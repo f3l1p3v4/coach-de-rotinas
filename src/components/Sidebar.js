@@ -2,6 +2,7 @@
 import React from 'react';
 import GuiaMetodos from './GuiaMetodos';
 import CoachingDiasDificeis from './CoachingDiasDificeis';
+import BlocoDeNotas from './BlocoDeNotas';
 import { X } from '@phosphor-icons/react'; // Ícone de fechar
 
 // Recebe as novas propriedades: isOpen e onClose
@@ -15,8 +16,9 @@ function Sidebar({ isOpen, onClose }) {
         <X size={24} />
       </button>
 
-      <GuiaMetodos />
+      <BlocoDeNotas />
       <CoachingDiasDificeis />
+      <GuiaMetodos />
     </aside>
   );
 }

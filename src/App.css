@@ -55,13 +55,37 @@ h1 {
   padding: 0 25px;
 }
 
-/* --- Estilos da Lista de Tarefas (mantidos) --- */
-.todo-list { list-style: none; padding: 0; display: flex; flex-direction: column; }
-.todo-item { display: flex; flex: 1; gap: 0.75rem; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #F0F0F0; }
+/* --- Estilos da Lista de Tarefas --- */
+.todo-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.todo-item {
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #F0F0F0;
+  margin-bottom: 0.75rem;
+}
+
+.todo-item:last-child {
+  margin-bottom: 0;
+}
+.todo-item:active {
+  z-index: 10;
+  cursor: grabbing;
+}
+
 .task-wrapper { display: flex; align-items: center; gap: 1rem; flex-grow: 1; }
-.task-wrapper label { display: flex; align-items: center; gap: 1rem; cursor: pointer; }
+/* Removido o label que não estava a ser usado */
 .task-wrapper input[type='checkbox'] { display: none; }
-.todo-checkbox { border-radius: 100%; height: 1.25rem; width: 1.25rem; transition: 0.2s all; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.todo-checkbox { border-radius: 100%; height: 1.25rem; width: 1.25rem; transition: 0.2s all; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
 .checkbox-unchecked { border: 2px solid #DDDDDD; }
 .checkbox-unchecked:hover { border-color: var(--accent-color); }
 .checkbox-checked { border: 2px solid var(--checkbox-checked-border); background-color: var(--checkbox-checked-bg); color: white; }
@@ -76,6 +100,7 @@ h1 {
 .popover-menu button { background: none; border: none; text-align: left; padding: 0.5rem; border-radius: 4px; cursor: pointer; width: 100%; }
 .popover-menu button:hover { background-color: #F5F5F5; }
 
+
 /* --- Sidebar --- */
 .sidebar-content h3 { color: var(--title-color); border-bottom: 1px solid #EAEAEA; padding-bottom: 10px; }
 .sidebar-content .content-section { background-color: #fff; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #EAEAEA; border-radius: 8px; padding: 20px; }
@@ -88,86 +113,146 @@ h1 {
 .mobile-menu-button { display: none; } /* Escondido no Desktop */
 .overlay { display: none; } /* Escondido no Desktop */
 
+/* --- ESTILOS PARA O GUIA DE MÉTODOS DINÂMICO --- */
+.guia-metodos-container h4, .content-section h4 {
+  margin-top: 0;
+  color: var(--title-color);
+}
+.metodo-card {
+  transition: opacity 0.5s ease-in-out;
+}
+.fade-in {
+  opacity: 1;
+}
+.fade-out {
+  opacity: 0;
+}
+
+
+/* --- ESTILOS DO CARD DE ANOTAÇÕES RÁPIDAS (Conteúdo Principal) --- */
+.notes-container {
+  margin-bottom: 2.5rem;
+  background-color: #FFFBEA;
+  border: 1px solid #FADF78;
+}
+.note-input-form { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.note-input-form input { flex-grow: 1; border: 1px solid #EAEAEA; border-radius: 6px; padding: 0.75rem; font-size: 1rem; }
+.note-input-form input:focus { outline: 2px solid var(--accent-color); border-color: var(--accent-color); }
+.note-input-form button { background-color: var(--accent-color); color: white; border: none; border-radius: 6px; font-size: 1.5rem; font-weight: bold; width: 50px; cursor: pointer; transition: background-color 0.2s; }
+.note-input-form button:hover { background-color: var(--accent-color-hover); }
+.notes-list { list-style: none; padding: 0; margin: 0; }
+.note-item { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px dashed #EAEAEA; }
+.note-item:last-child { border-bottom: none; }
+.note-item span { word-break: break-word; }
+.delete-note-button { background: none; border: none; color: var(--text-light-color); cursor: pointer; padding: 0.25rem; border-radius: 4px; margin-left: 0.5rem; flex-shrink: 0; }
+.delete-note-button:hover { background-color: var(--danger-color); color: white; }
+
+
+/* --- ESTILOS DO BLOCO DE NOTAS DA SIDEBAR (Adicionado aqui!) --- */
+.notepad-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0; /* Espaço antes do formulário de input */
+}
+.notepad-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+.notepad-item:last-child {
+  border-bottom: none;
+}
+.notepad-item span {
+  word-break: break-word;
+}
+.notepad-input-form {
+  display: flex;
+  gap: 0.5rem;
+}
+.notepad-input-form input {
+  flex-grow: 1;
+  border: 1px solid #EAEAEA;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+.notepad-input-form input:focus {
+  outline: 2px solid var(--accent-color);
+  border-color: var(--accent-color);
+}
+.notepad-input-form button {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  width: 40px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.notepad-input-form button:hover {
+  background-color: var(--accent-color-hover);
+}
+
+
 /* --------------------------------------------- */
 /* --- ESTILOS RESPONSIVOS PARA CELULAR --- */
-/* (Tudo aqui dentro só se aplica em telas com largura máxima de 800px) */
 /* --------------------------------------------- */
 @media (max-width: 800px) {
-  .App {
-    display: block; /* Remove o layout flex */
-  }
-
-  .main-content {
-    width: 100%;
-    padding: 20px;
-    box-sizing: border-box; /* Garante que o padding não aumente a largura */
-  }
-
-  /* Deixa o conteúdo principal escuro quando o menu estiver aberto */
-  .main-content.menu-open {
-    filter: brightness(0.5);
-    pointer-events: none;
-  }
-
-  .sidebar-content {
-    position: fixed; /* Fica por cima de tudo */
-    top: 0;
-    right: 0;
-    width: 70%; /* Ocupa 70% da tela */
-    max-width: 320px; /* Mas no máximo 320px */
-    height: 100vh; /* Ocupa a altura toda */
-    z-index: 1000;
-    box-shadow: -4px 0 15px rgba(0,0,0,0.1);
-    border-left: none;
-    transform: translateX(100%); /* Começa escondido à direita */
-  }
-
-  .sidebar-content.sidebar-open {
-    transform: translateX(0); /* Move para a tela quando a classe for aplicada */
-  }
-
-  .sidebar-close-button {
-    display: block;
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.5rem;
-    color: var(--text-light-color);
-  }
-
-  /* Botão de Menu (hambúrguer) */
-  .mobile-menu-button {
-    display: flex;
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1001; /* Fica acima de tudo */
-    background: var(--card-bg);
-    border: 1px solid #EAEAEA;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    cursor: pointer;
-  }
-
-  /* Fundo escurecido */
-  .overlay {
-    display: block;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.4);
-    z-index: 999;
-  }
-  
+  .App { display: block; }
+  .main-content { width: 100%; padding: 20px; box-sizing: border-box; }
+  .main-content.menu-open { filter: brightness(0.5); pointer-events: none; }
+  .sidebar-content { position: fixed; top: 0; right: 0; width: 70%; max-width: 320px; height: 100vh; z-index: 1000; box-shadow: -4px 0 15px rgba(0,0,0,0.1); border-left: none; transform: translateX(100%); }
+  .sidebar-content.sidebar-open { transform: translateX(0); }
+  .sidebar-close-button { display: block; position: absolute; top: 15px; right: 15px; background: none; border: none; cursor: pointer; font-size: 1.5rem; color: var(--text-light-color); }
+  .mobile-menu-button { display: flex; position: fixed; top: 20px; right: 20px; z-index: 1001; background: var(--card-bg); border: 1px solid #EAEAEA; border-radius: 50%; width: 50px; height: 50px; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; }
+  .overlay { display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.4); z-index: 999; }
   h1 { font-size: 1.8em; padding: 0 15px; }
   .todo-item { padding: 1rem; }
   .todo-paragraph { font-size: 0.95rem; }
   .task-wrapper { gap: 0.75rem; }
 }
+
+/* --- Estilos do Timer Pomodoro V2 --- */
+.timer-controls-container {
+  display: flex; align-items: center; gap: 0.5rem;
+  background-color: #f7f7f7; padding: 8px;
+  border-radius: 8px; margin-top: 8px;
+}
+.timer-phase-label {
+  background-color: var(--accent-color); color: white;
+  padding: 4px 8px; border-radius: 4px;
+  font-size: 0.75rem; font-weight: bold;
+}
+.timer-control-button {
+  background: none; border: 1px solid #ddd;
+  border-radius: 50%; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--text-color);
+  transition: background-color 0.2s;
+}
+.timer-control-button:hover { background-color: #eee; }
+.popover-menu-timer { display: flex; flex-direction: column; gap: 1rem; }
+.custom-time-adjuster { display: flex; align-items: center; justify-content: space-between; }
+.custom-time-adjuster label { font-size: 0.9rem; color: var(--text-light-color); }
+.adjuster-buttons { display: flex; align-items: center; gap: 0.5rem; }
+.adjuster-buttons button {
+  font-size: 1.2rem; width: 28px; height: 28px; line-height: 28px;
+  text-align: center; border: 1px solid #ddd; border-radius: 50%;
+  background-color: #fff; cursor: pointer;
+}
+.adjuster-buttons span { font-size: 1rem; font-weight: bold; min-width: 30px; text-align: center; }
+.start-pomodoro-btn {
+  background-color: var(--accent-color) !important; color: white;
+  font-weight: bold; text-align: center !important;
+}
+.start-pomodoro-btn:hover { background-color: var(--accent-color-hover) !important; }
+.todo-actions button:disabled, .menu-button:disabled {
+  opacity: 0.5; cursor: not-allowed;
+  background-color: #f0f0f0 !important;
+}
+.todo-actions button:disabled:hover { color: var(--text-light-color) !important; }
