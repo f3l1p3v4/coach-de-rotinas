@@ -5,20 +5,30 @@ import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-ki
 import TodoItem from './TodoItem';
 
 const initialTasks = [
-  { id: '1', text: 'Treino', emoji: '💪', completed: false },
-  { id: '2', text: 'Estudo Espiritual', emoji: '🙏', completed: false },
-  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', completed: false },
-  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', completed: false },
-  { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', completed: false },
+  { id: '1', text: 'Treino', emoji: '💪', completed: false, completedAt: null },
+  { id: '2', text: 'Estudo Espiritual', emoji: '🙏', completed: false, completedAt: null },
+  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', completed: false, completedAt: null },
+  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', completed: false, completedAt: null },
+  { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', completed: false, completedAt: null },
 ];
 
 const POMODORO_CONFIG = { Focus: 25, ShortBreak: 5, LongBreak: 15, cycles: 4 };
 
 function DailyPlanner() {
   const [tasks, setTasks] = useState(initialTasks);
-  const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0 });
+  const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
+
+  const speak = useCallback((text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel(); // Cancela falas anteriores
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
+  }, []);
 
   const playBeep = useCallback((frequency = 880, duration = 0.1, volume = 0.5) => {
     if (!audioContextRef.current) return;
@@ -48,25 +58,56 @@ function DailyPlanner() {
       nextPhase = 'Focus';
       nextSeconds = POMODORO_CONFIG.Focus * 60;
     }
+
+    let spokenMessage = '';
+    if (nextPhase === 'ShortBreak') {
+      spokenMessage = `Iniciando pausa curta de ${POMODORO_CONFIG.ShortBreak} minutos.`;
+    } else if (nextPhase === 'LongBreak') {
+      spokenMessage = `Iniciando pausa longa de ${POMODORO_CONFIG.LongBreak} minutos.`;
+    } else {
+      spokenMessage = `Iniciando sessão de foco de ${POMODORO_CONFIG.Focus} minutos.`;
+    }
+    speak(spokenMessage);
+
     alert(`🎉 Tempo para "${completedTask?.emoji} ${completedTask?.text}" (${activeTimer.phase}) concluído! Iniciando: ${nextPhase}`);
     setActiveTimer(prev => ({ ...prev, totalSeconds: nextSeconds, phase: nextPhase, pomodoroCycle: nextCycle, isRunning: true }));
-  }, [activeTimer.phase, activeTimer.pomodoroCycle, activeTimer.taskId, tasks]);
+  }, [activeTimer.phase, activeTimer.pomodoroCycle, activeTimer.taskId, tasks, speak]);
+
+  const handleCancelTimer = useCallback(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setActiveTimer({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null });
+  }, []);
 
   useEffect(() => {
     if (activeTimer.isRunning && activeTimer.totalSeconds > 0) {
       const interval = setInterval(() => {
         setActiveTimer(prev => ({ ...prev, totalSeconds: prev.totalSeconds - 1 }));
-        const secondsLeft = activeTimer.totalSeconds;
-        if (secondsLeft > 1 && secondsLeft <= 11) {
-          playBeep(880, 0.1, 0.3);
-        }
       }, 1000);
+
+      const secondsLeft = activeTimer.totalSeconds;
+      if (secondsLeft > 1 && secondsLeft <= 11) {
+        playBeep(880, 0.1, 0.3);
+      }
+      if (activeTimer.type === 'pomodoro' && secondsLeft === 11) {
+        speak('A sua sessão está a terminar em 10 segundos.');
+      }
+
       return () => clearInterval(interval);
     } else if (activeTimer.isRunning && activeTimer.totalSeconds === 0) {
       playBeep(1200, 0.5, 0.6);
-      startNextPhase();
+      
+      if (activeTimer.type === 'pomodoro') {
+        startNextPhase();
+      } else {
+        const completedTask = tasks.find(t => t.id === activeTimer.taskId);
+        speak(`Tempo personalizado para ${completedTask?.text} concluído!`)
+        alert(`🎉 Tempo personalizado para "${completedTask?.emoji} ${completedTask?.text}" concluído!`);
+        handleCancelTimer();
+      }
     }
-  }, [activeTimer.isRunning, activeTimer.totalSeconds, playBeep, startNextPhase]);
+  }, [activeTimer.isRunning, activeTimer.totalSeconds, playBeep, startNextPhase, activeTimer.type, activeTimer.taskId, tasks, handleCancelTimer, speak]);
 
   const formatTime = (totalSeconds) => {
     const minutes = Math.floor(totalSeconds / 60);
@@ -78,21 +119,22 @@ function DailyPlanner() {
     setCurrentTimeDisplay(formatTime(activeTimer.totalSeconds));
   }, [activeTimer.totalSeconds]);
 
-  const handleStartTimer = (taskId, minutes) => {
+  const handleStartTimer = (taskId, minutes, type) => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-    setActiveTimer({ taskId, totalSeconds: minutes * 60, phase: 'Focus', isRunning: true, pomodoroCycle: 0 });
+    if (type === 'pomodoro') {
+      speak(`Iniciando sessão de foco de ${minutes} minutos.`);
+    } else {
+      speak(`Iniciando timer personalizado de ${minutes} minutos.`);
+    }
+    setActiveTimer({ taskId, totalSeconds: minutes * 60, phase: 'Focus', isRunning: true, pomodoroCycle: 0, type });
   };
   
   const handlePauseResumeTimer = () => {
     if (activeTimer.totalSeconds > 0) {
       setActiveTimer(prev => ({ ...prev, isRunning: !prev.isRunning }));
-    }
-  };
-
-  const handleCancelTimer = () => {
-    setActiveTimer({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0 });
+    } 
   };
 
   const handleToggle = (id) => {
@@ -107,7 +149,11 @@ function DailyPlanner() {
         return;
       }
     }
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+    setTasks(tasks.map(t => 
+      t.id === id 
+        ? { ...t, completed: isCompleting, completedAt: isCompleting ? new Date() : null } 
+        : t
+    ));
   };
 
   const handleRemove = (id) => {

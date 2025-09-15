@@ -1,33 +1,23 @@
-// src/App.js
-import React, { useState } from 'react';
+import React from 'react';
 import './App.css';
 import DailyPlanner from './components/DailyPlanner';
-import Sidebar from './components/Sidebar';
-import { List } from '@phosphor-icons/react'; // Importando o ícone de menu
+import CoachingDiasDificeis from './components/CoachingDiasDificeis';
+import BlocoDeNotas from './components/BlocoDeNotas';
+import GuiaMetodos from './components/GuiaMetodos';
 
 function App() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   return (
     <div className="App">
-      {/* O overlay só aparece quando o menu está aberto */}
-      {isMenuOpen && <div className="overlay" onClick={toggleMenu} />}
-
-      <main className={`main-content ${isMenuOpen ? 'menu-open' : ''}`}>
-        <DailyPlanner />
-      </main>
-
-      {/* O botão de menu (hambúrguer) */}
-      <button className="mobile-menu-button" onClick={toggleMenu}>
-        <List size={24} />
-      </button>
-
-      {/* Passamos o estado e a função de fechar para a Sidebar */}
-      <Sidebar isOpen={isMenuOpen} onClose={toggleMenu} />
+      <CoachingDiasDificeis />
+      <div className="app-body">
+        <main className="main-content">
+          <DailyPlanner />
+        </main>
+        <aside className="right-sidebar">
+          <BlocoDeNotas />
+          <GuiaMetodos />
+        </aside>
+      </div>
     </div>
   );
 }

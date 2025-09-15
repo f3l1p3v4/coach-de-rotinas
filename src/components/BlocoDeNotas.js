@@ -1,11 +1,12 @@
 // src/components/BlocoDeNotas.js
 import React, { useState, useEffect } from 'react';
-import { Trash } from '@phosphor-icons/react';
+import { Trash, Plus } from '@phosphor-icons/react';
 
 function BlocoDeNotas() {
   // Usamos nomes de estado diferentes para clareza
   const [itens, setItens] = useState([]);
   const [novoItem, setNovoItem] = useState('');
+  const [inputVisivel, setInputVisivel] = useState(false);
 
   // Efeito para CARREGAR os itens do localStorage
   useEffect(() => {
@@ -23,7 +24,10 @@ function BlocoDeNotas() {
 
   const handleAdicionarItem = (e) => {
     e.preventDefault();
-    if (novoItem.trim() === '') return;
+    if (novoItem.trim() === '') {
+      setInputVisivel(false);
+      return;
+    }
 
     const itemObj = {
       id: Date.now(),
@@ -32,6 +36,7 @@ function BlocoDeNotas() {
 
     setItens([...itens, itemObj]);
     setNovoItem('');
+    setInputVisivel(false);
   };
 
   const handleRemoverItem = (id) => {
@@ -39,8 +44,15 @@ function BlocoDeNotas() {
   };
 
   return (
-    <div className="content-section">
-      <h3>🗒️ Bloco de Notas</h3>
+    <div className="content-section notepad-container">
+      <div className="notepad-header">
+        <h3>🗒️ Bloco de Notas</h3>
+        {!inputVisivel && (
+          <button className="add-note-button" onClick={() => setInputVisivel(true)}>
+            <Plus size={20} />
+          </button>
+        )}
+      </div>
       <ul className="notepad-list">
         {itens.map(item => (
           <li key={item.id} className="notepad-item">
@@ -51,15 +63,18 @@ function BlocoDeNotas() {
           </li>
         ))}
       </ul>
-      <form className="notepad-input-form" onSubmit={handleAdicionarItem}>
-        <input
-          type="text"
-          value={novoItem}
-          onChange={(e) => setNovoItem(e.target.value)}
-          placeholder="Nova anotação..."
-        />
-        <button type="submit">+</button>
-      </form>
+      {inputVisivel && (
+        <form className="notepad-input-form" onSubmit={handleAdicionarItem}>
+          <input
+            type="text"
+            value={novoItem}
+            onChange={(e) => setNovoItem(e.target.value)}
+            placeholder="Nova anotação..."
+            autoFocus
+          />
+          <button type="submit"><Plus size={20}/></button>
+        </form>
+      )}
     </div>
   );
 }

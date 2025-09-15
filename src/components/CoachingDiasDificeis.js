@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 
 // 1. Criamos a nossa lista de dicas de resiliência, agora mais detalhadas e com novas adições
 const dicasDeResiliencia = [
@@ -29,35 +29,23 @@ const dicasDeResiliencia = [
   }
 ];
 
-
 function CoachingDiasDificeis() {
   const [indiceAtual, setIndiceAtual] = useState(0);
-  const [visivel, setVisivel] = useState(true);
 
-  useEffect(() => {
-    // 2. Usamos a mesma lógica de intervalo para mudar a dica a cada 20 segundos
-    const intervalId = setInterval(() => {
-      setVisivel(false); // Inicia o fade-out
-
-      setTimeout(() => {
-        setIndiceAtual((indiceAnterior) => (indiceAnterior + 1) % dicasDeResiliencia.length);
-        setVisivel(true); // Inicia o fade-in com a nova dica
-      }, 500); // Sincronizado com a transição de CSS
-    }, 30000); // 20 segundos
-
-    return () => clearInterval(intervalId); // Limpa o intervalo
+  const handleAnimationIteration = useCallback(() => {
+    setIndiceAtual((indiceAnterior) => (indiceAnterior + 1) % dicasDeResiliencia.length);
   }, []);
 
   const dicaAtual = dicasDeResiliencia[indiceAtual];
 
   return (
-    <div className="content-section">
-      <h3>{dicaAtual.emoji} Coaching para Dias Difíceis</h3>
-      {/* 3. Reutilizamos as mesmas classes de CSS para a animação */}
-      <div className={`metodo-card ${visivel ? 'fade-in' : 'fade-out'}`}>
-        <h4>{dicaAtual.titulo}</h4>
-        <p>{dicaAtual.descricao}</p>
-      </div>
+    <div className="coaching-banner">
+      <p 
+        className="coaching-banner-text"
+        onAnimationIteration={handleAnimationIteration}
+      >
+        {dicaAtual.emoji} <strong>{dicaAtual.titulo}:</strong> {dicaAtual.descricao}
+      </p>
     </div>
   );
 }

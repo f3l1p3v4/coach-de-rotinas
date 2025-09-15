@@ -1,7 +1,6 @@
 // src/components/Sidebar.js
 import React from 'react';
 import GuiaMetodos from './GuiaMetodos';
-import CoachingDiasDificeis from './CoachingDiasDificeis';
 import BlocoDeNotas from './BlocoDeNotas';
 import { X } from '@phosphor-icons/react'; // Ícone de fechar
 
@@ -17,7 +16,6 @@ function Sidebar({ isOpen, onClose }) {
       </button>
 
       <BlocoDeNotas />
-      <CoachingDiasDificeis />
       <GuiaMetodos />
     </aside>
   );
