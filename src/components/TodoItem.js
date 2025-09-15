@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 // Importações corretas da @dnd-kit
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Check, Clock, Trash, X } from '@phosphor-icons/react';
-import TimerControl from './TimerControl';
+import { Check, Clock, Trash, X, Play, Pause } from '@phosphor-icons/react';
 
 const POMODORO_CONFIG = { Focus: 25 };
 
@@ -67,36 +66,42 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
         </div>
       </div>
       
-      {isThisTaskActive ? (
-        <TimerControl 
-          activeTimer={activeTimer}
-          onPauseResume={onPauseResume}
-          onCancel={onCancel}
-          currentTimeDisplay={currentTimeDisplay}
-        />
-      ) : (
-        <span className="timer-display"></span>
-      )}
+      <span className="timer-display">
+        {isThisTaskActive ? currentTimeDisplay : ''}
+      </span>
       
       <div className="todo-actions">
-        <button className="menu-button" onClick={() => setIsMenuOpen(!isMenuOpen)} disabled={isAnyTimerActive}>
-            <Clock size={20} />
-        </button>
+        {isThisTaskActive ? (
+          <>
+            <button className="timer-action-btn" onClick={onPauseResume}>
+              {activeTimer.isRunning ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
+            </button>
+            <button className="timer-action-btn danger" onClick={onCancel}>
+              <X size={20} weight="fill" />
+            </button>
+          </>
+        ) : (
+          <>
+            <button className="menu-button" onClick={() => setIsMenuOpen(!isMenuOpen)} disabled={isAnyTimerActive}>
+                <Clock size={20} />
+            </button>
 
-        {isMenuOpen && (
-          <div className="popover-menu">
-            <button className="start-pomodoro-btn" onClick={handleStartPomodoro}>
-              🍅 Iniciar Pomodoro
+            {isMenuOpen && (
+              <div className="popover-menu">
+                <button className="start-pomodoro-btn" onClick={handleStartPomodoro}>
+                  🍅 Iniciar Pomodoro
+                </button>
+                <button onClick={handleOpenCustomModal}>
+                  ⏱️ Tempo Personalizado
+                </button>
+              </div>
+            )}
+            
+            <button className="delete-button" onClick={() => onRemove(task.id)} disabled={isThisTaskActive}>
+                <Trash size={20} />
             </button>
-            <button onClick={handleOpenCustomModal}>
-              ⏱️ Tempo Personalizado
-            </button>
-          </div>
+          </>
         )}
-        
-        <button className="delete-button" onClick={() => onRemove(task.id)} disabled={isThisTaskActive}>
-            <Trash size={20} />
-        </button>
       </div>
 
       {isCustomTimeModalOpen && (
@@ -125,4 +130,3 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
 }
 
 export default TodoItem;
-

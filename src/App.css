@@ -116,6 +116,28 @@ h1 {
 .popover-menu button { background: none; border: none; text-align: left; padding: 0.5rem; border-radius: 4px; cursor: pointer; width: 100%; }
 .popover-menu button:hover { background-color: #F5F5F5; }
 
+.timer-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--accent-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.timer-action-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.timer-action-btn.danger {
+  color: var(--danger-color);
+}
+
+
 /* --- Estilos do Bloco de Notas --- */
 .notepad-container {
     position: relative;
