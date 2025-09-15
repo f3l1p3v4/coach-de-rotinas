@@ -1,16 +1,16 @@
 import React from 'react';
-import { Notepad, Timer } from '@phosphor-icons/react';
+import { Notepad, Trophy } from '@phosphor-icons/react';
 
-function FloatingMenuMobile({ onNotepadClick, onTabataClick }) {
+function FloatingMenuMobile({ onNotepadClick, onPlacarClick }) {
   return (
     <div className="floating-menu-mobile">
       <button onClick={onNotepadClick}>
         <Notepad size={22} />
         <span>Bloco de Notas</span>
       </button>
-      <button onClick={onTabataClick}>
-        <Timer size={22} />
-        <span>Tabata</span>
+      <button onClick={onPlacarClick}>
+        <Trophy size={22} />
+        <span>Placar</span>
       </button>
     </div>
   );

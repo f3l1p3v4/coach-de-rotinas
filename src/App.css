@@ -438,7 +438,7 @@ h1 {
 }
 
 /* New floating card styles */
-.floating-notepad-container {
+.floating-card-container {
   position: fixed;
   bottom: 95px; /* Position above the floating menu (20px bottom + ~60px menu height + 15px space) */
   left: 20px;
@@ -449,7 +449,8 @@ h1 {
   pointer-events: none;
 }
 
-.floating-notepad-container .notepad-container {
+.floating-card-container .notepad-container,
+.floating-card-container .placar-foco-container {
   pointer-events: auto;
   width: 100%;
   max-width: 450px;
@@ -462,9 +463,15 @@ h1 {
   overflow: hidden;
 }
 
-.floating-notepad-container .notepad-list {
+.floating-card-container .notepad-list {
     overflow-y: auto;
     flex-grow: 1;
+}
+
+/* Specific styles for placar card if needed */
+.floating-card-container .placar-foco-container {
+  background-color: var(--sidebar-bg); /* A slightly different background */
+  height: auto; /* Auto height for this card */
 }
 
 /* Keyframes for the new animation */
