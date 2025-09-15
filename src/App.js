@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import DailyPlanner from './components/DailyPlanner';
 import BannerDinamico from './components/BannerDinamico';
@@ -7,29 +7,45 @@ import FloatingMenuMobile from './components/FloatingMenuMobile';
 import PlacarFoco from './components/PlacarFoco';
 
 function App() {
-  const [mobileCard, setMobileCard] = useState(null); // null, 'notepad', or 'placar'
+  const [mobileCard, setMobileCard] = useState(null);
+  const [pomodoroCount, setPomodoroCount] = useState(0);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const savedData = JSON.parse(localStorage.getItem('placar_foco_data'));
+    if (savedData && savedData.date === today) {
+      setPomodoroCount(savedData.count);
+    } else {
+      localStorage.setItem('placar_foco_data', JSON.stringify({ count: 0, date: today }));
+    }
+  }, []);
+
+  const handlePomodoroComplete = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setPomodoroCount(currentCount => {
+      const newCount = currentCount + 1;
+      localStorage.setItem('placar_foco_data', JSON.stringify({ count: newCount, date: today }));
+      return newCount;
+    });
+  };
 
   const toggleMobileCard = (card) => {
     setMobileCard(prev => (prev === card ? null : card));
   };
-
-  // Placeholder for pomodoro count
-  const pomodoroCount = 5;
 
   return (
     <div className="App">
       <BannerDinamico />
       <div className="app-body">
         <main className="main-content">
-          <DailyPlanner />
+          <DailyPlanner onPomodoroComplete={handlePomodoroComplete} />
         </main>
         <aside className="right-sidebar">
-          <PlacarFoco />
+          <PlacarFoco count={pomodoroCount} />
           <BlocoDeNotas />
         </aside>
       </div>
 
-      {/* --- Mobile Only Elements --- */}
       <div className="mobile-only">
         {mobileCard === 'notepad' && (
           <div className="floating-card-container">
@@ -41,7 +57,6 @@ function App() {
             <PlacarFoco count={pomodoroCount} />
           </div>
         )}
-
         <div className="floating-menu-container">
           <FloatingMenuMobile
             onNotepadClick={() => toggleMobileCard('notepad')}

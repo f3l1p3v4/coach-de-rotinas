@@ -1,4 +1,3 @@
-// src/components/PlacarFoco.js
 import React from 'react';
 
 const PomodoroDots = ({ count }) => {
@@ -10,7 +9,6 @@ const PomodoroDots = ({ count }) => {
 };
 
 function PlacarFoco({ count }) {
-  // A lógica que escondia o card foi removida. Agora ele aparece sempre.
   return (
     <div className="content-section placar-foco-container">
       <h3>🏆 Placar de Foco do Dia</h3>
