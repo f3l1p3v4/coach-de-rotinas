@@ -107,7 +107,15 @@ h1 {
 .checkbox-checked { border: 2px solid var(--checkbox-checked-border); background-color: var(--checkbox-checked-bg); color: white; }
 .todo-paragraph { font-size: 1rem; line-height: 140%; user-select: none; transition: 0.2s all; }
 .paragraph-checked { text-decoration: line-through; color: var(--text-light-color); }
-.timer-display { font-family: 'monospace'; font-size: 1rem; color: var(--accent-color); min-width: 50px; text-align: center; }
+.timer-display {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Lucida Console", Monaco, monospace;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--title-color);
+  min-width: 60px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
 .todo-actions { position: relative; display: flex; align-items: center; gap: 0.5rem; }
 .menu-button, .delete-button { background: transparent; border: none; cursor: pointer; padding: 4px; border-radius: 4px; color: var(--text-light-color); display: flex; }
 .menu-button:hover, .delete-button:hover { background-color: #F0F0F0; color: var(--title-color); }
@@ -120,21 +128,27 @@ h1 {
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 0px 1px;
   border-radius: 4px;
-  color: var(--accent-color);
+  color: var(--text-color); /* Black/White theme */
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .timer-action-btn:hover {
   background-color: #f0f0f0;
+  color: var(--title-color);
 }
 
 .timer-action-btn.danger {
   color: var(--danger-color);
+}
+
+.timer-action-btn.danger:hover {
+  background-color: #f0f0f0; /* Same light gray as other buttons */
+  color: var(--danger-color);  /* Icon STAYS red */
 }
 
 
@@ -193,15 +207,12 @@ h1 {
   background: transparent;
   border: none;
   cursor: pointer;
-  color: #C4C4C4; /* Lighter color by default */
-  opacity: 0; /* Hidden by default */
-  transition: all 0.2s ease;
+  color: var(--text-light-color); /* Default icon color */
+  display: flex;
+  align-items: center;
   padding: 4px;
   border-radius: 4px;
-}
-
-.notepad-item:hover .delete-note-button {
-  opacity: 1; /* Show on hover */
+  transition: all 0.2s ease;
 }
 
 .delete-note-button:hover {

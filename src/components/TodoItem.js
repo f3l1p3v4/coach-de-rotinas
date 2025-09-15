@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 // Importações corretas da @dnd-kit
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Check, Clock, Trash, X, Play, Pause } from '@phosphor-icons/react';
+import { Check, Clock, Trash, XCircle, PlayCircle, PauseCircle } from '@phosphor-icons/react';
 
 const POMODORO_CONFIG = { Focus: 25 };
 
@@ -74,10 +74,10 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
         {isThisTaskActive ? (
           <>
             <button className="timer-action-btn" onClick={onPauseResume}>
-              {activeTimer.isRunning ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
+              {activeTimer.isRunning ? <PauseCircle size={25} weight="fill" /> : <PlayCircle size={25} weight="fill" />}
             </button>
             <button className="timer-action-btn danger" onClick={onCancel}>
-              <X size={20} weight="fill" />
+              <XCircle size={25} weight="fill" /> 
             </button>
           </>
         ) : (
@@ -109,7 +109,7 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
           <div className="modal-content">
             <h3>Definir Tempo Personalizado</h3>
             <button className="modal-close-button" onClick={() => setIsCustomTimeModalOpen(false)}>
-              <X size={24} />
+              <XCircle size={24} />
             </button>
             <div className="custom-time-adjuster">
               <label>Minutos:</label>
