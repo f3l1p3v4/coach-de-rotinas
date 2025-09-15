@@ -5,11 +5,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { Check, Clock, Trash, XCircle, PlayCircle, PauseCircle } from '@phosphor-icons/react';
 
 const POMODORO_CONFIG = { Focus: 25 };
+const TIME_CONFIG = { Focus: 5 };
 
 function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCancel, activeTimer, currentTimeDisplay }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCustomTimeModalOpen, setIsCustomTimeModalOpen] = useState(false);
-  const [customMinutes, setCustomMinutes] = useState(POMODORO_CONFIG.Focus);
+  const [customMinutes, setCustomMinutes] = useState(TIME_CONFIG.Focus);
   
   const isThisTaskActive = activeTimer.taskId === task.id;
   const isAnyTimerActive = activeTimer.taskId !== null;
