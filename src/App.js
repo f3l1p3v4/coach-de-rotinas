@@ -1,50 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import DailyPlanner from './components/DailyPlanner';
-import CoachingDiasDificeis from './components/CoachingDiasDificeis';
+import BannerDinamico from './components/BannerDinamico';
 import BlocoDeNotas from './components/BlocoDeNotas';
-import GuiaMetodos from './components/GuiaMetodos';
 import FloatingMenuMobile from './components/FloatingMenuMobile';
-import { X } from '@phosphor-icons/react';
-
+import PlacarFoco from './components/PlacarFoco'; // Verifique se esta linha está correta
 
 function App() {
   const [showMobileNotepad, setShowMobileNotepad] = useState(false);
+  const [pomodoroCount, setPomodoroCount] = useState(0);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const savedData = JSON.parse(localStorage.getItem('placar_foco_data'));
+
+    if (savedData && savedData.date === today) {
+      setPomodoroCount(savedData.count);
+    } else {
+      localStorage.setItem('placar_foco_data', JSON.stringify({ count: 0, date: today }));
+      setPomodoroCount(0); // Garante que o estado seja 0
+    }
+  }, []);
+
+  const handlePomodoroComplete = () => {
+    const today = new Date().toISOString().split('T')[0];
+    // Usando uma função no setState para garantir que estamos a usar o valor mais recente
+    setPomodoroCount(currentCount => {
+      const newCount = currentCount + 1;
+      localStorage.setItem('placar_foco_data', JSON.stringify({ count: newCount, date: today }));
+      return newCount;
+    });
+  };
+
+  const toggleMobileNotepad = () => {
+    setShowMobileNotepad(prev => !prev);
+  };
 
   return (
     <div className="App">
-      <CoachingDiasDificeis />
+      <BannerDinamico />
       <div className="app-body">
         <main className="main-content">
-          <DailyPlanner />
+          <DailyPlanner onPomodoroComplete={handlePomodoroComplete} />
         </main>
         <aside className="right-sidebar">
+          <PlacarFoco count={pomodoroCount} />
           <BlocoDeNotas />
-          <GuiaMetodos />
         </aside>
       </div>
 
-      {/* --- Mobile Only Elements --- */}
       <div className="mobile-only">
-        {!showMobileNotepad && (
-          <div className="floating-menu-container">
-            <FloatingMenuMobile
-              onNotepadClick={() => setShowMobileNotepad(true)}
-              onTabataClick={() => alert('Tabata ainda não implementado!')}
-            />
-          </div>
-        )}
-
         {showMobileNotepad && (
-          <div className="mobile-card-overlay" onClick={() => setShowMobileNotepad(false)}>
-            <div className="mobile-card-content" onClick={(e) => e.stopPropagation()}>
-              <button className="mobile-card-close" onClick={() => setShowMobileNotepad(false)}>
-                <X size={20} />
-              </button>
-              <BlocoDeNotas isMobileView={true} />
-            </div>
+          <div className="floating-notepad-container">
+            <BlocoDeNotas isMobileView={true} />
           </div>
         )}
+        <div className="floating-menu-container">
+          <FloatingMenuMobile
+            onNotepadClick={toggleMobileNotepad}
+            onTabataClick={() => alert('Tabata ainda não implementado!')}
+          />
+        </div>
       </div>
     </div>
   );
