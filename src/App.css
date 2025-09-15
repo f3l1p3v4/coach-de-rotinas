@@ -146,6 +146,7 @@ h1 {
 }
 
 .timer-action-btn.danger:hover {
+  background-color: #f0f0f0; /* Same light gray as other buttons */
   color: var(--danger-color);  /* Icon STAYS red */
 }
 
@@ -278,7 +279,7 @@ h1 {
 .add-note-button {
   background-color: #FFD452; /* Amarelo mais vivo */
   border: 1px solid #FBCB43;
-  color: #423400; /* Contraste */
+  color: #000000; /* Contraste */
   border-radius: 6px;
   width: 32px;
   height: 32px;
@@ -322,7 +323,7 @@ h1 {
   background-color: var(--danger-color);
 }
 
-.notepad-input-form { display: flex; gap: 0.5rem; }
+.notepad-input-form { display: flex; gap: 0.5rem; margin: 10px 0;}
 .notepad-input-form input {
   flex-grow: 1;
   border: 1px solid #FDF2D0;
@@ -330,8 +331,6 @@ h1 {
   padding: 0.5rem;
   font-size: 0.9rem;
   background-color: #FFFBEB;
-}
-.notepad-input-form input:focus {
   outline: none;
   border-color: #FFD452; /* Amarelo mais vivo */
   box-shadow: 0 0 0 2px rgba(255, 212, 82, 0.5);
@@ -478,9 +477,9 @@ h1 {
 
 .mobile-card-close {
   position: absolute;
-  top: 15px;
-  right: 15px;
-  background: #EAEAEA;
+  top: 10px;
+  right: 10px;
+  background: var(--danger-color);
   border: none;
   border-radius: 50%;
   width: 30px;
@@ -489,7 +488,7 @@ h1 {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--text-light-color);
+  color: var(--bg-color);
   z-index: 10;
 }
 

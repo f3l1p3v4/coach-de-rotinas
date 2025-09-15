@@ -41,7 +41,7 @@ function App() {
               <button className="mobile-card-close" onClick={() => setShowMobileNotepad(false)}>
                 <X size={20} />
               </button>
-              <BlocoDeNotas />
+              <BlocoDeNotas isMobileView={true} />
             </div>
           </div>
         )}
