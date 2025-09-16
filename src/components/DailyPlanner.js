@@ -167,7 +167,7 @@ function DailyPlanner({ onPomodoroComplete }) {
   return (
     <div className="planner-container">
       <div className="planner-header">
-        <h1>🗓️ Plano do Dia</h1>
+        <h1>Focus 🎯</h1>
         {/* Futuramente o contador de pomodoros pode vir aqui */}
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
