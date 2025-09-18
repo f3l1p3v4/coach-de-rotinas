@@ -1,0 +1,67 @@
+.details-modal-content {
+  text-align: left;
+  max-width: 600px;
+  padding: 1.5rem 2rem 2rem 2rem;
+}
+
+.details-modal-header h2 {
+  font-size: 1.8rem;
+  margin: 0;
+  color: var(--title-color);
+  word-break: break-word;
+}
+
+.details-modal-section {
+  margin-top: 2rem;
+}
+
+.details-modal-section label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-light-color);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.5px;
+}
+
+/* Novo estilo para o parágrafo de descrição */
+.details-modal-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0.75rem;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+}
+
+/* Nova lista de sub-tarefas de visualização */
+.subtask-list-view {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.subtask-list-view li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.subtask-list-view li:last-child {
+  border-bottom: none;
+}
+.subtask-list-view li.completed span {
+  text-decoration: line-through;
+  color: var(--text-light-color);
+}
+.subtask-list-view li span {
+  flex-grow: 1;
+}
+.subtask-icon {
+  color: var(--text-light-color);
+}
+.subtask-icon-completed {
+  color: var(--checkbox-checked-bg);
+}

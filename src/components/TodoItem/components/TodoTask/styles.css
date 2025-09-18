@@ -8,6 +8,7 @@
   line-height: 140%;
   user-select: none;
   transition: 0.2s all;
+  cursor: pointer;
 }
 
 .paragraph-checked { 

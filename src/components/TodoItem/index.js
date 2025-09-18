@@ -9,7 +9,7 @@ import CustomTimerModal from './components/CustomTimerModal';
 
 import './styles.css';
 
-function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCancel, activeTimer, currentTimeDisplay }) {
+function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCancel, activeTimer, currentTimeDisplay, onOpenDetails }) {
   const [isCustomTimeModalOpen, setIsCustomTimeModalOpen] = useState(false);
   
   const isThisTaskActive = activeTimer.taskId === task.id;
@@ -27,7 +27,7 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
       <li className="todo-item" ref={setNodeRef} style={style}>
         <div className="task-wrapper" {...attributes} {...listeners}>
           <TodoCheckbox completed={task.completed} onToggle={() => onToggle(task.id)} />
-          <TodoTask task={task} />
+          <TodoTask task={task} onOpenDetails={onOpenDetails} />
         </div>
         
         <span className="timer-display">

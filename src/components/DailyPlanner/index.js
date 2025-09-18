@@ -3,21 +3,55 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
 import TodoItem from '../TodoItem';
+import TaskDetailsModal from '../TaskDetailsModal';
 
 import './styles.css';
 
 const initialTasks = [
-  { id: '1', text: 'Treino', emoji: '💪', completed: false, completedAt: null },
-  { id: '2', text: 'Estudo Espiritual', emoji: '🙏', completed: false, completedAt: null },
-  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', completed: false, completedAt: null },
-  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', completed: false, completedAt: null },
-  { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', completed: false, completedAt: null },
+  { 
+    id: '1', text: 'Treino', emoji: '💪', completed: false, completedAt: null, 
+    description: 'Foco em peito e tríceps hoje. Lembrar de manter a boa forma e controlar a respiração.', 
+    subtasks: [
+      { id: 101, text: 'Aquecimento - 10 min de passadeira', completed: false },
+      { id: 102, text: 'Supino Reto - 4x8', completed: false },
+      { id: 103, text: 'Flexões - 3x até à falha', completed: false },
+      { id: 104, text: 'Fundos - 3x10', completed: false },
+    ] 
+  },
+  { 
+    id: '2', text: 'Estudo Espiritual', emoji: '🙏', completed: false, completedAt: null, 
+    description: 'Leitura do capítulo de hoje e meditação sobre os pontos principais. O objetivo é a reflexão, não a velocidade.', 
+    subtasks: [] 
+  },
+  { 
+    id: '3', text: 'Estudo de Órgão', emoji: '🎹', completed: false, completedAt: null, 
+    description: 'Praticar as escalas e a nova peça. Focar na mão esquerda.', 
+    subtasks: [
+      { id: 301, text: 'Escalas em Dó Maior - 15 min', completed: false },
+      { id: 302, text: 'Praticar compassos 1-16 da nova música', completed: false },
+    ] 
+  },
+  { 
+    id: '4', text: 'Faculdade / Concursos', emoji: '📚', completed: false, completedAt: null, 
+    description: 'Revisão da matéria de Direito Administrativo e resolução de 10 exercícios sobre o tema.', 
+    subtasks: [
+      { id: 401, text: 'Ler resumo do capítulo 3', completed: false },
+      { id: 402, text: 'Fazer os exercícios pares da página 45', completed: false },
+      { id: 403, text: 'Corrigir os exercícios', completed: false },
+    ] 
+  },
+  { 
+    id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', completed: false, completedAt: null, 
+    description: 'Foco na cozinha hoje, seguindo o método de 15 minutos.', 
+    subtasks: [] 
+  },
 ];
 
 export const POMODORO_CONFIG = { Focus: 25, ShortBreak: 5, LongBreak: 15, cycles: 4 };
 
 function DailyPlanner({ onPomodoroComplete }) {
   const [tasks, setTasks] = useState(initialTasks);
+  const [selectedTask, setSelectedTask] = useState(null);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
@@ -187,11 +221,18 @@ function DailyPlanner({ onPomodoroComplete }) {
                 onCancel={handleCancelTimer}
                 activeTimer={activeTimer}
                 currentTimeDisplay={currentTimeDisplay}
+                onOpenDetails={() => setSelectedTask(task)}
               />
             ))}
           </ul>
         </SortableContext>
       </DndContext>
+      {selectedTask && (
+        <TaskDetailsModal 
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </div>
   );
 }
