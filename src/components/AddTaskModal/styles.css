@@ -1,0 +1,96 @@
+.planner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+}
+
+.planner-header h1 {
+    padding: 0
+}
+
+.add-task-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(26, 26, 26, 0.9);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-task-button:hover {
+  opacity: 0.9;
+}
+
+.empty-state-message {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-light-color);
+  font-style: italic;
+}
+
+
+/* --- Estilos do Modal de Adicionar Tarefa --- */
+.add-task-modal {
+  text-align: left;
+  max-width: 600px;
+}
+.add-task-modal .form-group {
+  margin-bottom: 1rem;
+}
+.add-task-modal .form-group-inline {
+  display: flex;
+  gap: 1rem;
+}
+.add-task-modal .form-group-inline .form-group {
+  flex: 1;
+}
+.add-task-modal label {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-light-color);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+.add-task-modal input,
+.add-task-modal select,
+.add-task-modal textarea {
+  width: 100%;
+  border: 1px solid #EAEAEA;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-family: inherit;
+  box-sizing: border-box; /* Garante que padding não aumente a largura */
+}
+.add-task-modal input.emoji-input {
+  text-align: center;
+  font-size: 1.5rem;
+  padding: 0.5rem;
+}
+
+.subtask-editor {
+  background-color: #f9f9f9;
+  border: 1px solid #EAEAEA;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+.subtask-edit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
+}
+.subtask-edit-item button {
+  background: none; border: none; color: var(--text-light-color);
+  cursor: pointer; opacity: 0.5;
+}
+.subtask-edit-item:hover button { opacity: 1; color: var(--danger-color); }
