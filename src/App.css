@@ -20,7 +20,7 @@ body {
 }
 
 h3 {
-  margin-top: 0
+  margin-top: 0;
 }
 
 .App {
@@ -29,31 +29,54 @@ h3 {
   height: 100vh;
 }
 
+/* --- Banner de Coaching (Layout Atualizado para Vertical) --- */
 .coaching-banner {
   background: #1A1A1A;
   color: white;
-  padding: 0.75rem 0;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column; /* Para empilhar verticalmente */
+  align-items: center;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  padding: 0.5rem 0; /* Espaçamento vertical */
+}
+
+.coaching-banner:hover {
+  background: #2a2a2a;
+}
+
+/* NOVO: Estilo para o título centralizado */
+.banner-title-centered {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding-bottom: 0.3rem; /* Espaço abaixo do título */
+  width: 100%;
   text-align: center;
 }
 
-.banner-title-fixed {
-  font-weight: bold;
-  font-size: 0.9rem;
+.banner-text-scrolling-container {
+  width: 100%; /* Garante que o container ocupe toda a largura */
+  overflow: hidden;
 }
 
 .coaching-banner-text {
   display: inline-block;
-  animation: marquee 45s linear infinite;
+  animation: marquee 30s linear infinite;
   padding-left: 100%;
+  margin: 5px 0;
   will-change: transform;
 }
 
+.coaching-banner-text.marquee-paused {
+  animation-play-state: paused;
+}
+
 .coaching-banner-text strong {
-    font-weight: 600;
-    margin: 0 0.25rem;
+  font-weight: 600;
+  margin: 0 0.25rem;
+  color: #a5d8ff;
 }
 
 @keyframes marquee {
@@ -133,7 +156,7 @@ h1 {
   cursor: pointer;
   padding: 0px 1px;
   border-radius: 4px;
-  color: var(--text-color); /* Black/White theme */
+  color: var(--text-color);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,8 +172,8 @@ h1 {
 }
 
 .timer-action-btn.danger:hover {
-  background-color: #f0f0f0; /* Same light gray as other buttons */
-  color: var(--danger-color);  /* Icon STAYS red */
+  background-color: #f0f0f0;
+  color: var(--danger-color);
 }
 
 /* --- Estilos do Modal de Tempo Personalizado --- */
@@ -160,7 +183,7 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Darker overlay */
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -248,23 +271,23 @@ h1 {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  background-color: var(--title-color); /* Black */
+  background-color: var(--title-color);
   color: white;
   transition: background-color 0.2s;
 }
 
 .start-custom-btn:hover {
-  background-color: #333; /* Darker gray */
+  background-color: #333;
 }
 
 
 /* --- Estilos do Bloco de Notas --- */
 .notepad-container {
     position: relative;
-    background-color: #fcf1c6; /* Amarelinho mais forte */
+    background-color: #fcf1c6;
     padding: 1.5rem;
     border-radius: 8px;
-    border: 1px solid #FFD452; /* Amarelo mais vivo */
+    border: 1px solid #FFD452;
     margin-top: 20px;
 }
 
@@ -280,9 +303,9 @@ h1 {
 }
 
 .add-note-button {
-  background-color: #FFD452; /* Amarelo mais vivo */
+  background-color: #FFD452;
   border: 1px solid #FBCB43;
-  color: #000000; /* Contraste */
+  color: #000000;
   border-radius: 6px;
   width: 32px;
   height: 32px;
@@ -313,7 +336,7 @@ h1 {
   background: transparent;
   border: none;
   cursor: pointer;
-  color: var(--text-light-color); /* Default icon color */
+  color: var(--text-light-color);
   display: flex;
   align-items: center;
   padding: 4px;
@@ -335,13 +358,13 @@ h1 {
   font-size: 0.9rem;
   background-color: #FFFBEB;
   outline: none;
-  border-color: #FFD452; /* Amarelo mais vivo */
+  border-color: #FFD452;
   box-shadow: 0 0 0 2px rgba(255, 212, 82, 0.5);
 }
 
 .notepad-input-form button {
-  background-color: #FFD452; /* Amarelo mais vivo */
-  color: #423400; /* Contraste */
+  background-color: #FFD452;
+  color: #423400;
   border: 1px solid #FBCB43;
   border-radius: 6px;
   width: 40px;
@@ -380,6 +403,28 @@ h1 {
 .metodo-card p {
   font-size: 0.9rem;
   line-height: 1.5;
+  color: var(--text-color);
+}
+
+/* --- Estilos do Modal do Banner --- */
+.banner-modal-content {
+  text-align: left;
+  max-width: 550px;
+}
+.banner-modal-content h3 {
+  font-size: 1.1rem;
+  color: var(--text-light-color);
+  margin-bottom: 0.5rem;
+}
+.banner-modal-content h4 {
+  font-size: 1.5rem;
+  color: var(--title-color);
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+.banner-modal-content p {
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--text-color);
 }
 
@@ -434,10 +479,9 @@ h1 {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* New floating card styles */
 .floating-card-container {
   position: fixed;
-  bottom: 95px; /* Position above the floating menu (20px bottom + ~60px menu height + 15px space) */
+  bottom: 95px;
   left: 20px;
   right: 20px;
   z-index: 999;
@@ -461,17 +505,15 @@ h1 {
 }
 
 .floating-card-container .notepad-list {
-    overflow-y: auto;
-    flex-grow: 1;
+  overflow-y: auto;
+  flex-grow: 1;
 }
 
-/* Specific styles for placar card if needed */
 .floating-card-container .placar-foco-container {
-  background-color: var(--sidebar-bg); /* A slightly different background */
-  height: auto; /* Auto height for this card */
+  background-color: var(--sidebar-bg);
+  height: auto;
 }
 
-/* Keyframes for the new animation */
 @keyframes slideUpAndFadeIn {
   from {
     transform: translateY(60px) scale(0.9);
@@ -526,8 +568,6 @@ h1 {
     display: none;
   }
 }
-
-/* Adicionar ao final de src/App.css */
 
 /* --- Estilos do Placar de Foco --- */
 .placar-foco-container {

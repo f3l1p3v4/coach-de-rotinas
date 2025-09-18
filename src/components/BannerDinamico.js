@@ -1,7 +1,6 @@
-// src/components/BannerDinamico.js
 import React, { useState, useCallback } from 'react';
+import { XCircle } from '@phosphor-icons/react';
 
-// 1. Lista unificada com todos os métodos famosos que discutimos
 const todasAsDicas = [
   {
     tipo: 'Estratégia',
@@ -41,38 +40,53 @@ const todasAsDicas = [
   }
 ];
 
-// Embaralha a lista para que a ordem seja sempre uma surpresa
 todasAsDicas.sort(() => Math.random() - 0.5);
 
 function BannerDinamico() {
   const [indiceAtual, setIndiceAtual] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAnimationIteration = useCallback(() => {
     setIndiceAtual((indiceAnterior) => (indiceAnterior + 1) % todasAsDicas.length);
   }, []);
 
   const dicaAtual = todasAsDicas[indiceAtual];
-  
-  // 2. Lógica do título corrigida para mostrar o nome certo para cada tipo de dica
   const headerIcon = dicaAtual.tipo === 'Estratégia' ? '🚀' : '❤️';
   const headerText = dicaAtual.tipo === 'Estratégia' ? 'Impulso Mental' : 'Bússola Interna';
+  
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
 
   return (
-    <div className="coaching-banner">
-      <div className="banner-title-fixed">
-        <span>{headerIcon} {headerText}</span>
+    <>
+      <div className="coaching-banner" onClick={openModal}>
+        <div className="banner-title-centered">
+          <span>{headerIcon} {headerText}</span>
+        </div>
+        <div className="banner-text-scrolling-container">
+          <p 
+            className={`coaching-banner-text ${isModalOpen ? 'marquee-paused' : ''}`}
+            onAnimationIteration={handleAnimationIteration}
+            key={indiceAtual}
+          >
+            <strong>{dicaAtual.titulo}:</strong> {dicaAtual.descricao}
+          </p>
+        </div>
       </div>
-      {/* 3. Estrutura de JSX corrigida para o texto rolar corretamente */}
-      <div className="banner-text-scrolling-container">
-        <p 
-          className="coaching-banner-text"
-          onAnimationIteration={handleAnimationIteration}
-          key={indiceAtual} // 4. A 'key' força o reinício da animação a cada nova dica
-        >
-          <strong>{dicaAtual.titulo}:</strong> {dicaAtual.descricao}
-        </p>
-      </div>
-    </div>
+
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content banner-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close-button" onClick={closeModal}>
+              <XCircle size={28} />
+            </button>
+            <h3>{headerIcon} {headerText}</h3>
+            <h4>{dicaAtual.emoji} {dicaAtual.titulo}</h4>
+            <p>{dicaAtual.descricao}</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
