@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import TodoItem from './TodoItem';
+
+import TodoItem from '../TodoItem';
+
+import './styles.css';
 
 const initialTasks = [
   { id: '1', text: 'Treino', emoji: '💪', completed: false, completedAt: null },

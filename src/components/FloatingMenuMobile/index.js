@@ -1,6 +1,8 @@
 import React from 'react';
 import { Notepad, Trophy } from '@phosphor-icons/react';
 
+import './styles.css';
+
 function FloatingMenuMobile({ onNotepadClick, onPlacarClick }) {
   return (
     <div className="floating-menu-mobile">

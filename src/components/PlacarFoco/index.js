@@ -1,5 +1,7 @@
 import React from 'react';
 
+import './styles.css';
+
 const PomodoroDots = ({ count }) => {
   const dots = [];
   for (let i = 0; i < count; i++) {

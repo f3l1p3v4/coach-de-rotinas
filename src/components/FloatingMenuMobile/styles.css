@@ -1,0 +1,80 @@
+.floating-menu-mobile {
+  pointer-events: auto;
+  width: auto;
+  background-color: rgba(26, 26, 26, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.floating-menu-mobile button {
+  background: transparent;
+  border: none;
+  color: white;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 5px 15px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.floating-menu-mobile button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.floating-card-container {
+  position: fixed;
+  bottom: 95px;
+  left: 20px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.floating-card-container .notepad-container,
+.floating-card-container .placar-foco-container {
+  pointer-events: auto;
+  width: 100%;
+  max-width: 450px;
+  height: 50vh;
+  margin-bottom: 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  animation: slideUpAndFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.floating-card-container .notepad-list {
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.floating-card-container .placar-foco-container {
+  background-color: var(--sidebar-bg);
+  height: auto;
+}
+
+@keyframes slideUpAndFadeIn {
+  from {
+    transform: translateY(60px) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Trash, Plus } from '@phosphor-icons/react';
 
+import './styles.css';
+
 function BlocoDeNotas({ isMobileView = false }) {
   const [itens, setItens] = useState([]);
   const [novoItem, setNovoItem] = useState('');

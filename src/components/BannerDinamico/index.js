@@ -1,6 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { XCircle } from '@phosphor-icons/react';
 
+import './styles.css';
+
 const todasAsDicas = [
   {
     tipo: 'Estratégia',

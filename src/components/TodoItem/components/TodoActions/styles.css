@@ -1,0 +1,81 @@
+.todo-actions { 
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.timer-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0px 1px;
+  border-radius: 4px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.timer-action-btn:hover {
+  color: var(--title-color);
+}
+
+.timer-action-btn.danger {
+  color: var(--danger-color);
+}
+
+.timer-action-btn.danger:hover {
+  background-color: #f0f0f0;
+  color: var(--danger-color);
+}
+
+.menu-button, .delete-button { 
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-light-color);
+  display: flex;
+}
+
+.menu-button:hover, .delete-button:hover {
+  background-color: #F0F0F0;
+  color: var(--title-color);
+}
+
+.popover-menu { 
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 0.5rem;
+  z-index: 10;
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.popover-menu button { 
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.popover-menu button:hover {
+  background-color: #F5F5F5;
+}
+
+.delete-button:hover { 
+  background-color: var(--danger-color);
+  color: white;
+}

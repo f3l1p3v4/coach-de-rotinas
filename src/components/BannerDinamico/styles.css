@@ -1,0 +1,53 @@
+.coaching-banner {
+  background: #1A1A1A;
+  color: white;
+  display: flex;
+  flex-direction: column; /* Para empilhar verticalmente */
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  padding: 0.5rem 0; /* Espaçamento vertical */
+}
+
+.coaching-banner:hover {
+  background: #2a2a2a;
+}
+
+/* NOVO: Estilo para o título centralizado */
+.banner-title-centered {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding-bottom: 0.3rem; /* Espaço abaixo do título */
+  width: 100%;
+  text-align: center;
+}
+
+.banner-text-scrolling-container {
+  width: 100%; /* Garante que o container ocupe toda a largura */
+  overflow: hidden;
+}
+
+.coaching-banner-text {
+  display: inline-block;
+  animation: marquee 30s linear infinite;
+  padding-left: 100%;
+  margin: 5px 0;
+  will-change: transform;
+}
+
+.coaching-banner-text.marquee-paused {
+  animation-play-state: paused;
+}
+
+.coaching-banner-text strong {
+  font-weight: 600;
+  margin: 0 0.25rem;
+  color: #a5d8ff;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}

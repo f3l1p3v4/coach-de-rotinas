@@ -1,0 +1,37 @@
+.placar-foco-container {
+  padding: 1.5rem;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid #EAEAEA;
+  text-align: center;
+}
+
+.placar-display {
+  margin: 1rem 0;
+}
+
+.placar-count {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--title-color);
+  line-height: 1;
+}
+
+.placar-label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-light-color);
+  margin-top: 0.25rem;
+}
+
+.pomodoro-dots {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.placar-motivacao {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--text-color);
+}

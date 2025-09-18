@@ -1,0 +1,22 @@
+.task-details { 
+  display: flex;
+  flex-direction: column;
+}
+
+.todo-paragraph { 
+  font-size: 1rem;
+  line-height: 140%;
+  user-select: none;
+  transition: 0.2s all;
+}
+
+.paragraph-checked { 
+  text-decoration: line-through;
+  color: var(--text-light-color); 
+}
+
+.completion-time {
+  font-size: 0.75rem;
+  color: var(--text-light-color);
+  margin-top: 0.25rem;
+}

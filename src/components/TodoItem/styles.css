@@ -1,0 +1,43 @@
+.todo-item { 
+  display: flex;
+  flex: 1;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  margin-bottom: 0.75rem;
+  background-color: var(--card-bg);
+  border: 1px solid #EAEAEA;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.todo-item:last-child {
+  margin-bottom: 0;
+}
+
+.todo-item:active {
+  z-index: 10;
+  cursor: grabbing;
+}
+
+.task-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-grow: 1;
+}
+
+.task-wrapper input[type='checkbox'] {
+  display: none;
+}
+
+.timer-display {
+  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Lucida Console", Monaco, monospace;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--title-color);
+  min-width: 60px;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
