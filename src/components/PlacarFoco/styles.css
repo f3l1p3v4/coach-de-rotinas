@@ -1,5 +1,7 @@
 .placar-foco-container {
-  padding: 1.5rem;
+  width: 100%;
+  max-width: 250px;
+  padding: 3rem 1.5rem;
   background-color: var(--card-bg);
   border-radius: 8px;
   border: 1px solid #EAEAEA;

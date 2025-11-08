@@ -94,3 +94,9 @@
   cursor: pointer; opacity: 0.5;
 }
 .subtask-edit-item:hover button { opacity: 1; color: var(--danger-color); }
+
+.subtask-input-form {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}

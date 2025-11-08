@@ -20,11 +20,11 @@
   flex-direction: row;
   align-items: center;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  gap: 4px;
-  font-size: 0.75rem;
+  gap: 2px;
+  font-size: 0.7rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 5px 15px;
+  padding: 5px 10px;
   border-radius: 8px;
   transition: background-color 0.2s ease;
 }
@@ -48,7 +48,7 @@
 .floating-card-container .placar-foco-container {
   pointer-events: auto;
   width: 100%;
-  max-width: 450px;
+  max-width: 300px;
   height: 50vh;
   margin-bottom: 0;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);

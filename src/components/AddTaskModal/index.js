@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { XCircle, Trash, Plus } from '@phosphor-icons/react';
+import { XCircle, Trash, PlusCircle } from '@phosphor-icons/react';
 
 import './styles.css';
 
@@ -83,7 +83,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
           <div className="form-group">
             <label>Usar um modelo?</label>
             <select onChange={handleTemplateChange}>
-              <option value="">-- Nova Tarefa em Branco --</option>
+              <option value="">Selecione um modelo</option>
               {taskTemplates.map(template => (
                 <option key={template.id} value={template.id}>{template.emoji} {template.text}</option>
               ))}
@@ -117,7 +117,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
               ))}
               <div className="subtask-input-form">
                 <input type="text" value={newSubtaskText} onChange={e => setNewSubtaskText(e.target.value)} placeholder="Adicionar passo..."/>
-                <button type="button" onClick={handleAddSubtask}><Plus size={18}/></button>
+                <button type="button" onClick={handleAddSubtask} className='add-task-button'><PlusCircle size={28} /></button>
               </div>
             </div>
           </div>

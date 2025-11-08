@@ -38,12 +38,13 @@ function App() {
       <BannerDinamico />
       <div className="app-body">
         <main className="main-content">
+          {/*<PlacarFoco count={pomodoroCount} />*/}
           <DailyPlanner onPomodoroComplete={handlePomodoroComplete} />
         </main>
-        <aside className="right-sidebar">
+        {/*<aside className="right-sidebar">
           <PlacarFoco count={pomodoroCount} />
           <BlocoDeNotas />
-        </aside>
+        </aside>*/}
       </div>
 
       <div className="mobile-only">

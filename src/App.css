@@ -32,17 +32,20 @@ h3 {
 /* --- Layout Principal --- */
 .app-body {
   display: flex;
-  flex-direction: column; /* Mobile-first */
+  /* flex-direction: column; Mobile-first */
   flex-grow: 1;
   overflow: hidden; /* Prevent double scrollbars */
 }
 
 .main-content {
   width: 100%;
-  padding: 20px;
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 30px;
   overflow-y: auto;
   box-sizing: border-box;
   flex-grow: 1;
+
 }
 
 .right-sidebar {
@@ -125,7 +128,7 @@ h1 {
 }
 
 /* --- Estilos de Responsividade --- */
-@media (max-width: 1023px) {
+/* @media (max-width: 1023px) { */
   .right-sidebar {
     display: none;
   }
@@ -145,9 +148,9 @@ h1 {
   .todo-paragraph {
     font-size: 0.95rem;
   }
-}
+/*}*/
 
-@media (min-width: 1024px) {
+/*@media (min-width: 1024px) {
   .app-body {
     flex-direction: row;
   }
@@ -165,7 +168,7 @@ h1 {
   .mobile-only {
     display: none;
   }
-}
+}*/
 
 .switch {
   position: relative;
