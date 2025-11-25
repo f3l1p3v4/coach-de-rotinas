@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import DailyPlanner from './components/DailyPlanner';
 import BannerDinamico from './components/BannerDinamico';
-import BlocoDeNotas from './components/BlocoDeNotas';
 import FloatingMenuMobile from './components/FloatingMenuMobile';
 import PlacarFoco from './components/PlacarFoco';
 
@@ -38,21 +37,11 @@ function App() {
       <BannerDinamico />
       <div className="app-body">
         <main className="main-content">
-          {/*<PlacarFoco count={pomodoroCount} />*/}
           <DailyPlanner onPomodoroComplete={handlePomodoroComplete} />
         </main>
-        {/*<aside className="right-sidebar">
-          <PlacarFoco count={pomodoroCount} />
-          <BlocoDeNotas />
-        </aside>*/}
       </div>
 
       <div className="mobile-only">
-        {mobileCard === 'notepad' && (
-          <div className="floating-card-container">
-            <BlocoDeNotas isMobileView={true} />
-          </div>
-        )}
         {mobileCard === 'placar' && (
           <div className="floating-card-container">
             <PlacarFoco count={pomodoroCount} />

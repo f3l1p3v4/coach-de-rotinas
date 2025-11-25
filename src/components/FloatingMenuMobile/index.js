@@ -1,15 +1,11 @@
 import React from 'react';
-import { Notepad, Trophy, ClockClockwise, Gear } from '@phosphor-icons/react';
+import { Trophy, ClockClockwise, Gear } from '@phosphor-icons/react';
 
 import './styles.css';
 
-function FloatingMenuMobile({ onNotepadClick, onPlacarClick, onHistoryClick, onSettingsClick }) {
+function FloatingMenuMobile({ onPlacarClick, onHistoryClick, onSettingsClick }) {
   return (
     <div className="floating-menu-mobile">
-      <button onClick={onNotepadClick}>
-        <Notepad size={18} />
-        <span>Anotações</span>
-      </button>
       <button onClick={onPlacarClick}>
         <Trophy size={18} />
         <span>Placar</span>
