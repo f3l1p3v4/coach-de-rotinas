@@ -102,10 +102,12 @@ function BlocoDeNotas({ onClose, user }) {
 
   const colorOptions = [
     { label: 'Amarelo', hex: '#fff9c4' },
+    { label: 'Pêssego', hex: '#ffe0b2' },
+    { label: 'Vermelho', hex: '#ff8a80' },
     { label: 'Rosa', hex: '#ffcdd2' },
-    { label: 'Verde', hex: '#c8e6c9' },
-    { label: 'Azul', hex: '#bbdefb' },
     { label: 'Roxo', hex: '#e1bee7' },
+    { label: 'Azul', hex: '#bbdefb' },
+    { label: 'Verde', hex: '#c8e6c9' },
   ];
 
   return (
