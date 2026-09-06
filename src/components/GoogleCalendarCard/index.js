@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   CalendarBlank, 
   CaretLeft, 
@@ -95,22 +95,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   const [newPeriod, setNewPeriod] = useState('Manhã');
   const [newDesc, setNewDesc] = useState('');
 
-  useEffect(() => {
-    async function checkGoogleAuthAndFetch() {
-      try {
-        const token = await getGoogleAccessToken();
-        if (token) {
-          setGoogleToken(token);
-          loadRealGoogleEvents(token);
-        }
-      } catch (e) {
-        console.warn('Google Calendar token check failed:', e);
-      }
-    }
-    checkGoogleAuthAndFetch();
-  }, []);
-
-  const loadRealGoogleEvents = async (token, dateRef = currentDate) => {
+  const loadRealGoogleEvents = useCallback(async (token, dateRef = currentDate) => {
     setIsSyncing(true);
     setSyncStatusMsg('Sincronizando com Google Calendar...');
     try {
@@ -130,7 +115,22 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
     } finally {
       setIsSyncing(false);
     }
-  };
+  }, [currentDate]);
+
+  useEffect(() => {
+    async function checkGoogleAuthAndFetch() {
+      try {
+        const token = await getGoogleAccessToken();
+        if (token) {
+          setGoogleToken(token);
+          loadRealGoogleEvents(token);
+        }
+      } catch (e) {
+        console.warn('Google Calendar token check failed:', e);
+      }
+    }
+    checkGoogleAuthAndFetch();
+  }, [loadRealGoogleEvents]);
 
   const handleConnectGoogle = async () => {
     try {
@@ -149,7 +149,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
     if (googleToken) {
       loadRealGoogleEvents(googleToken, currentDate);
     }
-  }, [currentDate]);
+  }, [currentDate, googleToken, loadRealGoogleEvents]);
 
   const handlePrev = () => {
     const d = new Date(currentDate);

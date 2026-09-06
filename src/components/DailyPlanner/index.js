@@ -108,7 +108,6 @@ function DailyPlanner({
         date: selectedDate
       };
       setTasks(prev => {
-        const timeA = newTask.time || '00:00';
         const updated = [...prev, newTask];
         return updated.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
       });
@@ -238,7 +237,7 @@ function DailyPlanner({
   }, []);
 
   const startNextPhase = useCallback(() => {
-    const { taskId, phase, pomodoroCycle, type, config } = activeTimer;
+    const { taskId, phase, pomodoroCycle, config } = activeTimer;
     let nextPhase = 'Focus';
     let nextCycle = pomodoroCycle;
     let durationMinutes = config.Focus;
