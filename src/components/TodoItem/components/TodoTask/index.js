@@ -9,7 +9,7 @@ function TodoTask({ task, onOpenDetails }) {
         className={`todo-paragraph ${task.completed ? 'paragraph-checked' : ''}`}
         onClick={onOpenDetails}
       >
-        <span style={{ marginRight: '0.5rem' }}>{task.emoji}</span>
+        <span style={{ marginRight: '0.8rem' }}>{task.emoji}</span>
         {task.text}
       </p>
       {task.completed && task.completedAt && (

@@ -1,3 +1,20 @@
+.todo-item-container {
+  display: flex;
+  align-items: stretch;
+  gap: 15px;
+  margin-bottom: 0.75rem;
+  overflow: visible; /* a timeline-block contera o overflow internamente */
+}
+
+.todo-item-container.period-end {
+  margin-bottom: 2.5rem;
+}
+
+.todo-item-container:last-child,
+.todo-item-container.period-end:last-child {
+  margin-bottom: 0;
+}
+
 .todo-item { 
   display: flex;
   flex: 1;
@@ -5,15 +22,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  margin-bottom: 0.75rem;
   background-color: var(--card-bg);
-  border: 1px solid #EAEAEA;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.todo-item:last-child {
-  margin-bottom: 0;
 }
 
 .todo-item:active {
@@ -33,11 +45,99 @@
 }
 
 .timer-display {
-  font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Lucida Console", Monaco, monospace;
   font-size: 1.1rem;
   font-weight: 500;
   color: var(--title-color);
-  min-width: 60px;
   text-align: center;
   letter-spacing: 0.5px;
+}
+
+.timeline-block {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 85px;
+  flex-shrink: 0;
+  overflow: visible;
+  clip-path: none;
+}
+
+.timeline-time {
+  font-size: 16px;
+  color: var(--text-light-color);
+  margin-right: 5px;
+  font-family: 'Caveat', cursive;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.timeline-horizontal-line {
+  flex-grow: 1;
+  height: 1px;
+  background-color: var(--text-light-color);
+  opacity: 0.5;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  transform: rotate(-1deg);
+  margin-right: 32px;
+}
+
+.timeline-vertical-line {
+  position: absolute;
+  right: 32px;
+  width: 2px;
+  background-color: var(--text-color);
+  top: -0.75rem;
+  bottom: 0;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+
+.timeline-vertical-line.top-rounded {
+  top: 0;
+}
+
+.timeline-vertical-line.bottom-rounded {
+  bottom: 0;
+}
+
+.timeline-vertical-line.top-rounded.bottom-rounded {
+  top: 0;
+  bottom: 0;
+}
+
+.timeline-vertical-line.top-rounded::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 2px;
+  background-color: var(--text-color);
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  transform: rotate(2deg);
+}
+
+.timeline-vertical-line.bottom-rounded::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30px;
+  height: 2px;
+  background-color: var(--text-color);
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  transform: rotate(-2deg);
+}
+
+.timeline-period-text {
+  position: absolute;
+  left: 68px;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  font-size: 22px;
+  font-family: 'Caveat', cursive;
+  font-weight: 600;
+  color: var(--text-color);
+  letter-spacing: 2px;
+  white-space: nowrap;
+  pointer-events: none;
 }

@@ -7,8 +7,11 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
   const [text, setText] = useState('');
   const [emoji, setEmoji] = useState('✨');
   const [description, setDescription] = useState('');
+  const [time, setTime] = useState('');
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
+
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
 
   // Efeito para resetar o formulário quando o modal é fechado/aberto
   useEffect(() => {
@@ -16,8 +19,10 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       setText('');
       setEmoji('✨');
       setDescription('');
+      setTime('');
       setSubtasks([]);
       setNewSubtaskText('');
+      setSaveAsTemplate(false);
     }
   }, [isOpen]);
 
@@ -28,6 +33,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       setText('');
       setEmoji('✨');
       setDescription('');
+      setTime('');
       setSubtasks([]);
       return;
     }
@@ -63,11 +69,12 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       text,
       emoji,
       description,
+      time,
       subtasks,
       completed: false,
       completedAt: null,
     };
-    onAddTask(newTask);
+    onAddTask(newTask, saveAsTemplate);
     onClose();
   };
 
@@ -95,9 +102,13 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
               <label>Nome da Tarefa</label>
               <input type="text" value={text} onChange={e => setText(e.target.value)} required />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ flex: '0 0 auto' }}>
               <label>Emoji</label>
               <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} className="emoji-input" />
+            </div>
+            <div className="form-group" style={{ flex: '0 0 auto' }}>
+              <label>Horário</label>
+              <input type="time" value={time} onChange={e => setTime(e.target.value)} />
             </div>
           </div>
           
@@ -120,6 +131,18 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
                 <button type="button" onClick={handleAddSubtask} className='add-task-button'><PlusCircle size={28} /></button>
               </div>
             </div>
+          </div>
+          <div className="template-checkbox-group" onClick={() => setSaveAsTemplate(!saveAsTemplate)}>
+            <input 
+              type="checkbox" 
+              id="saveAsTemplate" 
+              checked={saveAsTemplate} 
+              onChange={e => setSaveAsTemplate(e.target.checked)} 
+              onClick={e => e.stopPropagation()}
+            />
+            <label htmlFor="saveAsTemplate">
+              ⭐ Salvar como modelo para usar outras vezes
+            </label>
           </div>
           
           <button type="submit" className="start-custom-btn">Adicionar Tarefa à Lista</button>

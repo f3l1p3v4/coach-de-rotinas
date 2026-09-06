@@ -13,12 +13,13 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: rgba(26, 26, 26, 0.9);
-  color: white;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
   border: none;
   border-radius: 8px;
   padding: 0.4rem 1rem;
-  font-size: 0.9rem;
+  font-size: 1.25rem;
+  gap: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -63,9 +64,11 @@
 .add-task-modal select,
 .add-task-modal textarea {
   width: 100%;
-  border: 1px solid #EAEAEA;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0.75rem;
+  background-color: var(--card-bg);
+  color: var(--text-color);
   font-size: 1rem;
   font-family: inherit;
   box-sizing: border-box; /* Garante que padding não aumente a largura */
@@ -77,8 +80,8 @@
 }
 
 .subtask-editor {
-  background-color: #f9f9f9;
-  border: 1px solid #EAEAEA;
+  background-color: var(--sidebar-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   padding: 0.75rem;
 }
@@ -99,4 +102,36 @@
   display: flex;
   justify-content: space-between;
   gap: 10px;
+}
+
+.template-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 1.2rem 0;
+  padding: 0.75rem 1rem;
+  background-color: var(--sidebar-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.template-checkbox-group:hover {
+  border-color: var(--title-color);
+}
+
+.template-checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.template-checkbox-group label {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--title-color);
+  text-transform: none;
+  cursor: pointer;
 }

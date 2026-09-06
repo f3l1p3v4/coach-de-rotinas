@@ -1,13 +1,15 @@
 .floating-menu-mobile {
   pointer-events: auto;
   width: auto;
-  background-color: rgba(26, 26, 26, 0.9);
+  max-width: 95vw;
+  background-color: var(--primary-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 10px;
   display: flex;
   justify-content: space-around;
+  flex-wrap: wrap;
   gap: 10px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
@@ -15,13 +17,13 @@
 .floating-menu-mobile button {
   background: transparent;
   border: none;
-  color: white;
+  color: var(--primary-text);
   display: flex;
   flex-direction: row;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  gap: 2px;
-  font-size: 0.7rem;
+  border: 1px solid var(--primary-text);
+  gap: 0.5rem;
+  font-size: 1.1rem;
   font-weight: 500;
   cursor: pointer;
   padding: 5px 10px;
@@ -45,11 +47,12 @@
 }
 
 .floating-card-container .notepad-container,
-.floating-card-container .placar-foco-container {
+.floating-card-container .placar-foco-container,
+.floating-card-container .gerenciador-modelos-container {
   pointer-events: auto;
   width: 100%;
-  max-width: 300px;
-  height: 50vh;
+  max-width: 380px;
+  max-height: 70vh;
   margin-bottom: 0;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   animation: slideUpAndFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;

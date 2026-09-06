@@ -4,7 +4,7 @@
   padding: 3rem 1.5rem;
   background-color: var(--card-bg);
   border-radius: 8px;
-  border: 1px solid #EAEAEA;
+  border: 1px solid var(--border-color);
   text-align: center;
 }
 

@@ -63,7 +63,8 @@ function BannerDinamico() {
     <>
       <div className="coaching-banner" onClick={openModal}>
         <div className="banner-title-centered">
-          <span>{headerIcon} {headerText}</span>
+          <span>{headerIcon}</span>
+          <span>{headerText}</span>
         </div>
         <div className="banner-text-scrolling-container">
           <p 

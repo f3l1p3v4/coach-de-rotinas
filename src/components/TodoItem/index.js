@@ -24,25 +24,51 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
 
   return (
     <>
-      <li className="todo-item" ref={setNodeRef} style={style}>
-        <div className="task-wrapper" {...attributes} {...listeners}>
-          <TodoCheckbox completed={task.completed} onToggle={() => onToggle(task.id)} />
-          <TodoTask task={task} onOpenDetails={onOpenDetails} />
+      <li 
+        className={`todo-item-container ${task.timelineInfo?.isLast ? 'period-end' : ''}`} 
+        ref={setNodeRef} 
+        style={style} 
+        {...attributes} 
+        {...listeners}
+      >
+        <div className="todo-item">
+          <div className="task-wrapper">
+            <TodoCheckbox completed={task.completed} onToggle={() => onToggle(task.id)} />
+            <TodoTask task={task} onOpenDetails={onOpenDetails} />
+          </div>
+          
+          <span className="timer-display">
+            {isThisTaskActive ? currentTimeDisplay : ''}
+          </span>
+          
+          <TodoActions 
+            task={task}
+            activeTimer={activeTimer}
+            onStartTimer={onStartTimer}
+            onPauseResume={onPauseResume}
+            onCancel={onCancel}
+            onRemove={onRemove}
+            openCustomModal={() => setIsCustomTimeModalOpen(true)}
+          />
         </div>
-        
-        <span className="timer-display">
-          {isThisTaskActive ? currentTimeDisplay : ''}
-        </span>
-        
-        <TodoActions 
-          task={task}
-          activeTimer={activeTimer}
-          onStartTimer={onStartTimer}
-          onPauseResume={onPauseResume}
-          onCancel={onCancel}
-          onRemove={onRemove}
-          openCustomModal={() => setIsCustomTimeModalOpen(true)}
-        />
+
+        {task.timelineInfo && (
+          <div className="timeline-block">
+            <div className="timeline-time">{task.timelineInfo.time}</div>
+            <div className="timeline-horizontal-line"></div>
+            <div className={`timeline-vertical-line ${task.timelineInfo.isFirst ? 'top-rounded' : ''} ${task.timelineInfo.isLast ? 'bottom-rounded' : ''}`}></div>
+            {task.timelineInfo.showText && (
+              <div 
+                className="timeline-period-text"
+                style={{
+                  top: `calc(${task.timelineInfo.groupSize / 2} * 100% + ${(task.timelineInfo.groupSize - 1) / 2} * 0.75rem)`
+                }}
+              >
+                {task.timelineInfo.period}
+              </div>
+            )}
+          </div>
+        )}
       </li>
 
       {isCustomTimeModalOpen && (

@@ -5,32 +5,49 @@ import { PlusCircle } from '@phosphor-icons/react';
 
 import TodoItem from '../TodoItem';
 import TaskDetailsModal from '../TaskDetailsModal';
-import AddTaskModal from '../AddTaskModal'; 
+import AddTaskModal from '../AddTaskModal';
 
 import './styles.css';
 
 const taskTemplates = [
-  { id: '1', text: 'Treino', emoji: '💪', description: 'Foco em peito e tríceps. Manter a boa forma e controlar a respiração.', subtasks: [ { id: 101, text: 'Aquecimento - 10 min', completed: false }, { id: 102, text: 'Supino Reto - 4x8', completed: false } ] },
+  { id: '1', text: 'Treino', emoji: '💪', description: 'Foco em peito e tríceps. Manter a boa forma e controlar a respiração.', subtasks: [{ id: 101, text: 'Aquecimento - 10 min', completed: false }, { id: 102, text: 'Supino Reto - 4x8', completed: false }] },
   { id: '2', text: 'Estudo Espiritual', emoji: '🙏', description: 'Leitura do capítulo de hoje e meditação. O objetivo é a reflexão.', subtasks: [] },
-  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', description: 'Praticar as escalas e a nova peça.', subtasks: [ { id: 301, text: 'Escalas - 15 min', completed: false }, { id: 302, text: 'Praticar nova música', completed: false } ] },
-  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', description: 'Revisão da matéria e resolução de exercícios.', subtasks: [ { id: 401, text: 'Ler resumo do capítulo', completed: false }, { id: 402, text: 'Fazer 10 exercícios', completed: false } ] },
+  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', description: 'Praticar as escalas e a nova peça.', subtasks: [{ id: 301, text: 'Escalas - 15 min', completed: false }, { id: 302, text: 'Praticar nova música', completed: false }] },
+  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', description: 'Revisão da matéria e resolução de exercícios.', subtasks: [{ id: 401, text: 'Ler resumo do capítulo', completed: false }, { id: 402, text: 'Fazer 10 exercícios', completed: false }] },
   { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', description: 'Foco num cómodo por 15 minutos.', subtasks: [] },
-  { id: '6', text: 'Organização do Dia', emoji: '📋', description: 'Organizar manhã de trabalho por 30 min', subtasks: [ { id: 601, text: 'Verificar mensagens pessoais e profissionais no email e whatsapp', completed: false }, { id: 602, text: 'Processar todas as ULs', completed: false }, { id: 603, text: 'Organizar as tarefas pendentes no trello', completed: false }, { id: 604, text: 'Ler notícias', completed: false } ] },
+  { id: '6', text: 'Organização do Dia', emoji: '📋', description: 'Organizar manhã de trabalho por 30 min', subtasks: [{ id: 601, text: 'Verificar mensagens pessoais e profissionais no email e whatsapp', completed: false }, { id: 602, text: 'Processar todas as ULs', completed: false }, { id: 603, text: 'Organizar as tarefas pendentes no trello', completed: false }, { id: 604, text: 'Ler notícias', completed: false }] },
   { id: '7', text: 'Conferência de Serviços', emoji: '🔍', description: 'Verificar relatório de inconsistencia e fazer backup e ajustes se necessário', subtasks: [] },
   { id: '8', text: 'Estudo no Trabalho', emoji: '🧠', description: 'Estudar ferramentas para usar no meu trabalho', subtasks: [{ id: 801, text: 'Estudar SQL Server', completed: false }, { id: 802, text: 'Estudar Maker Softwell', completed: false },] },
   { id: '9', text: 'Suporte', emoji: '📞', description: 'Solução de problemas aleatórios relacionadas ao Suporte', subtasks: [{ id: 901, text: 'Conferência de inconsistencia de catraca se precisar', completed: false }, { id: 902, text: 'Estudar Maker Softwell', completed: false },] },
   { id: '10', text: 'Desenvolvimento de Software', emoji: '👨‍💻', description: 'Focar em projetos de desenvolvimento e implementação de novas funcionalidades.', subtasks: [{ id: 1001, text: 'Codificar e testar novas features', completed: false }, { id: 1002, text: 'Revisar código (Code Review)', completed: false }, { id: 1003, text: 'Corrigir bugs identificados', completed: false }, { id: 1004, text: 'Documentar a nova funcionalidade', completed: false }] },
 ];
 
+export const initialTaskTemplates = taskTemplates;
+
 export const POMODORO_CONFIG = { Focus: 25, ShortBreak: 5, LongBreak: 15, cycles: 4 };
 
-function DailyPlanner({ onPomodoroComplete }) {
+function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, templates: propTemplates, setTemplates: propSetTemplates }) {
   const [tasks, setTasks] = useState([]);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
+
+  const [internalTemplates, setInternalTemplates] = useState(() => {
+    const savedTemplates = localStorage.getItem('custom_task_templates');
+    if (savedTemplates) {
+      try {
+        return JSON.parse(savedTemplates);
+      } catch (e) {
+        return initialTaskTemplates;
+      }
+    }
+    return initialTaskTemplates;
+  });
+
+  const templates = propTemplates || internalTemplates;
+  const setTemplates = propSetTemplates || setInternalTemplates;
 
   useEffect(() => {
     const savedTasks = localStorage.getItem('daily_tasks');
@@ -43,8 +60,22 @@ function DailyPlanner({ onPomodoroComplete }) {
     localStorage.setItem('daily_tasks', JSON.stringify(tasks));
   }, [tasks]);
 
-  const handleAddTask = (newTask) => {
+  useEffect(() => {
+    localStorage.setItem('custom_task_templates', JSON.stringify(templates));
+  }, [templates]);
+
+  const handleAddTask = (newTask, saveAsTemplate) => {
     setTasks(prevTasks => [...prevTasks, newTask]);
+    if (saveAsTemplate) {
+      const newTemplate = {
+        id: Date.now().toString(),
+        text: newTask.text,
+        emoji: newTask.emoji,
+        description: newTask.description,
+        subtasks: (newTask.subtasks || []).map(st => ({ id: Date.now() + Math.random(), text: st.text, completed: false }))
+      };
+      setTemplates(prev => [...prev, newTemplate]);
+    }
   };
 
   const speak = useCallback((text) => {
@@ -90,7 +121,7 @@ function DailyPlanner({ onPomodoroComplete }) {
       nextPhase = 'Focus';
       nextSeconds = config.Focus * 60;
     }
-    
+
     speak(`Iniciando ${nextPhase === 'Focus' ? 'foco' : 'pausa'}`);
     alert(`🎉 Tempo para "${completedTask?.emoji} ${completedTask?.text}" (${phase}) concluído! Iniciando: ${nextPhase}`);
     setActiveTimer(prev => ({ ...prev, totalSeconds: nextSeconds, phase: nextPhase, pomodoroCycle: nextCycle, isRunning: true }));
@@ -120,7 +151,7 @@ function DailyPlanner({ onPomodoroComplete }) {
       return () => clearInterval(interval);
     } else if (activeTimer.isRunning && activeTimer.totalSeconds === 0) {
       playBeep(1200, 0.5, 0.6);
-      
+
       const isCycle = activeTimer.type === 'pomodoro' || activeTimer.type === 'customCycle';
 
       if (isCycle) {
@@ -139,10 +170,10 @@ function DailyPlanner({ onPomodoroComplete }) {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${tasks.find(t=>t.id === taskId)?.text}.`);
+    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${tasks.find(t => t.id === taskId)?.text}.`);
     setActiveTimer({ taskId, totalSeconds: config.Focus * 60, phase: 'Focus', isRunning: true, pomodoroCycle: 0, type, config });
   };
-  
+
   const handlePauseResumeTimer = () => {
     if (activeTimer.totalSeconds > 0) {
       setActiveTimer(prev => ({ ...prev, isRunning: !prev.isRunning }));
@@ -168,20 +199,31 @@ function DailyPlanner({ onPomodoroComplete }) {
     if (activeTimer.taskId === id) handleCancelTimer();
     setTasks(tasks.filter(t => t.id !== id));
   };
-  
+
   const handleOnDragEnd = (event) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setTasks((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
+
+        // Extrai a lista de horários na ordem atual das posições
+        const times = items.map((item) => item.time);
+
+        // Move as tarefas para a nova ordem visual
+        const reorderedItems = arrayMove(items, oldIndex, newIndex);
+
+        // Atribui o horário correspondente da posição para cada tarefa reordenada
+        return reorderedItems.map((item, index) => ({
+          ...item,
+          time: times[index]
+        }));
       });
     }
   };
-  
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
-  
+
   const formatTime = (totalSeconds) => {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
@@ -192,32 +234,72 @@ function DailyPlanner({ onPomodoroComplete }) {
     setCurrentTimeDisplay(formatTime(activeTimer.totalSeconds));
   }, [activeTimer.totalSeconds]);
 
+  const getPeriod = (t) => {
+    if (!t || !t.time) return null;
+    const h = parseInt(t.time.split(':')[0], 10);
+    if (h >= 12 && h < 18) return 'Tarde';
+    if (h >= 18) return 'Noite';
+    return 'Manhã';
+  };
+
+  const processedTasks = tasks.map((task, index) => {
+    let timelineInfo = null;
+    if (task.time) {
+      const period = getPeriod(task);
+      const prevPeriod = getPeriod(tasks[index - 1]);
+      const nextPeriod = getPeriod(tasks[index + 1]);
+
+      const isFirst = prevPeriod !== period;
+      const isLast = nextPeriod !== period;
+
+      let startIdx = index;
+      while (startIdx > 0 && getPeriod(tasks[startIdx - 1]) === period) startIdx--;
+      let endIdx = index;
+      while (endIdx < tasks.length - 1 && getPeriod(tasks[endIdx + 1]) === period) endIdx++;
+
+      const groupSize = endIdx - startIdx + 1;
+      const showText = isFirst;
+
+      timelineInfo = { time: task.time, period, isFirst, isLast, showText, groupSize };
+    }
+    return { ...task, timelineInfo };
+  });
+
   return (
     <div className="planner-container">
       <div className="planner-header">
-        <h1>Focus 🎯</h1>
-        <button className="add-task-button" onClick={() => setIsAddTaskModalOpen(true)}>
-          <PlusCircle size={28} />
-          <span>Nova Tarefa</span>
-        </button>
+        <h1>Focus Task 🎯</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div className="theme-toggle-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.2rem' }}>{isDarkMode ? '🌙' : '☀️'}</span>
+            <label className="switch">
+              <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} />
+              <span className="slider round"></span>
+            </label>
+          </div>
+          <button className="add-task-button" onClick={() => setIsAddTaskModalOpen(true)}>
+            <PlusCircle size={28} />
+            <span>Nova Tarefa</span>
+          </button>
+        </div>
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
-        <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
+        <SortableContext items={processedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <ul className="todo-list">
-            {tasks.length > 0 ? (
-              tasks.map((task, index) => (
-              <TodoItem
-                key={task.id}
-                task={task}
-                onToggle={handleToggle}
-                onRemove={handleRemove}
-                onStartTimer={handleStartTimer}
-                onPauseResume={handlePauseResumeTimer}
-                onCancel={handleCancelTimer}
-                activeTimer={activeTimer}
-                currentTimeDisplay={currentTimeDisplay}
-                onOpenDetails={() => setSelectedTask(task)}
-              />
+            {processedTasks.length > 0 ? (
+              processedTasks.map((task, index) => (
+                <TodoItem
+                  key={task.id}
+                  task={task}
+                  onToggle={handleToggle}
+                  onRemove={handleRemove}
+                  onStartTimer={handleStartTimer}
+                  onPauseResume={handlePauseResumeTimer}
+                  onCancel={handleCancelTimer}
+                  activeTimer={activeTimer}
+                  currentTimeDisplay={currentTimeDisplay}
+                  onOpenDetails={() => setSelectedTask(task)}
+                />
               ))
             ) : (
               <p className="empty-state-message">A sua lista de tarefas está vazia. Adicione uma nova tarefa para começar!</p>
@@ -226,16 +308,16 @@ function DailyPlanner({ onPomodoroComplete }) {
         </SortableContext>
       </DndContext>
       {selectedTask && (
-        <TaskDetailsModal 
+        <TaskDetailsModal
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
         />
       )}
-      <AddTaskModal 
+      <AddTaskModal
         isOpen={isAddTaskModalOpen}
         onClose={() => setIsAddTaskModalOpen(false)}
         onAddTask={handleAddTask}
-        taskTemplates={taskTemplates}
+        taskTemplates={templates}
       />
     </div>
   );

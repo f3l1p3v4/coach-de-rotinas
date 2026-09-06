@@ -10,13 +10,42 @@
   --checkbox-checked-bg: #34C759;
   --checkbox-checked-border: #2ca54a;
   --danger-color: #FF3B30;
+  --border-color: #EAEAEA;
+  --primary-bg: #1A1A1A;
+  --primary-text: #FFFFFF;
+}
+
+[data-theme='dark'] {
+  --bg-color: #222222;
+  --card-bg: #2C2C2C;
+  --sidebar-bg: #1A1A1A;
+  --title-color: #FFFFFF;
+  --text-color: #F9F9F9;
+  --text-light-color: #CCCCCC;
+  --accent-color: #0A84FF;
+  --accent-color-hover: #007AFF;
+  --checkbox-checked-bg: #30D158;
+  --checkbox-checked-border: #28a745;
+  --danger-color: #FF453A;
+  --border-color: #555555;
+  --primary-bg: #FFFFFF;
+  --primary-text: #1A1A1A;
+}
+
+html, body {
+  overflow-x: hidden;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Caveat', cursive;
+  font-size: 1.25rem; /* Aumentar fonte globalmente */
   background-color: var(--bg-color);
   color: var(--text-color);
   margin: 0;
+}
+
+button, input, textarea, select {
+  font-family: inherit;
 }
 
 h3 {
@@ -43,16 +72,16 @@ h3 {
   margin: 20px auto;
   padding: 30px;
   overflow-y: auto;
+  overflow-x: hidden; /* Corta qualquer vazamento horizontal da timeline */
   box-sizing: border-box;
   flex-grow: 1;
-
 }
 
 .right-sidebar {
   padding: 20px;
   background-color: var(--sidebar-bg);
   overflow-y: auto;
-  border-left: 1px solid #EAEAEA;
+  border-left: 1px solid var(--border-color);
 }
 
 h1 {
@@ -67,7 +96,7 @@ h1 {
   padding: 1.5rem;
   background-color: var(--card-bg);
   border-radius: 8px;
-  border: 1px solid #EAEAEA;
+  border: 1px solid var(--border-color);
 }
 .metodo-card {
   transition: opacity 0.5s ease-in-out;

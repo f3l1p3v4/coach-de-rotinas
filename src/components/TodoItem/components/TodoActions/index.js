@@ -42,10 +42,12 @@ function TodoActions({ task, activeTimer, onStartTimer, onPauseResume, onCancel,
       {isMenuOpen && (
         <div className="popover-menu">
           <button className="start-pomodoro-btn" onClick={handleStartPomodoro}>
-            🍅 Iniciar Pomodoro
+            <span>🍅</span>
+            <span>Iniciar Pomodoro</span>
           </button>
           <button onClick={handleOpenModal}>
-            ⏱️ Tempo Personalizado
+            <span>⏱️</span>
+            <span>Tempo Personalizado</span>
           </button>
         </div>
       )}

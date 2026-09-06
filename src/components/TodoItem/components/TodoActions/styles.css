@@ -27,7 +27,7 @@
 }
 
 .timer-action-btn.danger:hover {
-  background-color: #f0f0f0;
+  background-color: var(--sidebar-bg);
   color: var(--danger-color);
 }
 
@@ -42,7 +42,7 @@
 }
 
 .menu-button:hover, .delete-button:hover {
-  background-color: #F0F0F0;
+  background-color: var(--sidebar-bg);
   color: var(--title-color);
 }
 
@@ -50,7 +50,8 @@
   position: absolute;
   right: 0;
   top: 100%;
-  background-color: white;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   padding: 0.5rem;
@@ -69,10 +70,15 @@
   border-radius: 4px;
   cursor: pointer;
   width: 100%;
+  color: var(--text-color);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .popover-menu button:hover {
-  background-color: #F5F5F5;
+  background-color: var(--sidebar-bg);
 }
 
 .delete-button:hover { 

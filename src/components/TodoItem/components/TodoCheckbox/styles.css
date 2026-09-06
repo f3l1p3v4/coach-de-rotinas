@@ -1,5 +1,5 @@
 .checkbox-unchecked {
-  border: 2px solid #DDDDDD;
+  border: 2px solid var(--border-color);
 }
 
 .checkbox-unchecked:hover {

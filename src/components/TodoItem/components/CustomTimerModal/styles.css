@@ -20,7 +20,7 @@
   max-width: 380px;
   position: relative;
   text-align: center;
-  border: 1px solid #EAEAEA;
+  border: 1px solid var(--border-color);
 }
 
 .modal-content h3 {
@@ -43,7 +43,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #f0f0f0;
+  background-color: var(--sidebar-bg);
   padding: 10px 15px;
   border-radius: 8px;
   margin-bottom: 1.5rem;
@@ -75,8 +75,8 @@
 }
 
 .adjuster-buttons button {
-  background-color: #f0f0f0;
-  border: 1px solid #EAEAEA;
+  background-color: var(--sidebar-bg);
+  border: 1px solid var(--border-color);
   color: var(--text-color);
   width: 40px;
   height: 40px;
@@ -87,8 +87,8 @@
 }
 
 .adjuster-buttons button:hover {
-  background-color: #e0e0e0;
-  border-color: #d0d0d0;
+  background-color: var(--card-bg);
+  border-color: var(--title-color);
 }
 
 .adjuster-buttons span {
@@ -102,16 +102,17 @@
 .start-custom-btn {
   width: 100%;
   padding: 0.85rem;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  background-color: var(--title-color);
-  color: white;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
   transition: background-color 0.2s;
+  font-family: inherit;
 }
 
 .start-custom-btn:hover {
-  background-color: #333;
+  opacity: 0.85;
 }
