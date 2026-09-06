@@ -164,19 +164,6 @@ function App() {
             <BlocoDeNotas onClose={() => setMobileCard(null)} user={user} />
           </div>
         )}
-        {mobileCard === 'history' && (
-          <div 
-            className="floating-card-container"
-            onClick={e => e.stopPropagation()}
-            onMouseDown={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            onTouchStart={e => e.stopPropagation()}
-          >
-            <div style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--title-color)', pointerEvents: 'auto' }}>
-              Em breve: Histórico
-            </div>
-          </div>
-        )}
         {mobileCard === 'settings' && (
           <div 
             className="floating-card-container"
@@ -198,7 +185,6 @@ function App() {
           <FloatingMenuMobile
             onNotepadClick={() => toggleMobileCard('notepad')}
             onPlacarClick={() => toggleMobileCard('placar')}
-            onHistoryClick={() => toggleMobileCard('history')}
             onSettingsClick={() => toggleMobileCard('settings')}
           />
         </div>

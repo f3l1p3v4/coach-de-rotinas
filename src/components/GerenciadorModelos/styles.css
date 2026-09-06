@@ -234,7 +234,7 @@
 .add-subtask-btn {
   background: none;
   border: none;
-  color: var(--primary-text);
+  color: var(--title-color);
   cursor: pointer;
   display: flex;
   align-items: center;

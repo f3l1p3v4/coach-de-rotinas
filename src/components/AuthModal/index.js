@@ -101,7 +101,7 @@ function AuthModal({ user, onClose, onAuthSuccess }) {
               <span className="user-avatar-badge">{user.email ? user.email[0].toUpperCase() : 'U'}</span>
               <div className="user-details">
                 <span className="user-email-text">{user.email}</span>
-                <span className="user-status-online">● Conectado ao Supabase</span>
+                <span className="user-status-online">● Conectado</span>
               </div>
             </div>
 

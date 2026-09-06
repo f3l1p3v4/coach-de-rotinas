@@ -3,8 +3,9 @@
   --card-bg: #FFFFFF;
   --sidebar-bg: #F9F9F9;
   --title-color: #1A1A1A;
-  --text-color: #555555;
-  --text-light-color: #888888;
+  --text-color: #333333;
+  --secondary-text: #4b5563;
+  --text-light-color: #666666;
   --accent-color: #007AFF;
   --accent-color-hover: #0056b3;
   --checkbox-checked-bg: #34C759;
@@ -21,6 +22,7 @@
   --sidebar-bg: #1A1A1A;
   --title-color: #FFFFFF;
   --text-color: #F9F9F9;
+  --secondary-text: #d1d5db;
   --text-light-color: #CCCCCC;
   --accent-color: #0A84FF;
   --accent-color-hover: #007AFF;
