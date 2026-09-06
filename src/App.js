@@ -5,27 +5,49 @@ import BannerDinamico from './components/BannerDinamico';
 import FloatingMenuMobile from './components/FloatingMenuMobile';
 import PlacarFoco from './components/PlacarFoco';
 import GerenciadorModelos from './components/GerenciadorModelos';
+import BlocoDeNotas from './components/BlocoDeNotas';
+import AuthModal from './components/AuthModal';
+
+import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
+import { loadUserTemplates, syncUserTemplates, loadUserFocusScore, syncUserFocusScore } from './services/supabaseService';
 
 function App() {
   const [mobileCard, setMobileCard] = useState(null);
   const [pomodoroCount, setPomodoroCount] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [user, setUser] = useState(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const [templates, setTemplates] = useState(() => {
-    const savedTemplates = localStorage.getItem('custom_task_templates');
-    if (savedTemplates) {
-      try {
-        return JSON.parse(savedTemplates);
-      } catch (e) {
-        return initialTaskTemplates;
-      }
-    }
-    return initialTaskTemplates;
-  });
+  const [templates, setTemplates] = useState(initialTaskTemplates);
 
+  // Escutar autenticação do Supabase
   useEffect(() => {
-    localStorage.setItem('custom_task_templates', JSON.stringify(templates));
-  }, [templates]);
+    if (isSupabaseConfigured && supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+      });
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  // Carregar modelos de tarefa ao mudar usuário
+  useEffect(() => {
+    async function initTemplates() {
+      const tmpls = await loadUserTemplates(user?.id, initialTaskTemplates);
+      setTemplates(tmpls);
+    }
+    initTemplates();
+  }, [user]);
+
+  // Sincronizar modelos ao alterar
+  useEffect(() => {
+    syncUserTemplates(user?.id, templates);
+  }, [templates, user]);
 
   const handleAddTemplate = (newTemplate) => {
     setTemplates(prev => [...prev, newTemplate]);
@@ -56,21 +78,19 @@ function App() {
     });
   };
 
+  // Carregar placar de foco
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const savedData = JSON.parse(localStorage.getItem('placar_foco_data'));
-    if (savedData && savedData.date === today) {
-      setPomodoroCount(savedData.count);
-    } else {
-      localStorage.setItem('placar_foco_data', JSON.stringify({ count: 0, date: today }));
+    async function initFocusScore() {
+      const score = await loadUserFocusScore(user?.id);
+      setPomodoroCount(score);
     }
-  }, []);
+    initFocusScore();
+  }, [user]);
 
   const handlePomodoroComplete = () => {
-    const today = new Date().toISOString().split('T')[0];
     setPomodoroCount(currentCount => {
       const newCount = currentCount + 1;
-      localStorage.setItem('placar_foco_data', JSON.stringify({ count: newCount, date: today }));
+      syncUserFocusScore(user?.id, newCount);
       return newCount;
     });
   };
@@ -90,32 +110,68 @@ function App() {
             toggleDarkMode={toggleDarkMode}
             templates={templates}
             setTemplates={setTemplates}
+            user={user}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
           />
         </main>
       </div>
 
+      {isAuthModalOpen && (
+        <AuthModal 
+          user={user} 
+          onClose={() => setIsAuthModalOpen(false)} 
+          onAuthSuccess={(u) => setUser(u)}
+        />
+      )}
+
       <div className="mobile-only">
+        {mobileCard !== null && (
+          <div className="floating-card-backdrop" onClick={() => setMobileCard(null)} />
+        )}
+
         {mobileCard === 'placar' && (
-          <div className="floating-card-container">
+          <div 
+            className="floating-card-container"
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+          >
             <PlacarFoco count={pomodoroCount} />
           </div>
         )}
         {mobileCard === 'notepad' && (
-          <div className="floating-card-container">
-            <div style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--title-color)' }}>
-              Em breve: Bloco de Notas
-            </div>
+          <div 
+            className="floating-card-container"
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+          >
+            <BlocoDeNotas onClose={() => setMobileCard(null)} user={user} />
           </div>
         )}
         {mobileCard === 'history' && (
-          <div className="floating-card-container">
-            <div style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--title-color)' }}>
+          <div 
+            className="floating-card-container"
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+          >
+            <div style={{ background: 'var(--card-bg)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)', color: 'var(--title-color)', pointerEvents: 'auto' }}>
               Em breve: Histórico
             </div>
           </div>
         )}
         {mobileCard === 'settings' && (
-          <div className="floating-card-container">
+          <div 
+            className="floating-card-container"
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+          >
             <GerenciadorModelos
               templates={templates}
               onAddTemplate={handleAddTemplate}

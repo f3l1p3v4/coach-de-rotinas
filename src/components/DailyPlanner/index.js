@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import { PlusCircle } from '@phosphor-icons/react';
+import { PlusCircle, User } from '@phosphor-icons/react';
+import { loadUserTasks, syncUserTasks } from '../../services/supabaseService';
 
 import TodoItem from '../TodoItem';
 import TaskDetailsModal from '../TaskDetailsModal';
@@ -26,7 +27,7 @@ export const initialTaskTemplates = taskTemplates;
 
 export const POMODORO_CONFIG = { Focus: 25, ShortBreak: 5, LongBreak: 15, cycles: 4 };
 
-function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, templates: propTemplates, setTemplates: propSetTemplates }) {
+function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, templates: propTemplates, setTemplates: propSetTemplates, user, onOpenAuthModal }) {
   const [tasks, setTasks] = useState([]);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -50,15 +51,16 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
   const setTemplates = propSetTemplates || setInternalTemplates;
 
   useEffect(() => {
-    const savedTasks = localStorage.getItem('daily_tasks');
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
+    async function initTasks() {
+      const initialTasks = await loadUserTasks(user?.id);
+      setTasks(initialTasks);
     }
-  }, []);
+    initTasks();
+  }, [user]);
 
   useEffect(() => {
-    localStorage.setItem('daily_tasks', JSON.stringify(tasks));
-  }, [tasks]);
+    syncUserTasks(user?.id, tasks);
+  }, [tasks, user]);
 
   useEffect(() => {
     localStorage.setItem('custom_task_templates', JSON.stringify(templates));
@@ -270,6 +272,10 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
       <div className="planner-header">
         <h1>Focus Task 🎯</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button className="user-auth-badge-btn" onClick={onOpenAuthModal} title={user ? `Logado como ${user.email}` : "Entrar ou Criar Conta"}>
+            <User size={20} />
+            <span>{user ? (user.email ? user.email.split('@')[0] : 'Minha Conta') : 'Entrar'}</span>
+          </button>
           <div className="theme-toggle-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '1.2rem' }}>{isDarkMode ? '🌙' : '☀️'}</span>
             <label className="switch">

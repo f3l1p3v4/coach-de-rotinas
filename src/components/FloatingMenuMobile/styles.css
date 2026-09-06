@@ -35,30 +35,52 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.floating-card-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 1000;
+  pointer-events: auto;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .floating-card-container {
   position: fixed;
   bottom: 95px;
   left: 20px;
   right: 20px;
-  z-index: 999;
+  z-index: 1001;
   display: flex;
   justify-content: center;
   pointer-events: none;
 }
 
 .floating-card-container .notepad-container,
+.floating-card-container .bloco-notas-container,
 .floating-card-container .placar-foco-container,
 .floating-card-container .gerenciador-modelos-container {
-  pointer-events: auto;
+  pointer-events: auto !important;
   width: 100%;
-  max-width: 380px;
-  max-height: 70vh;
+  max-width: 400px;
+  max-height: 75vh;
   margin-bottom: 0;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-  animation: slideUpAndFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  animation: slideUpAndFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
+  z-index: 1002;
 }
 
 .floating-card-container .notepad-list {
