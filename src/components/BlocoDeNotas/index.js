@@ -5,7 +5,25 @@ import { loadUserNotes, syncUserNotes } from '../../services/supabaseService';
 import './styles.css';
 
 function BlocoDeNotas({ onClose, user }) {
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState(() => {
+    const saved = localStorage.getItem('coach_anotacoes');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      {
+        id: '1',
+        title: 'Bem-vindo ao seu Bloco de Notas! 📝',
+        content: 'Use este espaço para anotações rápidas, ideias do dia, lembretes de rotina ou pensamentos importantes.',
+        date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
+        color: '#fff9c4'
+      }
+    ];
+  });
+  const [isLoaded, setIsLoaded] = useState(false);
   const [activeNote, setActiveNote] = useState(null); // Note sendo editada ou visualizada
   const [isEditing, setIsEditing] = useState(false);
 
@@ -15,28 +33,27 @@ function BlocoDeNotas({ onClose, user }) {
   const [selectedColor, setSelectedColor] = useState('#fff9c4');
 
   useEffect(() => {
+    let isMounted = true;
     async function initNotes() {
-      const userNotes = await loadUserNotes(user?.id);
-      if (userNotes.length === 0 && !user) {
-        setNotes([
-          {
-            id: '1',
-            title: 'Bem-vindo ao seu Bloco de Notas! 📝',
-            content: 'Use este espaço para anotações rápidas, ideias do dia, lembretes de rotina ou pensamentos importantes.',
-            date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-            color: '#fff9c4'
-          }
-        ]);
+      if (user?.id) {
+        const userNotes = await loadUserNotes(user.id);
+        if (isMounted) {
+          setNotes(userNotes);
+          setIsLoaded(true);
+        }
       } else {
-        setNotes(userNotes);
+        setIsLoaded(true);
       }
     }
     initNotes();
+    return () => { isMounted = false; };
   }, [user]);
 
   useEffect(() => {
-    syncUserNotes(user?.id, notes);
-  }, [notes, user]);
+    if (isLoaded) {
+      syncUserNotes(user?.id, notes);
+    }
+  }, [notes, user, isLoaded]);
 
   const handleOpenCreate = () => {
     setActiveNote(null);

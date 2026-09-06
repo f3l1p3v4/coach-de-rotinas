@@ -35,19 +35,32 @@ function App() {
     }
   }, []);
 
+  const [isTemplatesLoaded, setIsTemplatesLoaded] = useState(false);
+
   // Carregar modelos de tarefa ao mudar usuário
   useEffect(() => {
+    let isMounted = true;
     async function initTemplates() {
-      const tmpls = await loadUserTemplates(user?.id, initialTaskTemplates);
-      setTemplates(tmpls);
+      if (user?.id) {
+        const tmpls = await loadUserTemplates(user.id, initialTaskTemplates);
+        if (isMounted) {
+          setTemplates(tmpls);
+          setIsTemplatesLoaded(true);
+        }
+      } else {
+        setIsTemplatesLoaded(true);
+      }
     }
     initTemplates();
+    return () => { isMounted = false; };
   }, [user]);
 
   // Sincronizar modelos ao alterar
   useEffect(() => {
-    syncUserTemplates(user?.id, templates);
-  }, [templates, user]);
+    if (isTemplatesLoaded) {
+      syncUserTemplates(user?.id, templates);
+    }
+  }, [templates, user, isTemplatesLoaded]);
 
   const handleAddTemplate = (newTemplate) => {
     setTemplates(prev => [...prev, newTemplate]);

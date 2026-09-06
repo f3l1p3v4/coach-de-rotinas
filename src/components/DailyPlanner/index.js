@@ -28,7 +28,16 @@ export const initialTaskTemplates = taskTemplates;
 export const POMODORO_CONFIG = { Focus: 25, ShortBreak: 5, LongBreak: 15, cycles: 4 };
 
 function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, templates: propTemplates, setTemplates: propSetTemplates, user, onOpenAuthModal }) {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(() => {
+    const savedTasks = localStorage.getItem('daily_tasks');
+    if (savedTasks) {
+      try {
+        return JSON.parse(savedTasks);
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [isTasksLoaded, setIsTasksLoaded] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
@@ -51,16 +60,27 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
   const setTemplates = propSetTemplates || setInternalTemplates;
 
   useEffect(() => {
+    let isMounted = true;
     async function initTasks() {
-      const initialTasks = await loadUserTasks(user?.id);
-      setTasks(initialTasks);
+      if (user?.id) {
+        const initialTasks = await loadUserTasks(user.id);
+        if (isMounted) {
+          setTasks(initialTasks);
+          setIsTasksLoaded(true);
+        }
+      } else {
+        setIsTasksLoaded(true);
+      }
     }
     initTasks();
+    return () => { isMounted = false; };
   }, [user]);
 
   useEffect(() => {
-    syncUserTasks(user?.id, tasks);
-  }, [tasks, user]);
+    if (isTasksLoaded) {
+      syncUserTasks(user?.id, tasks);
+    }
+  }, [tasks, user, isTasksLoaded]);
 
   useEffect(() => {
     localStorage.setItem('custom_task_templates', JSON.stringify(templates));
