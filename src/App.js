@@ -7,6 +7,7 @@ import PlacarFoco from './components/PlacarFoco';
 import GerenciadorModelos from './components/GerenciadorModelos';
 import BlocoDeNotas from './components/BlocoDeNotas';
 import AuthModal from './components/AuthModal';
+import GoogleCalendarCard from './components/GoogleCalendarCard';
 
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import { loadUserTemplates, syncUserTemplates, loadUserFocusScore, syncUserFocusScore } from './services/supabaseService';
@@ -17,6 +18,7 @@ function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [calendarTaskToAdd, setCalendarTaskToAdd] = useState(null);
 
   const [templates, setTemplates] = useState(initialTaskTemplates);
 
@@ -24,11 +26,17 @@ function App() {
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setUser(session?.user ?? null);
+        const u = session?.user ?? null;
+        setUser(u);
+        const avatar = u?.user_metadata?.avatar_url || u?.user_metadata?.picture;
+        if (avatar) localStorage.setItem('google_user_avatar', avatar);
       });
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
+        const u = session?.user ?? null;
+        setUser(u);
+        const avatar = u?.user_metadata?.avatar_url || u?.user_metadata?.picture;
+        if (avatar) localStorage.setItem('google_user_avatar', avatar);
       });
 
       return () => subscription.unsubscribe();
@@ -125,6 +133,8 @@ function App() {
             setTemplates={setTemplates}
             user={user}
             onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            calendarTaskToAdd={calendarTaskToAdd}
+            onClearCalendarTaskToAdd={() => setCalendarTaskToAdd(null)}
           />
         </main>
       </div>
@@ -142,6 +152,23 @@ function App() {
           <div className="floating-card-backdrop" onClick={() => setMobileCard(null)} />
         )}
 
+        {mobileCard === 'calendar' && (
+          <div 
+            className="floating-card-container"
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            onTouchStart={e => e.stopPropagation()}
+          >
+            <GoogleCalendarCard 
+              onClose={() => setMobileCard(null)}
+              onAddTaskFromCalendar={(taskData) => {
+                setCalendarTaskToAdd(taskData);
+                setMobileCard(null);
+              }}
+            />
+          </div>
+        )}
         {mobileCard === 'placar' && (
           <div 
             className="floating-card-container"
@@ -184,6 +211,7 @@ function App() {
         <div className="floating-menu-container">
           <FloatingMenuMobile
             onNotepadClick={() => toggleMobileCard('notepad')}
+            onCalendarClick={() => toggleMobileCard('calendar')}
             onPlacarClick={() => toggleMobileCard('placar')}
             onSettingsClick={() => toggleMobileCard('settings')}
           />

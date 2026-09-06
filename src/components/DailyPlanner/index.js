@@ -25,6 +25,14 @@ const getFormattedDateLabel = (dateStr) => {
   return `${d}/${m}/${y}`;
 };
 
+const sortTasksChronologically = (taskList) => {
+  return [...taskList].sort((a, b) => {
+    const timeA = a.time || '00:00';
+    const timeB = b.time || '00:00';
+    return timeA.localeCompare(timeB);
+  });
+};
+
 const taskTemplates = [
   { id: '1', text: 'Treino', emoji: '💪', description: 'Foco em peito e tríceps. Manter a boa forma e controlar a respiração.', subtasks: [{ id: 101, text: 'Aquecimento - 10 min', completed: false }, { id: 102, text: 'Supino Reto - 4x8', completed: false }] },
   { id: '2', text: 'Estudo Espiritual', emoji: '🙏', description: 'Leitura do capítulo de hoje e meditação. O objetivo é a reflexão.', subtasks: [] },
@@ -42,7 +50,17 @@ export const initialTaskTemplates = taskTemplates;
 
 export const POMODORO_CONFIG = { Focus: 25, ShortBreak: 5, LongBreak: 15, cycles: 4 };
 
-function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, templates: propTemplates, setTemplates: propSetTemplates, user, onOpenAuthModal }) {
+function DailyPlanner({ 
+  onPomodoroComplete, 
+  isDarkMode, 
+  toggleDarkMode, 
+  templates: propTemplates, 
+  setTemplates: propSetTemplates, 
+  user, 
+  onOpenAuthModal,
+  calendarTaskToAdd,
+  onClearCalendarTaskToAdd
+}) {
   const [selectedDate, setSelectedDate] = useState(getTodayString);
   const [tasks, setTasks] = useState(() => {
     const savedTasks = localStorage.getItem('daily_tasks');
@@ -74,6 +92,29 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
 
   const templates = propTemplates || internalTemplates;
   const setTemplates = propSetTemplates || setInternalTemplates;
+
+  // Efeito para adicionar tarefas vindas da Agenda
+  useEffect(() => {
+    if (calendarTaskToAdd) {
+      const newTask = {
+        id: Date.now().toString(),
+        text: calendarTaskToAdd.text,
+        emoji: calendarTaskToAdd.emoji || '📅',
+        description: calendarTaskToAdd.description || '',
+        time: calendarTaskToAdd.time || '09:00',
+        period: calendarTaskToAdd.period || 'Manhã',
+        completed: false,
+        subtasks: calendarTaskToAdd.subtasks || [],
+        date: selectedDate
+      };
+      setTasks(prev => {
+        const timeA = newTask.time || '00:00';
+        const updated = [...prev, newTask];
+        return updated.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+      });
+      if (onClearCalendarTaskToAdd) onClearCalendarTaskToAdd();
+    }
+  }, [calendarTaskToAdd, selectedDate, onClearCalendarTaskToAdd]);
 
   useEffect(() => {
     let isMounted = true;
@@ -128,6 +169,7 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
       date: selectedDate
     };
     setTasks(prevTasks => [...prevTasks, taskWithDate]);
+    setTasks(prevTasks => sortTasksChronologically([...prevTasks, taskWithDate]));
     if (saveAsTemplate) {
       const newTemplate = {
         id: Date.now().toString(),
@@ -138,6 +180,37 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
       };
       setTemplates(prev => [...prev, newTemplate]);
     }
+  };
+
+  const handleDropFromCalendar = (e) => {
+    e.preventDefault();
+    try {
+      const dataStr = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
+      if (dataStr) {
+        const item = JSON.parse(dataStr);
+        if (item.text) {
+          const newTask = {
+            id: Date.now().toString(),
+            text: item.text,
+            emoji: item.emoji || '📅',
+            description: item.description || '',
+            time: item.time || '09:00',
+            period: item.period || 'Manhã',
+            completed: false,
+            subtasks: item.subtasks || [],
+            date: selectedDate
+          };
+          setTasks(prev => sortTasksChronologically([...prev, newTask]));
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao processar drop da agenda:', err);
+    }
+  };
+
+  const handleDragOverFromCalendar = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
   };
 
   const speak = useCallback((text) => {
@@ -333,6 +406,28 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
     return { ...task, timelineInfo };
   });
 
+  const getUserAvatar = (u) => {
+    if (u) {
+      const meta = u.user_metadata || {};
+      if (meta.avatar_url) return meta.avatar_url;
+      if (meta.picture) return meta.picture;
+      
+      if (u.identities && u.identities.length > 0) {
+        for (const identity of u.identities) {
+          const idData = identity.identity_data || {};
+          if (idData.avatar_url) return idData.avatar_url;
+          if (idData.picture) return idData.picture;
+        }
+      }
+    }
+
+    const savedAvatar = localStorage.getItem('google_user_avatar');
+    if (savedAvatar && u) return savedAvatar;
+    return null;
+  };
+
+  const userAvatarUrl = getUserAvatar(user);
+
   return (
     <div className="planner-container">
       <div className="top-navigation-bar">
@@ -372,10 +467,22 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
             </label>
           </div>
 
-          <button className="user-auth-badge-btn" onClick={onOpenAuthModal} title={user ? `Logado como ${user.email}` : "Entrar ou Criar Conta"}>
-            <User size={20} />
-            <span>{user ? (user.email ? user.email.split('@')[0] : 'Minha Conta') : 'Entrar'}</span>
-          </button>
+          {userAvatarUrl ? (
+            <button 
+              className="user-auth-badge-btn user-avatar-only-btn" 
+              onClick={onOpenAuthModal} 
+              title={user?.email ? `Logado como ${user.email}` : "Perfil do Usuário"}
+            >
+              <div className="google-avatar-ring">
+                <img src={userAvatarUrl} alt="Perfil" className="google-avatar-img" />
+              </div>
+            </button>
+          ) : (
+            <button className="user-auth-badge-btn" onClick={onOpenAuthModal} title={user ? `Logado como ${user.email}` : "Entrar ou Criar Conta"}>
+              <User size={20} />
+              <span>{user ? (user.email ? user.email.split('@')[0] : 'Minha Conta') : 'Entrar'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -388,7 +495,11 @@ function DailyPlanner({ onPomodoroComplete, isDarkMode, toggleDarkMode, template
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
         <SortableContext items={processedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <ul className="todo-list">
+          <ul 
+            className="todo-list"
+            onDragOver={handleDragOverFromCalendar}
+            onDrop={handleDropFromCalendar}
+          >
             {processedTasks.length > 0 ? (
               processedTasks.map((task, index) => (
                 <TodoItem

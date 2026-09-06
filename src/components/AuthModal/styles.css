@@ -282,3 +282,46 @@
 .auth-logout-btn:hover {
   opacity: 0.9;
 }
+
+.auth-social-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0.5rem 0;
+  color: var(--text-light-color, #9ca3af);
+  font-size: 0.85rem;
+}
+
+.auth-social-divider::before,
+.auth-social-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.auth-social-divider span {
+  padding: 0 0.5rem;
+}
+
+.auth-google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--card-bg, #ffffff);
+  color: var(--title-color, #111827);
+  border: 1px solid var(--border-color, #d1d5db);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.auth-google-btn:hover {
+  background-color: var(--sidebar-bg, #f9fafb);
+  border-color: #4285F4;
+}
