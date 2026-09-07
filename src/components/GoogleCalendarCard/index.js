@@ -86,6 +86,10 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   const [syncStatusMsg, setSyncStatusMsg] = useState('');
 
   const [selectedEventDetail, setSelectedEventDetail] = useState(null);
+  const [detailTime, setDetailTime] = useState('09:00');
+  const [detailPeriod, setDetailPeriod] = useState('Manhã');
+  const [detailSubtasks, setDetailSubtasks] = useState([]);
+  const [newDetailSubtaskText, setNewDetailSubtaskText] = useState('');
 
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -212,18 +216,54 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
     setEvents(prev => prev.filter(evt => evt.id !== id));
   };
 
+  const handleOpenEventDetail = (evt) => {
+    setSelectedEventDetail(evt);
+    const { time, period } = parseTimeAndPeriod(evt.time, evt.period);
+    setDetailTime(time);
+    setDetailPeriod(period);
+    setDetailSubtasks([]);
+    setNewDetailSubtaskText('');
+  };
+
+  const handleDetailTimeChange = (newTime) => {
+    setDetailTime(newTime);
+    if (newTime) {
+      const hour = parseInt(newTime.split(':')[0], 10);
+      if (!isNaN(hour)) {
+        if (hour >= 12 && hour < 18) setDetailPeriod('Tarde');
+        else if (hour >= 18) setDetailPeriod('Noite');
+        else setDetailPeriod('Manhã');
+      }
+    }
+  };
+
+  const handleAddDetailSubtask = (e) => {
+    e.preventDefault();
+    if (!newDetailSubtaskText.trim()) return;
+    const newSub = {
+      id: `${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+      text: newDetailSubtaskText.trim(),
+      completed: false
+    };
+    setDetailSubtasks(prev => [...prev, newSub]);
+    setNewDetailSubtaskText('');
+  };
+
+  const handleRemoveDetailSubtask = (subId) => {
+    setDetailSubtasks(prev => prev.filter(s => s.id !== subId));
+  };
+
   const handleAddEventToTasks = (evt, e) => {
     if (e) e.stopPropagation();
-    const { time, period } = parseTimeAndPeriod(evt.time, evt.period);
-    if (onAddTaskFromCalendar) {
+    if (onAddTaskFromCalendar && evt) {
       onAddTaskFromCalendar({
         text: evt.title,
         emoji: evt.emoji || '📅',
-        description: evt.description ? `${evt.description} (Horário: ${evt.time || ''})` : `Agendado: ${evt.time || 'Dia inteiro'}`,
-        time: time,
-        period: period,
-        subtasks: [],
-        date: selectedDate || getTodayStr()
+        description: evt.description || `Agendado do Google Agenda`,
+        time: detailTime,
+        period: detailPeriod,
+        subtasks: detailSubtasks,
+        date: selectedDate || evt.date || getTodayStr()
       });
     }
   };
@@ -500,7 +540,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
                         onDragStart={(e) => handleDragStart(evt, e)}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedEventDetail(evt);
+                          handleOpenEventDetail(evt);
                         }}
                         title={`${evt.title} (${evt.time}) - Clique para detalhes ou arraste para tarefas`}
                       >
@@ -539,7 +579,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
                           onDragStart={(e) => handleDragStart(evt, e)}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedEventDetail(evt);
+                            handleOpenEventDetail(evt);
                           }}
                           title={`${evt.title} (${evt.time}) - Clique para detalhes ou arraste`}
                         >
@@ -580,20 +620,81 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
                 <CalendarBlank size={18} className="detail-icon" />
                 <span><strong>Data:</strong> {selectedEventDetail.date}</span>
               </div>
-              <div className="detail-item">
-                <Clock size={18} className="detail-icon" />
-                <span><strong>Horário:</strong> {selectedEventDetail.time}</span>
+
+              <div className="detail-edit-grid">
+                <div className="detail-item-col">
+                  <label><Clock size={16} /> Horário</label>
+                  <input 
+                    type="time" 
+                    value={detailTime} 
+                    onChange={(e) => handleDetailTimeChange(e.target.value)} 
+                    className="detail-time-input"
+                  />
+                </div>
+
+                <div className="detail-item-col">
+                  <label><Tag size={16} /> Período</label>
+                  <select 
+                    value={detailPeriod} 
+                    onChange={(e) => setDetailPeriod(e.target.value)}
+                    className="detail-period-select"
+                  >
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                  </select>
+                </div>
               </div>
-              <div className="detail-item">
-                <Tag size={18} className="detail-icon" />
-                <span><strong>Período:</strong> {selectedEventDetail.period}</span>
-              </div>
+
               {selectedEventDetail.description && (
                 <div className="detail-item detail-desc">
                   <strong>Descrição:</strong>
                   <p>{selectedEventDetail.description}</p>
                 </div>
               )}
+
+              <div className="detail-subtasks-section">
+                <label>Sub-tarefas ({detailSubtasks.length})</label>
+                {detailSubtasks.length > 0 && (
+                  <ul className="detail-subtasks-list">
+                    {detailSubtasks.map(st => (
+                      <li key={st.id}>
+                        <span>{st.text}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => handleRemoveDetailSubtask(st.id)}
+                          className="sub-remove-btn"
+                        >
+                          <X size={14} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="detail-add-subtask-row">
+                  <input 
+                    type="text" 
+                    placeholder="Adicionar sub-tarefa..." 
+                    value={newDetailSubtaskText}
+                    onChange={(e) => setNewDetailSubtaskText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddDetailSubtask(e);
+                      }
+                    }}
+                    className="detail-subtask-input"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={handleAddDetailSubtask}
+                    className="detail-subtask-add-btn"
+                  >
+                    <PlusCircle size={18} />
+                    <span>Adicionar</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="event-detail-actions">

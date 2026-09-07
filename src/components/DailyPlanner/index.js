@@ -97,7 +97,7 @@ function DailyPlanner({
   useEffect(() => {
     if (calendarTaskToAdd) {
       const newTask = {
-        id: Date.now().toString(),
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         text: calendarTaskToAdd.text,
         emoji: calendarTaskToAdd.emoji || '📅',
         description: calendarTaskToAdd.description || '',
@@ -107,10 +107,7 @@ function DailyPlanner({
         subtasks: calendarTaskToAdd.subtasks || [],
         date: selectedDate
       };
-      setTasks(prev => {
-        const updated = [...prev, newTask];
-        return updated.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
-      });
+      setTasks(prev => sortTasksChronologically([...prev, newTask]));
       if (onClearCalendarTaskToAdd) onClearCalendarTaskToAdd();
     }
   }, [calendarTaskToAdd, selectedDate, onClearCalendarTaskToAdd]);
@@ -163,11 +160,12 @@ function DailyPlanner({
   };
 
   const handleAddTask = (newTask, saveAsTemplate) => {
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const taskWithDate = {
       ...newTask,
+      id: uniqueId,
       date: selectedDate
     };
-    setTasks(prevTasks => [...prevTasks, taskWithDate]);
     setTasks(prevTasks => sortTasksChronologically([...prevTasks, taskWithDate]));
     if (saveAsTemplate) {
       const newTemplate = {
@@ -181,6 +179,14 @@ function DailyPlanner({
     }
   };
 
+  const handleUpdateTask = (updatedTask) => {
+    setTasks(prevTasks => {
+      const updatedList = prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+      return sortTasksChronologically(updatedList);
+    });
+    setSelectedTask(null);
+  };
+
   const handleDropFromCalendar = (e) => {
     e.preventDefault();
     try {
@@ -189,7 +195,7 @@ function DailyPlanner({
         const item = JSON.parse(dataStr);
         if (item.text) {
           const newTask = {
-            id: Date.now().toString(),
+            id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
             text: item.text,
             emoji: item.emoji || '📅',
             description: item.description || '',
@@ -524,6 +530,8 @@ function DailyPlanner({
         <TaskDetailsModal
           task={selectedTask}
           onClose={() => setSelectedTask(null)}
+          onUpdateTask={handleUpdateTask}
+          onRemoveTask={handleRemove}
         />
       )}
       <AddTaskModal

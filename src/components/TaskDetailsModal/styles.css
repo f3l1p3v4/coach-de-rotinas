@@ -1,67 +1,267 @@
 .details-modal-content {
   text-align: left;
-  max-width: 600px;
-  padding: 1.5rem 2rem 2rem 2rem;
+  max-width: 580px;
+  width: 90%;
+  padding: 1.75rem 2rem 2rem 2rem;
+  background-color: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
-.details-modal-header h2 {
-  font-size: 1.8rem;
-  margin: 0;
+.task-details-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.details-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.title-edit-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.emoji-input {
+  width: 48px;
+  height: 48px;
+  font-size: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background-color: var(--sidebar-bg);
   color: var(--title-color);
-  word-break: break-word;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
-.details-modal-section {
-  margin-top: 2rem;
+.emoji-input:focus {
+  border-color: var(--accent-color);
 }
 
+.task-title-input {
+  flex: 1;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--title-color);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.4rem 0.2rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.task-title-input:focus {
+  border-bottom-color: var(--accent-color);
+}
+
+.details-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.details-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.details-field label,
 .details-modal-section label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-weight: 600;
   font-size: 0.8rem;
   color: var(--text-light-color);
   text-transform: uppercase;
-  display: block;
-  margin-bottom: 0.5rem;
   letter-spacing: 0.5px;
 }
 
-/* Novo estilo para o parágrafo de descrição */
-.details-modal-description {
-  font-size: 1rem;
-  line-height: 1.6;
-  margin: 0;
-  padding: 0.75rem;
+.details-input,
+.details-select,
+.details-textarea {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
   background-color: var(--sidebar-bg);
-  border-radius: 6px;
+  color: var(--title-color);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
 }
 
-/* Nova lista de sub-tarefas de visualização */
+.details-input:focus,
+.details-select:focus,
+.details-textarea:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.details-textarea {
+  resize: vertical;
+  min-height: 70px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
 .subtask-list-view {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0.5rem 0 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 .subtask-list-view li {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--border-color);
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--sidebar-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
 }
-.subtask-list-view li:last-child {
-  border-bottom: none;
-}
-.subtask-list-view li.completed span {
+
+.subtask-list-view li.completed .subtask-text-view {
   text-decoration: line-through;
-  color: var(--text-light-color);
+  opacity: 0.6;
 }
-.subtask-list-view li span {
+
+.subtask-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.subtask-text-view {
   flex-grow: 1;
+  font-size: 0.92rem;
+  color: var(--text-color);
 }
-.subtask-icon {
-  color: var(--text-light-color);
+
+.subtask-delete-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.2s;
 }
-.subtask-icon-completed {
-  color: var(--checkbox-checked-bg);
+
+.subtask-delete-btn:hover {
+  opacity: 1;
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.add-subtask-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.subtask-inline-input {
+  flex: 1;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--sidebar-bg);
+  color: var(--title-color);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.subtask-inline-input:focus {
+  border-color: var(--accent-color);
+}
+
+.add-subtask-inline-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.9rem;
+  background-color: rgba(99, 102, 241, 0.1);
+  color: var(--accent-color);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-subtask-inline-btn:hover {
+  background-color: var(--accent-color);
+  color: #ffffff;
+}
+
+.details-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.details-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.1rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.details-delete-btn:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.details-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  background-color: var(--accent-color);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.details-save-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
 }

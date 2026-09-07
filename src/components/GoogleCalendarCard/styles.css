@@ -519,6 +519,132 @@
   white-space: pre-wrap;
 }
 
+.detail-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.detail-item-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.detail-item-col label,
+.detail-subtasks-section label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-light-color, #6b7280);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.detail-time-input,
+.detail-period-select {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background-color: var(--sidebar-bg, #f9fafb);
+  color: var(--title-color, #1f2937);
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.detail-time-input:focus,
+.detail-period-select:focus {
+  border-color: #4285F4;
+}
+
+.detail-subtasks-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.detail-subtasks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.detail-subtasks-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background-color: var(--sidebar-bg, #f9fafb);
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  font-size: 0.85rem;
+}
+
+.sub-remove-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.sub-remove-btn:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.detail-add-subtask-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.detail-subtask-input {
+  flex: 1;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background-color: var(--sidebar-bg, #f9fafb);
+  color: var(--title-color, #1f2937);
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.detail-subtask-input:focus {
+  border-color: #4285F4;
+}
+
+.detail-subtask-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.75rem;
+  background-color: rgba(66, 133, 244, 0.1);
+  color: #4285F4;
+  border: 1px solid rgba(66, 133, 244, 0.3);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.detail-subtask-add-btn:hover {
+  background-color: #4285F4;
+  color: #ffffff;
+}
+
 .event-detail-actions {
   padding: 1rem 1.25rem 1.25rem 1.25rem;
   display: flex;
