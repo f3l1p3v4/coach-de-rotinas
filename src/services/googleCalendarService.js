@@ -17,11 +17,13 @@ export async function signInWithGoogleCalendar() {
     throw new Error('Supabase não está configurado.');
   }
 
+  const redirectUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       scopes: 'https://www.googleapis.com/auth/calendar.events',
-      redirectTo: window.location.origin
+      redirectTo: redirectUrl
     }
   });
 
