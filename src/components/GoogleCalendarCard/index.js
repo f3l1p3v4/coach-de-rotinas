@@ -17,6 +17,7 @@ import {
   fetchGoogleEvents, 
   createGoogleEvent 
 } from '../../services/googleCalendarService';
+import { supabase } from '../../lib/supabaseClient';
 
 import './styles.css';
 
@@ -100,16 +101,30 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   const [newDesc, setNewDesc] = useState('');
 
   const loadRealGoogleEvents = useCallback(async (token, dateRef = currentDate) => {
+    if (!token) return;
     setIsSyncing(true);
     setSyncStatusMsg('Sincronizando com Google Calendar...');
     try {
       const startRange = new Date(dateRef.getFullYear(), dateRef.getMonth() - 1, 1).toISOString();
       const endRange = new Date(dateRef.getFullYear(), dateRef.getMonth() + 2, 0, 23, 59, 59).toISOString();
 
-      const realEvents = await fetchGoogleEvents(token, startRange, endRange);
-      setEvents(realEvents || []);
-      if (realEvents && realEvents.length > 0) {
-        setSyncStatusMsg(`Sincronizado! ${realEvents.length} evento(s) carregado(s).`);
+      const res = await fetchGoogleEvents(token, startRange, endRange);
+      
+      if (res.isUnauthorized) {
+        setGoogleToken(null);
+        setSyncStatusMsg('Sessão do Google expirada. Clique em "Conectar Google Agenda".');
+        return;
+      }
+
+      if (res.error) {
+        setSyncStatusMsg(`Erro ao conectar com Google: ${res.error}`);
+        return;
+      }
+
+      const fetchedList = res.events || [];
+      setEvents(fetchedList);
+      if (fetchedList.length > 0) {
+        setSyncStatusMsg(`Sincronizado! ${fetchedList.length} evento(s) carregado(s).`);
       } else {
         setSyncStatusMsg('Conectado ao Google Agenda (nenhum evento neste período).');
       }
@@ -122,19 +137,34 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   }, [currentDate]);
 
   useEffect(() => {
+    let authSub = null;
+    if (supabase) {
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session?.provider_token) {
+          setGoogleToken(session.provider_token);
+          loadRealGoogleEvents(session.provider_token, currentDate);
+        }
+      });
+      authSub = data?.subscription;
+    }
+
     async function checkGoogleAuthAndFetch() {
       try {
         const token = await getGoogleAccessToken();
         if (token) {
           setGoogleToken(token);
-          loadRealGoogleEvents(token);
+          loadRealGoogleEvents(token, currentDate);
         }
       } catch (e) {
         console.warn('Google Calendar token check failed:', e);
       }
     }
     checkGoogleAuthAndFetch();
-  }, [loadRealGoogleEvents]);
+
+    return () => {
+      if (authSub) authSub.unsubscribe();
+    };
+  }, [currentDate, loadRealGoogleEvents]);
 
   const handleConnectGoogle = async () => {
     try {
@@ -146,14 +176,10 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   };
 
   useEffect(() => {
-    localStorage.setItem('google_calendar_events', JSON.stringify(events));
-  }, [events]);
-
-  useEffect(() => {
-    if (googleToken) {
-      loadRealGoogleEvents(googleToken, currentDate);
+    if (events && events.length > 0) {
+      localStorage.setItem('google_calendar_events', JSON.stringify(events));
     }
-  }, [currentDate, googleToken, loadRealGoogleEvents]);
+  }, [events]);
 
   const handlePrev = () => {
     const d = new Date(currentDate);

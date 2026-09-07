@@ -378,7 +378,9 @@ function DailyPlanner({
   }, [activeTimer.totalSeconds]);
 
   const getPeriod = (t) => {
-    if (!t || !t.time) return null;
+    if (!t) return 'Manhã';
+    if (t.period) return t.period;
+    if (!t.time) return 'Manhã';
     const h = parseInt(t.time.split(':')[0], 10);
     if (h >= 12 && h < 18) return 'Tarde';
     if (h >= 18) return 'Noite';
@@ -387,29 +389,20 @@ function DailyPlanner({
 
   const todayStr = getTodayString();
   const tasksForSelectedDate = tasks.filter(t => (t.date || todayStr) === selectedDate);
+  const processedTasks = sortTasksChronologically(tasksForSelectedDate);
 
-  const processedTasks = tasksForSelectedDate.map((task, index) => {
-    let timelineInfo = null;
-    if (task.time) {
-      const period = getPeriod(task);
-      const prevPeriod = getPeriod(tasksForSelectedDate[index - 1]);
-      const nextPeriod = getPeriod(tasksForSelectedDate[index + 1]);
-
-      const isFirst = prevPeriod !== period;
-      const isLast = nextPeriod !== period;
-
-      let startIdx = index;
-      while (startIdx > 0 && getPeriod(tasksForSelectedDate[startIdx - 1]) === period) startIdx--;
-      let endIdx = index;
-      while (endIdx < tasksForSelectedDate.length - 1 && getPeriod(tasksForSelectedDate[endIdx + 1]) === period) endIdx++;
-
-      const groupSize = endIdx - startIdx + 1;
-      const showText = isFirst;
-
-      timelineInfo = { time: task.time, period, isFirst, isLast, showText, groupSize };
-    }
-    return { ...task, timelineInfo };
+  const PERIOD_NAMES = ['Manhã', 'Tarde', 'Noite'];
+  const groupedPeriodTasks = PERIOD_NAMES.map(pName => {
+    return {
+      period: pName,
+      tasks: processedTasks.filter(t => getPeriod(t) === pName)
+    };
   });
+
+  const otherTasks = processedTasks.filter(t => !PERIOD_NAMES.includes(getPeriod(t)));
+  if (otherTasks.length > 0) {
+    groupedPeriodTasks.push({ period: 'Outros', tasks: otherTasks });
+  }
 
   const getUserAvatar = (u) => {
     if (u) {
@@ -500,30 +493,46 @@ function DailyPlanner({
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
         <SortableContext items={processedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <ul 
-            className="todo-list"
+          <div 
+            className="planner-periods-wrapper"
             onDragOver={handleDragOverFromCalendar}
             onDrop={handleDropFromCalendar}
           >
             {processedTasks.length > 0 ? (
-              processedTasks.map((task, index) => (
-                <TodoItem
-                  key={task.id}
-                  task={task}
-                  onToggle={handleToggle}
-                  onRemove={handleRemove}
-                  onStartTimer={handleStartTimer}
-                  onPauseResume={handlePauseResumeTimer}
-                  onCancel={handleCancelTimer}
-                  activeTimer={activeTimer}
-                  currentTimeDisplay={currentTimeDisplay}
-                  onOpenDetails={() => setSelectedTask(task)}
-                />
-              ))
+              groupedPeriodTasks.map((group) => {
+                if (group.tasks.length === 0) return null;
+
+                return (
+                  <div key={group.period} className="period-section-group">
+                    <h2 className="period-section-title">{group.period}</h2>
+                    <div className="period-section-box">
+                      {group.tasks.map((task) => (
+                        <TodoItem
+                          key={task.id}
+                          task={task}
+                          onToggle={handleToggle}
+                          onRemove={handleRemove}
+                          onStartTimer={handleStartTimer}
+                          onPauseResume={handlePauseResumeTimer}
+                          onCancel={handleCancelTimer}
+                          activeTimer={activeTimer}
+                          currentTimeDisplay={currentTimeDisplay}
+                          onOpenDetails={() => setSelectedTask(task)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
             ) : (
-              <p className="empty-state-message">A sua lista de tarefas está vazia. Adicione uma nova tarefa para começar!</p>
+              <div className="period-section-group">
+                <h2 className="period-section-title">Manhã</h2>
+                <div className="period-section-box empty-box">
+                  <p className="empty-state-message">A sua lista de tarefas está vazia. Adicione uma nova tarefa para começar!</p>
+                </div>
+              </div>
             )}
-          </ul>
+          </div>
         </SortableContext>
       </DndContext>
       {selectedTask && (

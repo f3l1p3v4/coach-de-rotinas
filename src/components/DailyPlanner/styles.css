@@ -151,9 +151,43 @@
   display: block;
 }
 
-.todo-list { 
-  list-style: none;
-  padding: 0;
+.planner-periods-wrapper {
   display: flex;
   flex-direction: column;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  width: 100%;
+}
+
+.period-section-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.period-section-title {
+  font-family: 'Caveat', cursive, sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--title-color, #ffffff);
+  text-align: center;
+  margin-bottom: 0.75rem;
+  letter-spacing: 1px;
+}
+
+.period-section-box {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+
+.period-section-box.empty-box {
+  background-color: var(--card-bg, #242424);
+  border: 1px solid var(--border-color, #383838);
+  border-radius: 10px;
+  padding: 2rem;
+  text-align: center;
 }

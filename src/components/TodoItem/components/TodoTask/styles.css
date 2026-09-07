@@ -4,20 +4,34 @@
 }
 
 .todo-paragraph { 
-  font-size: 1.3rem;
-  line-height: 140%;
+  font-family: 'Caveat', cursive, sans-serif;
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 120%;
   user-select: none;
   transition: 0.2s all;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-color, #ffffff);
+}
+
+.task-emoji {
+  font-size: 1.25rem;
 }
 
 .paragraph-checked { 
   text-decoration: line-through;
-  color: var(--text-light-color); 
+  color: var(--text-light-color, #888888); 
+  opacity: 0.75;
 }
 
 .completion-time {
-  font-size: 0.75rem;
-  color: var(--text-light-color);
-  margin-top: 0.25rem;
+  font-family: 'Caveat', cursive, sans-serif;
+  font-size: 1.05rem;
+  color: var(--text-light-color, #888888);
+  margin-top: 0.1rem;
+  margin-left: 1.8rem;
+  font-style: italic;
 }

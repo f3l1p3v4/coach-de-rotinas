@@ -24,8 +24,8 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
 
   return (
     <>
-      <li 
-        className={`todo-item-container ${task.timelineInfo?.isLast ? 'period-end' : ''}`} 
+      <div 
+        className="todo-item-container" 
         ref={setNodeRef} 
         style={style} 
         {...attributes} 
@@ -37,9 +37,11 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
             <TodoTask task={task} onOpenDetails={onOpenDetails} />
           </div>
           
-          <span className="timer-display">
-            {isThisTaskActive ? currentTimeDisplay : ''}
-          </span>
+          {isThisTaskActive && (
+            <span className="timer-display">
+              {currentTimeDisplay}
+            </span>
+          )}
           
           <TodoActions 
             task={task}
@@ -51,25 +53,7 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
             openCustomModal={() => setIsCustomTimeModalOpen(true)}
           />
         </div>
-
-        {task.timelineInfo && (
-          <div className="timeline-block">
-            <div className="timeline-time">{task.timelineInfo.time}</div>
-            <div className="timeline-horizontal-line"></div>
-            <div className={`timeline-vertical-line ${task.timelineInfo.isFirst ? 'top-rounded' : ''} ${task.timelineInfo.isLast ? 'bottom-rounded' : ''}`}></div>
-            {task.timelineInfo.showText && (
-              <div 
-                className="timeline-period-text"
-                style={{
-                  top: `calc(${task.timelineInfo.groupSize / 2} * 100% + ${(task.timelineInfo.groupSize - 1) / 2} * 0.75rem)`
-                }}
-              >
-                {task.timelineInfo.period}
-              </div>
-            )}
-          </div>
-        )}
-      </li>
+      </div>
 
       {isCustomTimeModalOpen && (
         <CustomTimerModal 

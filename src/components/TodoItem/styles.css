@@ -1,18 +1,7 @@
 .todo-item-container {
   display: flex;
-  align-items: stretch;
-  gap: 15px;
-  margin-bottom: 0.75rem;
-  overflow: visible; /* a timeline-block contera o overflow internamente */
-}
-
-.todo-item-container.period-end {
-  margin-bottom: 2.5rem;
-}
-
-.todo-item-container:last-child,
-.todo-item-container.period-end:last-child {
-  margin-bottom: 0;
+  align-items: center;
+  width: 100%;
 }
 
 .todo-item { 
@@ -21,11 +10,17 @@
   gap: 0.75rem;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  padding: 0.95rem 1.35rem;
+  background-color: var(--card-bg, #262626);
+  border: 1px solid var(--border-color, #383838);
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.todo-item:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 .todo-item:active {
@@ -45,9 +40,10 @@
 }
 
 .timer-display {
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--title-color);
+  font-family: 'Caveat', cursive, monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #eab308;
   text-align: center;
   letter-spacing: 0.5px;
 }

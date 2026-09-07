@@ -23,7 +23,11 @@ export async function signInWithGoogleCalendar() {
     provider: 'google',
     options: {
       scopes: 'https://www.googleapis.com/auth/calendar.events',
-      redirectTo: redirectUrl
+      redirectTo: redirectUrl,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent'
+      }
     }
   });
 
@@ -61,7 +65,7 @@ export function setLocalGoogleAccessToken(token) {
  * Busca compromissos do Google Calendar do usuário primário.
  */
 export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
-  if (!accessToken) return [];
+  if (!accessToken) return { events: [], isUnauthorized: true };
 
   let url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=2500';
   
@@ -89,14 +93,16 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
     if (!res.ok) {
       if (res.status === 401) {
         console.warn('Token do Google Calendar expirado ou inválido.');
+        localStorage.removeItem('google_access_token');
+        return { events: [], isUnauthorized: true };
       }
-      return [];
+      return { events: [], error: `Erro ${res.status}: ${res.statusText}` };
     }
 
     const data = await res.json();
-    if (!data.items) return [];
+    if (!data.items) return { events: [] };
 
-    return data.items.map(item => {
+    const mappedEvents = data.items.map(item => {
       const startDT = item.start?.dateTime || item.start?.date;
       const endDT = item.end?.dateTime || item.end?.date;
       
@@ -143,9 +149,11 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
         htmlLink: item.htmlLink
       };
     });
+
+    return { events: mappedEvents };
   } catch (err) {
     console.error('Erro ao buscar eventos do Google Calendar:', err);
-    return [];
+    return { events: [], error: err.message };
   }
 }
 
