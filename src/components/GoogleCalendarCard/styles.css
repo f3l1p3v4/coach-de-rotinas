@@ -59,9 +59,9 @@
 }
 
 .sync-reload-btn:hover {
-  background-color: #4285F4;
-  color: #ffffff;
-  border-color: #4285F4;
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #ffffff;
 }
 
 .status-disconnected {
@@ -74,19 +74,22 @@
 }
 
 .connect-google-btn {
-  background-color: #4285F4;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #111827;
   border: none;
-  padding: 0.35rem 0.75rem;
+  padding: 0.4rem 0.85rem;
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .connect-google-btn:hover {
-  opacity: 0.9;
+  background-color: #f3f4f6;
+  color: #111827;
+  transform: translateY(-1px);
 }
 
 .header-title-wrapper {
@@ -96,7 +99,9 @@
 }
 
 .calendar-brand-icon {
-  color: #4285F4; /* Google Blue */
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .header-title-wrapper h3 {
@@ -117,7 +122,7 @@
 .view-btn {
   background: none;
   border: none;
-  padding: 0.3rem 0.85rem;
+  padding: 0.35rem 0.9rem;
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -127,9 +132,10 @@
 }
 
 .view-btn.active {
-  background-color: #4285F4;
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);
+  background-color: #ffffff;
+  color: #111827;
+  font-weight: 700;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
 .calendar-close-btn {
@@ -178,8 +184,8 @@
 }
 
 .nav-btn:hover {
-  border-color: #4285F4;
-  color: #4285F4;
+  border-color: #ffffff;
+  color: #ffffff;
 }
 
 .nav-today-btn {
@@ -195,8 +201,8 @@
 }
 
 .nav-today-btn:hover {
-  border-color: #4285F4;
-  color: #4285F4;
+  border-color: #ffffff;
+  color: #ffffff;
 }
 
 .current-label {
@@ -209,28 +215,31 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background-color: #4285F4;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #111827;
   border: none;
   border-radius: 6px;
-  padding: 0.4rem 0.75rem;
+  padding: 0.4rem 0.85rem;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .add-evt-shortcut-btn:hover {
-  opacity: 0.9;
+  background-color: #f3f4f6;
+  color: #111827;
+  transform: translateY(-1px);
 }
 
 .calendar-drag-hint {
-  background-color: rgba(66, 133, 244, 0.1);
-  border-left: 4px solid #4285F4;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-left: 4px solid #ffffff;
   padding: 0.6rem 0.85rem;
   border-radius: 6px;
   font-size: 0.85rem;
-  color: var(--title-color, #1f2937);
+  color: var(--title-color, #ffffff);
   margin-bottom: 0.85rem;
 }
 
@@ -302,14 +311,21 @@
 }
 
 .add-event-form .save-btn {
-  background-color: #4285F4;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #111827;
   border: none;
-  padding: 0.35rem 0.85rem;
+  padding: 0.4rem 0.95rem;
   border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.add-event-form .save-btn:hover {
+  background-color: #f3f4f6;
+  color: #111827;
 }
 
 /* --- Grade Mensal --- */
@@ -353,8 +369,8 @@
 }
 
 .day-cell.is-today {
-  border: 2px solid #4285F4;
-  background-color: rgba(66, 133, 244, 0.05);
+  border: 2px solid #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .day-number {
@@ -497,7 +513,7 @@
 }
 
 .detail-icon {
-  color: #4285F4;
+  color: #ffffff;
   flex-shrink: 0;
 }
 
@@ -558,7 +574,7 @@
 
 .detail-time-input:focus,
 .detail-period-select:focus {
-  border-color: #4285F4;
+  border-color: #ffffff;
 }
 
 .detail-subtasks-section {
@@ -622,7 +638,7 @@
 }
 
 .detail-subtask-input:focus {
-  border-color: #4285F4;
+  border-color: #ffffff;
 }
 
 .detail-subtask-add-btn {
@@ -630,19 +646,20 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.45rem 0.75rem;
-  background-color: rgba(66, 133, 244, 0.1);
-  color: #4285F4;
-  border: 1px solid rgba(66, 133, 244, 0.3);
+  background-color: #ffffff;
+  color: #111827;
+  border: none;
   border-radius: 6px;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .detail-subtask-add-btn:hover {
-  background-color: #4285F4;
-  color: #ffffff;
+  background-color: #f3f4f6;
+  color: #111827;
 }
 
 .event-detail-actions {
@@ -721,7 +738,7 @@
 }
 
 .week-col.is-today {
-  border: 2px solid #4285F4;
+  border: 2px solid #ffffff;
 }
 
 .week-col-header {
@@ -761,8 +778,8 @@
 
 .week-event-card {
   background-color: var(--card-bg, #ffffff);
-  border: 1px solid #d2e3fc;
-  border-left: 3px solid #4285F4;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-left: 3px solid #ffffff;
   border-radius: 6px;
   padding: 6px;
   display: flex;
@@ -797,7 +814,7 @@
 
 .week-evt-time {
   font-size: 0.7rem;
-  color: #4285F4;
+  color: var(--text-color, #ffffff);
   display: flex;
   align-items: center;
   gap: 3px;

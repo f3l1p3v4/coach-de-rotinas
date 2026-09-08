@@ -161,8 +161,8 @@
 }
 
 .input-wrapper input:focus {
-  border-color: #eab308;
-  box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2);
+  border-color: #0A84FF;
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
 }
 
 .auth-submit-btn {
@@ -171,8 +171,8 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background-color: var(--primary-bg, #1a1a1a);
-  color: var(--primary-text, #ffffff);
+  background-color: #0A84FF;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 1.05rem;
@@ -183,7 +183,8 @@
 }
 
 .auth-submit-btn:hover {
-  opacity: 0.9;
+  background-color: #0070df;
+  opacity: 0.95;
 }
 
 .auth-toggle-mode {
@@ -196,7 +197,7 @@
 .auth-toggle-mode button {
   background: none;
   border: none;
-  color: #d97706;
+  color: #0A84FF;
   font-weight: 700;
   cursor: pointer;
   padding: 0;
@@ -222,7 +223,7 @@
 .user-avatar-badge {
   width: 44px;
   height: 44px;
-  background-color: #eab308;
+  background-color: #0A84FF;
   color: #ffffff;
   border-radius: 50%;
   display: flex;
@@ -257,10 +258,10 @@
   color: var(--title-color, #4b5563);
   line-height: 1.4;
   margin: 0;
-  background-color: rgba(234, 179, 8, 0.15);
+  background-color: rgba(10, 132, 255, 0.12);
   padding: 0.85rem;
   border-radius: 8px;
-  border-left: 4px solid #eab308;
+  border-left: 4px solid #0A84FF;
 }
 
 .auth-logout-btn {

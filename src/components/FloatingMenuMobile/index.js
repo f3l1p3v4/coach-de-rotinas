@@ -3,22 +3,36 @@ import { Trophy, Notepad, Gear, CalendarBlank } from '@phosphor-icons/react';
 
 import './styles.css';
 
-function FloatingMenuMobile({ onNotepadClick, onPlacarClick, onCalendarClick, onSettingsClick }) {
+function FloatingMenuMobile({ activeCard, onNotepadClick, onPlacarClick, onCalendarClick, onSettingsClick }) {
   return (
     <div className="floating-menu-mobile">
-      <button onClick={onNotepadClick}>
+      <button 
+        className={activeCard === 'notepad' ? 'active' : ''} 
+        onClick={onNotepadClick}
+      >
         <Notepad size={18} />
         <span>Anotações</span>
       </button>
-      <button onClick={onCalendarClick}>
+      <button 
+        className={activeCard === 'calendar' ? 'active' : ''} 
+        onClick={onCalendarClick}
+      >
         <CalendarBlank size={18} />
         <span>Agenda</span>
       </button>
-      <button onClick={onPlacarClick}>
+      <button 
+        className={activeCard === 'placar' ? 'active' : ''} 
+        onClick={onPlacarClick}
+      >
         <Trophy size={18} />
         <span>Placar</span>
       </button>
-      <button onClick={onSettingsClick} title="Ajustes" aria-label="Ajustes">
+      <button 
+        className={activeCard === 'settings' ? 'active' : ''} 
+        onClick={onSettingsClick} 
+        title="Ajustes" 
+        aria-label="Ajustes"
+      >
         <Gear size={22} />
       </button>
     </div>

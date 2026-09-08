@@ -221,27 +221,33 @@ h1 {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
+  background-color: #e5e7eb;
+  border: 1px solid var(--border-color, #d1d5db);
+  transition: .3s ease;
+  box-sizing: border-box;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
+  height: 18px;
+  width: 18px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
-  transition: .4s;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: .3s ease;
 }
 
+/* Quando Dark Mode ativado: fundo do botão escuro com borda e bolinha branca */
 input:checked + .slider {
-  background-color: var(--accent-color);
+  background-color: var(--card-bg, #2c2c2c);
+  border: 1px solid var(--border-color, #555555);
 }
 
 input:checked + .slider:before {
   transform: translateX(22px);
+  background-color: #ffffff;
 }
 
 .slider.round {
@@ -250,4 +256,4 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
-}
+}

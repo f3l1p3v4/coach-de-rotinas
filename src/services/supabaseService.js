@@ -3,7 +3,21 @@ import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 /**
  * --- TAREFAS DIÁRIAS ---
  */
+
+const parseLocalTasks = () => {
+  try {
+    const raw = localStorage.getItem('daily_tasks');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+};
+
 export async function loadUserTasks(userId) {
+  const localTasks = parseLocalTasks();
+
   if (isSupabaseConfigured && supabase && userId) {
     try {
       const { data, error } = await supabase
@@ -12,51 +26,110 @@ export async function loadUserTasks(userId) {
         .eq('user_id', userId)
         .order('created_at', { ascending: true });
 
-      if (!error && data) {
-        return data.map(t => ({
-          id: t.id,
-          text: t.text,
-          emoji: t.emoji,
-          time: t.time,
-          period: t.period,
-          status: t.status,
-          completedAt: t.completed_at,
-          subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
-        }));
+      if (!error && Array.isArray(data)) {
+        if (data.length > 0) {
+          const remoteTasks = data.map(t => ({
+            id: String(t.id),
+            text: t.text || '',
+            emoji: t.emoji || '✨',
+            time: t.time || '',
+            period: t.period || 'Manhã',
+            category: t.category || null,
+            color: t.color || null,
+            status: t.status || (t.completed ? 'completed' : 'pending'),
+            completed: t.completed !== undefined ? Boolean(t.completed) : t.status === 'completed',
+            completedAt: t.completed_at || t.completedAt || null,
+            startedAt: t.started_at || t.startedAt || null,
+            date: t.date || null,
+            isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
+            recurringDays: Array.isArray(t.recurring_days) ? t.recurring_days : (Array.isArray(t.recurringDays) ? t.recurringDays : []),
+            completedDates: Array.isArray(t.completed_dates) ? t.completed_dates : (Array.isArray(t.completedDates) ? t.completedDates : []),
+            description: t.description || '',
+            subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
+          }));
+
+          localStorage.setItem('daily_tasks', JSON.stringify(remoteTasks));
+          return remoteTasks;
+        } else {
+          // Se o banco remoto retornou vazio ([]):
+          // Se o usuário tem tarefas locais que ainda não foram sincronizadas (ex: primeiro login pós offline):
+          const hasSynced = localStorage.getItem('has_synced_user_tasks');
+          if (localTasks.length > 0 && !hasSynced) {
+            localStorage.setItem('has_synced_user_tasks', 'true');
+            syncUserTasks(userId, localTasks).catch(() => {});
+            return localTasks;
+          }
+
+          // Caso contrário, a lista está legitimamente vazia (ex: usuário apagou tudo)
+          localStorage.setItem('daily_tasks', JSON.stringify([]));
+          return [];
+        }
       }
     } catch (err) {
       console.warn('Erro ao carregar tarefas do Supabase, usando localStorage:', err);
     }
   }
 
-  // Fallback LocalStorage
-  const savedTasks = localStorage.getItem('daily_tasks');
-  return savedTasks ? JSON.parse(savedTasks) : [];
+  return localTasks;
 }
 
 export async function syncUserTasks(userId, tasks) {
-  // Salvar no localStorage sempre para cache offline
-  localStorage.setItem('daily_tasks', JSON.stringify(tasks));
+  if (!Array.isArray(tasks)) return;
 
+  // 1. Salvar no localStorage sempre para cache offline
+  localStorage.setItem('daily_tasks', JSON.stringify(tasks));
+  localStorage.setItem('has_synced_user_tasks', 'true');
+
+  // Limpar resíduo de backup antigo se existir
+  localStorage.removeItem('daily_tasks_backup');
+
+  // 2. Sincronizar com Supabase se configurado
   if (isSupabaseConfigured && supabase && userId) {
     try {
-      // 1. Limpar tarefas antigas do usuário e re-inserir para manter sincronia
+      // Deletar tarefas anteriores para atualizar estado completo
       await supabase.from('tasks').delete().eq('user_id', userId);
 
       if (tasks.length > 0) {
-        const payload = tasks.map(t => ({
+        // Tentar payload completo com todos os campos
+        const fullPayload = tasks.map(t => ({
           id: String(t.id),
           user_id: userId,
-          text: t.text,
+          text: t.text || '',
           emoji: t.emoji || '📝',
+          description: t.description || '',
           time: t.time || '',
-          period: t.period || '',
-          status: t.status || 'pending',
+          period: t.period || 'Manhã',
+          category: t.category || null,
+          color: t.color || null,
+          date: t.date || null,
+          status: t.completed ? 'completed' : (t.status || 'pending'),
           completed_at: t.completedAt || null,
+          started_at: t.startedAt || null,
+          is_recurring: Boolean(t.isRecurring),
+          recurring_days: t.recurringDays || [],
+          completed_dates: t.completedDates || [],
           subtasks: t.subtasks || []
         }));
 
-        await supabase.from('tasks').insert(payload);
+        const { error: insertError } = await supabase.from('tasks').insert(fullPayload);
+
+        // Se falhar (ex: colunas extras não existem no schema do banco)
+        // faz fallback seguro para o schema básico sem quebrar
+        if (insertError) {
+          console.warn('Falha com payload completo, tentando schema básico:', insertError);
+          const basicPayload = tasks.map(t => ({
+            id: String(t.id),
+            user_id: userId,
+            text: t.text || '',
+            emoji: t.emoji || '📝',
+            time: t.time || '',
+            period: t.period || 'Manhã',
+            status: t.completed ? 'completed' : (t.status || 'pending'),
+            completed_at: t.completedAt || null,
+            subtasks: t.subtasks || []
+          }));
+          await supabase.from('tasks').insert(basicPayload);
+        }
       }
     } catch (err) {
       console.error('Erro ao sincronizar tarefas no Supabase:', err);
@@ -80,6 +153,10 @@ export async function loadUserTemplates(userId, initialTemplates) {
           id: t.id,
           text: t.text,
           emoji: t.emoji,
+          category: t.category || null,
+          color: t.color || null,
+          isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
+          recurringDays: Array.isArray(t.recurring_days) ? t.recurring_days : (Array.isArray(t.recurringDays) ? t.recurringDays : []),
           description: t.description,
           subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
         }));
@@ -108,16 +185,32 @@ export async function syncUserTemplates(userId, templates) {
       await supabase.from('task_templates').delete().eq('user_id', userId);
 
       if (templates.length > 0) {
-        const payload = templates.map(t => ({
+        const fullPayload = templates.map(t => ({
           id: String(t.id),
           user_id: userId,
           text: t.text,
           emoji: t.emoji || '📋',
+          category: t.category || null,
+          color: t.color || null,
+          is_recurring: Boolean(t.isRecurring),
+          recurring_days: t.recurringDays || [],
           description: t.description || '',
           subtasks: t.subtasks || []
         }));
 
-        await supabase.from('task_templates').insert(payload);
+        const { error: insertError } = await supabase.from('task_templates').insert(fullPayload);
+        if (insertError) {
+          console.warn('Falha ao inserir modelos com category/color, tentando payload básico:', insertError);
+          const basicPayload = templates.map(t => ({
+            id: String(t.id),
+            user_id: userId,
+            text: t.text,
+            emoji: t.emoji || '📋',
+            description: t.description || '',
+            subtasks: t.subtasks || []
+          }));
+          await supabase.from('task_templates').insert(basicPayload);
+        }
       }
     } catch (err) {
       console.error('Erro ao sincronizar modelos no Supabase:', err);
@@ -142,6 +235,7 @@ export async function loadUserNotes(userId) {
           id: n.id,
           title: n.title,
           content: n.content,
+          category: n.category || null,
           color: n.color,
           date: n.date
         }));
@@ -170,16 +264,29 @@ export async function syncUserNotes(userId, notes) {
       await supabase.from('notes').delete().eq('user_id', userId);
 
       if (notes.length > 0) {
-        const payload = notes.map(n => ({
+        const fullPayload = notes.map(n => ({
           id: String(n.id),
           user_id: userId,
           title: n.title,
           content: n.content,
+          category: n.category || null,
           color: n.color || '#fff9c4',
           date: n.date
         }));
 
-        await supabase.from('notes').insert(payload);
+        const { error: insertError } = await supabase.from('notes').insert(fullPayload);
+        if (insertError) {
+          console.warn('Falha ao sincronizar notas com category, tentando payload básico:', insertError);
+          const basicPayload = notes.map(n => ({
+            id: String(n.id),
+            user_id: userId,
+            title: n.title,
+            content: n.content,
+            color: n.color || '#fff9c4',
+            date: n.date
+          }));
+          await supabase.from('notes').insert(basicPayload);
+        }
       }
     } catch (err) {
       console.error('Erro ao sincronizar notas no Supabase:', err);

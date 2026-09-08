@@ -1,0 +1,205 @@
+.category-filter-bar-container {
+  display: flex;
+  justify-content: flex-start;
+  margin: 0.75rem 0 1.4rem 0;
+  width: 100%;
+}
+
+.category-filter-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--sidebar-bg, #f3f4f6);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 9999px;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='dark'] .category-filter-bar {
+  background: var(--sidebar-bg, #1a1a1a);
+  border-color: var(--border-color, #383838);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.category-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--secondary-text, #666666);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.filter-pill-btn:hover {
+  color: var(--title-color, #111827);
+  background: rgba(125, 125, 125, 0.12);
+}
+
+[data-theme='dark'] .filter-pill-btn {
+  color: var(--text-light-color, #cccccc);
+}
+
+[data-theme='dark'] .filter-pill-btn:hover {
+  color: var(--title-color, #ffffff);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Botão Todos Ativo */
+.filter-pill-btn.filter-pill-all.active {
+  background: #1a1a1a;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  border-color: #1a1a1a;
+}
+
+.filter-pill-btn.filter-pill-all.active .filter-name,
+.filter-pill-btn.filter-pill-all.active .filter-count {
+  color: #ffffff;
+}
+
+[data-theme='dark'] .filter-pill-btn.filter-pill-all.active {
+  background: #ffffff;
+  color: #111111;
+  border-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='dark'] .filter-pill-btn.filter-pill-all.active .filter-name,
+[data-theme='dark'] .filter-pill-btn.filter-pill-all.active .filter-count {
+  color: #111111;
+}
+
+/* Categorias Individuais Ativas */
+.filter-pill-btn.filter-pill-category.active {
+  color: #111827;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.filter-pill-btn.filter-pill-category.active .filter-name {
+  color: #111827 !important;
+}
+
+.filter-pill-btn.filter-pill-category.active .filter-count {
+  color: #374151 !important;
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .filter-pill-btn.filter-pill-category.active {
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme='dark'] .filter-pill-btn.filter-pill-category.active .filter-name {
+  color: #ffffff !important;
+}
+
+[data-theme='dark'] .filter-pill-btn.filter-pill-category.active .filter-count {
+  color: rgba(255, 255, 255, 0.85) !important;
+  opacity: 0.95;
+  font-weight: 600;
+}
+
+.filter-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.uncategorized-dot {
+  background-color: #94a3b8;
+}
+
+.filter-name {
+  line-height: 1;
+}
+
+.filter-count {
+  font-size: 0.82rem;
+  opacity: 0.75;
+  font-weight: 500;
+}
+
+/* Integração Estilo Caderno / Papel no Bloco de Notas: Formato de Quadradinhos */
+.bloco-notas-container .category-filter-bar-container {
+  margin: 0.5rem 0 1rem 0 !important;
+}
+
+.bloco-notas-container .category-filter-bar {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 2px 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+}
+
+.bloco-notas-container .filter-pill-btn {
+  color: #374151 !important;
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.15rem !important;
+  font-weight: 600 !important;
+  padding: 5px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.bloco-notas-container .filter-pill-btn:hover {
+  color: #111111 !important;
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Quando selecionado: quadradinho escuro com texto branco */
+.bloco-notas-container .filter-pill-btn.active {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #1a1a1a !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25) !important;
+  font-weight: 700 !important;
+  transform: translateY(-1px) !important;
+}
+
+.bloco-notas-container .filter-pill-btn.active .filter-name,
+.bloco-notas-container .filter-pill-btn.active .filter-count {
+  color: #ffffff !important;
+}
+
+.bloco-notas-container .filter-pill-btn .filter-count {
+  font-size: 0.85rem !important;
+  opacity: 0.85 !important;
+}
+
+.bloco-notas-container .uncategorized-dot {
+  background-color: #888888 !important;
+}

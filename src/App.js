@@ -12,6 +12,14 @@ import GoogleCalendarCard from './components/GoogleCalendarCard';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import { loadUserTemplates, syncUserTemplates, loadUserFocusScore, syncUserFocusScore } from './services/supabaseService';
 
+const getTodayString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 function App() {
   const [mobileCard, setMobileCard] = useState(null);
   const [pomodoroCount, setPomodoroCount] = useState(0);
@@ -19,6 +27,17 @@ function App() {
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [calendarTaskToAdd, setCalendarTaskToAdd] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const saved = localStorage.getItem('selected_planner_date');
+    if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
+      return saved;
+    }
+    return getTodayString();
+  });
+
+  useEffect(() => {
+    localStorage.setItem('selected_planner_date', selectedDate);
+  }, [selectedDate]);
 
   const [templates, setTemplates] = useState(initialTaskTemplates);
 
@@ -135,6 +154,8 @@ function App() {
             onOpenAuthModal={() => setIsAuthModalOpen(true)}
             calendarTaskToAdd={calendarTaskToAdd}
             onClearCalendarTaskToAdd={() => setCalendarTaskToAdd(null)}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
           />
         </main>
       </div>
@@ -162,6 +183,7 @@ function App() {
           >
             <GoogleCalendarCard 
               onClose={() => setMobileCard(null)}
+              selectedDate={selectedDate}
               onAddTaskFromCalendar={(taskData) => {
                 setCalendarTaskToAdd(taskData);
                 setMobileCard(null);
@@ -210,6 +232,7 @@ function App() {
         )}
         <div className="floating-menu-container">
           <FloatingMenuMobile
+            activeCard={mobileCard}
             onNotepadClick={() => toggleMobileCard('notepad')}
             onCalendarClick={() => toggleMobileCard('calendar')}
             onPlacarClick={() => toggleMobileCard('placar')}

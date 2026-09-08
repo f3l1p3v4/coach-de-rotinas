@@ -5,17 +5,35 @@
 }
 
 .todo-item { 
+  position: relative;
   display: flex;
   flex: 1;
   gap: 0.75rem;
   align-items: center;
   justify-content: space-between;
-  padding: 0.95rem 1.35rem;
+  padding: 0.95rem 1.35rem 0.95rem 1.55rem;
   background-color: var(--card-bg, #262626);
   border: 1px solid var(--border-color, #383838);
   border-radius: 10px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   transition: border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.todo-item-container:has(.menu-is-open) {
+  z-index: 40;
+  position: relative;
+}
+
+.category-accent-strip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  border-top-left-radius: 9px;
+  border-bottom-left-radius: 9px;
+  pointer-events: none;
+  transition: background-color 0.2s ease;
 }
 
 .todo-item:hover {

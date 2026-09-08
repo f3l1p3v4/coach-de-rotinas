@@ -7,6 +7,8 @@ import { loadUserTasks, syncUserTasks } from '../../services/supabaseService';
 import TodoItem from '../TodoItem';
 import TaskDetailsModal from '../TaskDetailsModal';
 import AddTaskModal from '../AddTaskModal';
+import CategoryFilterBar from '../CategoryFilterBar';
+import { getStoredCategories } from '../../constants/categories';
 
 import './styles.css';
 
@@ -34,16 +36,16 @@ const sortTasksChronologically = (taskList) => {
 };
 
 const taskTemplates = [
-  { id: '1', text: 'Treino', emoji: '💪', description: 'Foco em peito e tríceps. Manter a boa forma e controlar a respiração.', subtasks: [{ id: 101, text: 'Aquecimento - 10 min', completed: false }, { id: 102, text: 'Supino Reto - 4x8', completed: false }] },
-  { id: '2', text: 'Estudo Espiritual', emoji: '🙏', description: 'Leitura do capítulo de hoje e meditação. O objetivo é a reflexão.', subtasks: [] },
-  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', description: 'Praticar as escalas e a nova peça.', subtasks: [{ id: 301, text: 'Escalas - 15 min', completed: false }, { id: 302, text: 'Praticar nova música', completed: false }] },
-  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', description: 'Revisão da matéria e resolução de exercícios.', subtasks: [{ id: 401, text: 'Ler resumo do capítulo', completed: false }, { id: 402, text: 'Fazer 10 exercícios', completed: false }] },
-  { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', description: 'Foco num cómodo por 15 minutos.', subtasks: [] },
-  { id: '6', text: 'Organização do Dia', emoji: '📋', description: 'Organizar manhã de trabalho por 30 min', subtasks: [{ id: 601, text: 'Verificar mensagens pessoais e profissionais no email e whatsapp', completed: false }, { id: 602, text: 'Processar todas as ULs', completed: false }, { id: 603, text: 'Organizar as tarefas pendentes no trello', completed: false }, { id: 604, text: 'Ler notícias', completed: false }] },
-  { id: '7', text: 'Conferência de Serviços', emoji: '🔍', description: 'Verificar relatório de inconsistencia e fazer backup e ajustes se necessário', subtasks: [] },
-  { id: '8', text: 'Estudo no Trabalho', emoji: '🧠', description: 'Estudar ferramentas para usar no meu trabalho', subtasks: [{ id: 801, text: 'Estudar SQL Server', completed: false }, { id: 802, text: 'Estudar Maker Softwell', completed: false },] },
-  { id: '9', text: 'Suporte', emoji: '📞', description: 'Solução de problemas aleatórios relacionadas ao Suporte', subtasks: [{ id: 901, text: 'Conferência de inconsistencia de catraca se precisar', completed: false }, { id: 902, text: 'Estudar Maker Softwell', completed: false },] },
-  { id: '10', text: 'Desenvolvimento de Software', emoji: '👨‍💻', description: 'Focar em projetos de desenvolvimento e implementação de novas funcionalidades.', subtasks: [{ id: 1001, text: 'Codificar e testar novas features', completed: false }, { id: 1002, text: 'Revisar código (Code Review)', completed: false }, { id: 1003, text: 'Corrigir bugs identificados', completed: false }, { id: 1004, text: 'Documentar a nova funcionalidade', completed: false }] },
+  { id: '1', text: 'Treino', emoji: '💪', category: 'Saúde / Treino', color: '#f97316', description: 'Foco em peito e tríceps. Manter a boa forma e controlar a respiração.', subtasks: [{ id: 101, text: 'Aquecimento - 10 min', completed: false }, { id: 102, text: 'Supino Reto - 4x8', completed: false }] },
+  { id: '2', text: 'Estudo Espiritual', emoji: '🙏', category: 'Espiritual', color: '#eab308', description: 'Leitura do capítulo de hoje e meditação. O objetivo é a reflexão.', subtasks: [] },
+  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', category: 'Estudos', color: '#8b5cf6', description: 'Praticar as escalas e a nova peça.', subtasks: [{ id: 301, text: 'Escalas - 15 min', completed: false }, { id: 302, text: 'Praticar nova música', completed: false }] },
+  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', category: 'Estudos', color: '#8b5cf6', description: 'Revisão da matéria e resolução de exercícios.', subtasks: [{ id: 401, text: 'Ler resumo do capítulo', completed: false }, { id: 402, text: 'Fazer 10 exercícios', completed: false }] },
+  { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', category: 'Casa', color: '#ec4899', description: 'Foco num cómodo por 15 minutos.', subtasks: [] },
+  { id: '6', text: 'Organização do Dia', emoji: '📋', category: 'Trabalho', color: '#3b82f6', description: 'Organizar manhã de trabalho por 30 min', subtasks: [{ id: 601, text: 'Verificar mensagens pessoais e profissionais no email e whatsapp', completed: false }, { id: 602, text: 'Processar todas as ULs', completed: false }, { id: 603, text: 'Organizar as tarefas pendentes no trello', completed: false }, { id: 604, text: 'Ler notícias', completed: false }] },
+  { id: '7', text: 'Conferência de Serviços', emoji: '🔍', category: 'Trabalho', color: '#3b82f6', description: 'Verificar relatório de inconsistencia e fazer backup e ajustes se necessário', subtasks: [] },
+  { id: '8', text: 'Estudo no Trabalho', emoji: '🧠', category: 'Trabalho', color: '#3b82f6', description: 'Estudar ferramentas para usar no meu trabalho', subtasks: [{ id: 801, text: 'Estudar SQL Server', completed: false }, { id: 802, text: 'Estudar Maker Softwell', completed: false },] },
+  { id: '9', text: 'Suporte', emoji: '📞', category: 'Trabalho', color: '#3b82f6', description: 'Solução de problemas aleatórios relacionadas ao Suporte', subtasks: [{ id: 901, text: 'Conferência de inconsistencia de catraca se precisar', completed: false }, { id: 902, text: 'Estudar Maker Softwell', completed: false },] },
+  { id: '10', text: 'Desenvolvimento de Software', emoji: '👨‍💻', category: 'Trabalho', color: '#3b82f6', description: 'Focar em projetos de desenvolvimento e implementação de novas funcionalidades.', subtasks: [{ id: 1001, text: 'Codificar e testar novas features', completed: false }, { id: 1002, text: 'Revisar código (Code Review)', completed: false }, { id: 1003, text: 'Corrigir bugs identificados', completed: false }, { id: 1004, text: 'Documentar a nova funcionalidade', completed: false }] },
 ];
 
 export const initialTaskTemplates = taskTemplates;
@@ -59,24 +61,44 @@ function DailyPlanner({
   user, 
   onOpenAuthModal,
   calendarTaskToAdd,
-  onClearCalendarTaskToAdd
+  onClearCalendarTaskToAdd,
+  selectedDate: propSelectedDate,
+  setSelectedDate: propSetSelectedDate
 }) {
-  const [selectedDate, setSelectedDate] = useState(getTodayString);
+  const [internalSelectedDate, setInternalSelectedDate] = useState(() => {
+    const saved = localStorage.getItem('selected_planner_date');
+    if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
+      return saved;
+    }
+    return getTodayString();
+  });
+
+  const selectedDate = propSelectedDate || internalSelectedDate;
+  const setSelectedDate = propSetSelectedDate || setInternalSelectedDate;
+
+  useEffect(() => {
+    localStorage.setItem('selected_planner_date', selectedDate);
+  }, [selectedDate]);
+
   const [tasks, setTasks] = useState(() => {
     const savedTasks = localStorage.getItem('daily_tasks');
     if (savedTasks) {
       try {
-        return JSON.parse(savedTasks);
+        const parsed = JSON.parse(savedTasks);
+        if (Array.isArray(parsed)) return parsed;
       } catch (e) {}
     }
     return [];
   });
+
   const [isTasksLoaded, setIsTasksLoaded] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
+  const hasInitializedRef = useRef(false);
 
   const [internalTemplates, setInternalTemplates] = useState(() => {
     const savedTemplates = localStorage.getItem('custom_task_templates');
@@ -96,6 +118,7 @@ function DailyPlanner({
   // Efeito para adicionar tarefas vindas da Agenda
   useEffect(() => {
     if (calendarTaskToAdd) {
+      const taskDate = calendarTaskToAdd.date || selectedDate;
       const newTask = {
         id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         text: calendarTaskToAdd.text,
@@ -105,7 +128,8 @@ function DailyPlanner({
         period: calendarTaskToAdd.period || 'Manhã',
         completed: false,
         subtasks: calendarTaskToAdd.subtasks || [],
-        date: selectedDate
+        color: calendarTaskToAdd.color || null,
+        date: taskDate
       };
       setTasks(prev => sortTasksChronologically([...prev, newTask]));
       if (onClearCalendarTaskToAdd) onClearCalendarTaskToAdd();
@@ -120,9 +144,11 @@ function DailyPlanner({
         if (isMounted) {
           setTasks(initialTasks);
           setIsTasksLoaded(true);
+          hasInitializedRef.current = true;
         }
       } else {
         setIsTasksLoaded(true);
+        hasInitializedRef.current = true;
       }
     }
     initTasks();
@@ -130,7 +156,7 @@ function DailyPlanner({
   }, [user]);
 
   useEffect(() => {
-    if (isTasksLoaded) {
+    if (isTasksLoaded && hasInitializedRef.current) {
       syncUserTasks(user?.id, tasks);
     }
   }, [tasks, user, isTasksLoaded]);
@@ -172,6 +198,8 @@ function DailyPlanner({
         id: Date.now().toString(),
         text: newTask.text,
         emoji: newTask.emoji,
+        category: newTask.category || '',
+        color: newTask.color || '',
         description: newTask.description || '',
         subtasks: newTask.subtasks || []
       };
@@ -312,7 +340,20 @@ function DailyPlanner({
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${tasks.find(t => t.id === taskId)?.text}.`);
+    const currentTask = tasks.find(t => t.id === taskId);
+    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${currentTask?.text}.`);
+    
+    // Registrar startedAt na tarefa se ainda não tiver sido iniciado
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        return {
+          ...t,
+          startedAt: t.startedAt || new Date().toISOString()
+        };
+      }
+      return t;
+    }));
+
     setActiveTimer({ taskId, totalSeconds: config.Focus * 60, phase: 'Focus', isRunning: true, pomodoroCycle: 0, type, config });
   };
 
@@ -322,10 +363,36 @@ function DailyPlanner({
     }
   };
 
+  const getDayOfWeek = (dateStr) => {
+    if (!dateStr) return new Date().getDay();
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).getDay();
+  };
+
+  const isTaskForSelectedDate = (t, dateStr) => {
+    const dayOfWeek = getDayOfWeek(dateStr);
+    if (t.isRecurring) {
+      if (!Array.isArray(t.recurringDays) || t.recurringDays.length === 0) return false;
+      if (!t.recurringDays.includes(dayOfWeek)) return false;
+      if (t.date && dateStr < t.date) return false;
+      return true;
+    }
+    return (t.date || todayStr) === dateStr;
+  };
+
+  const isTaskCompletedForDate = (t, dateStr) => {
+    if (t.isRecurring) {
+      return Array.isArray(t.completedDates) && t.completedDates.includes(dateStr);
+    }
+    return Boolean(t.completed);
+  };
+
   const handleToggle = (id) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-    const isCompleting = !task.completed;
+    const isCompletedCurrently = isTaskCompletedForDate(task, selectedDate);
+    const isCompleting = !isCompletedCurrently;
+
     if (isCompleting && activeTimer.taskId === id) {
       const userConfirmed = window.confirm("⏱️ A atividade está em andamento. Deseja realmente finalizá-la e parar o timer?");
       if (userConfirmed) {
@@ -334,7 +401,30 @@ function DailyPlanner({
         return;
       }
     }
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: isCompleting, completedAt: isCompleting ? new Date() : null } : t));
+
+    setTasks(tasks.map(t => {
+      if (t.id !== id) return t;
+
+      if (t.isRecurring) {
+        const currentDates = Array.isArray(t.completedDates) ? t.completedDates : [];
+        const updatedDates = isCompleting
+          ? [...currentDates, selectedDate]
+          : currentDates.filter(d => d !== selectedDate);
+
+        return {
+          ...t,
+          completedDates: updatedDates,
+          completed: selectedDate === todayStr ? isCompleting : (Array.isArray(updatedDates) && updatedDates.includes(todayStr)),
+          completedAt: isCompleting ? new Date().toISOString() : null
+        };
+      }
+
+      return {
+        ...t,
+        completed: isCompleting,
+        completedAt: isCompleting ? new Date().toISOString() : null
+      };
+    }));
   };
 
   const handleRemove = (id) => {
@@ -342,26 +432,33 @@ function DailyPlanner({
     setTasks(tasks.filter(t => t.id !== id));
   };
 
+  const handleToggleCategory = (catName) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(catName)) {
+        return prev.filter(c => c !== catName);
+      } else {
+        return [...prev, catName];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedCategories([]);
+  };
+
   const handleOnDragEnd = (event) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setTasks((allTasks) => {
-        const todayStr = getTodayString();
-        const currentDayTasks = allTasks.filter(t => (t.date || todayStr) === selectedDate);
-        const otherDayTasks = allTasks.filter(t => (t.date || todayStr) !== selectedDate);
+        const currentDayTasks = allTasks.filter(t => isTaskForSelectedDate(t, selectedDate));
+        const otherDayTasks = allTasks.filter(t => !isTaskForSelectedDate(t, selectedDate));
 
         const oldIndex = currentDayTasks.findIndex((item) => item.id === active.id);
         const newIndex = currentDayTasks.findIndex((item) => item.id === over.id);
 
-        const times = currentDayTasks.map((item) => item.time);
         const reordered = arrayMove(currentDayTasks, oldIndex, newIndex);
 
-        const updatedDayTasks = reordered.map((item, index) => ({
-          ...item,
-          time: times[index]
-        }));
-
-        return [...otherDayTasks, ...updatedDayTasks];
+        return [...otherDayTasks, ...reordered];
       });
     }
   };
@@ -389,8 +486,30 @@ function DailyPlanner({
   };
 
   const todayStr = getTodayString();
-  const tasksForSelectedDate = tasks.filter(t => (t.date || todayStr) === selectedDate);
-  const processedTasks = sortTasksChronologically(tasksForSelectedDate);
+  const tasksForSelectedDate = tasks.filter(t => isTaskForSelectedDate(t, selectedDate));
+
+  const categoryCounts = {};
+  let uncategorizedCount = 0;
+  tasksForSelectedDate.forEach(t => {
+    if (t.category) {
+      categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
+    } else {
+      uncategorizedCount += 1;
+    }
+  });
+
+  const filteredTasks = tasksForSelectedDate.filter(t => {
+    if (selectedCategories.length === 0) return true;
+    if (!t.category) return selectedCategories.includes('__none__');
+    return selectedCategories.includes(t.category);
+  });
+
+  const processedTasks = sortTasksChronologically(
+    filteredTasks.map(t => ({
+      ...t,
+      completed: isTaskCompletedForDate(t, selectedDate)
+    }))
+  );
 
   const PERIOD_NAMES = ['Manhã', 'Tarde', 'Noite'];
   const groupedPeriodTasks = PERIOD_NAMES.map(pName => {
@@ -404,6 +523,13 @@ function DailyPlanner({
   if (otherTasks.length > 0) {
     groupedPeriodTasks.push({ period: 'Outros', tasks: otherTasks });
   }
+
+  const otherDatesWithTasks = Array.from(new Set(
+    tasks
+      .filter(t => !t.isRecurring)
+      .map(t => t.date || todayStr)
+      .filter(d => d !== selectedDate)
+  )).sort();
 
   const getUserAvatar = (u) => {
     if (u) {
@@ -492,6 +618,17 @@ function DailyPlanner({
           <span>Nova Tarefa</span>
         </button>
       </div>
+
+      <CategoryFilterBar
+        categories={getStoredCategories()}
+        categoryCounts={categoryCounts}
+        totalCount={tasksForSelectedDate.length}
+        uncategorizedCount={uncategorizedCount}
+        selectedCategories={selectedCategories}
+        onToggleCategory={handleToggleCategory}
+        onSelectAll={handleSelectAll}
+      />
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
         <SortableContext items={processedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div 
@@ -518,18 +655,68 @@ function DailyPlanner({
                           onCancel={handleCancelTimer}
                           activeTimer={activeTimer}
                           currentTimeDisplay={currentTimeDisplay}
-                          onOpenDetails={() => setSelectedTask(task)}
+                          onOpenDetails={() => setSelectedTask(tasks.find(t => t.id === task.id) || task)}
                         />
                       ))}
                     </div>
                   </div>
                 );
               })
+            ) : tasksForSelectedDate.length > 0 ? (
+              <div className="period-section-group">
+                <div className="period-section-box empty-box" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+                  <p className="empty-state-message" style={{ margin: 0, padding: 0 }}>
+                    Nenhuma tarefa encontrada para a(s) categoria(s) selecionada(s).
+                  </p>
+                  <button 
+                    type="button" 
+                    onClick={handleSelectAll}
+                    style={{
+                      marginTop: '1rem',
+                      backgroundColor: 'var(--primary-bg)',
+                      color: 'var(--primary-text)',
+                      border: 'none',
+                      padding: '0.45rem 1.1rem',
+                      borderRadius: '20px',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Mostrar Todas as Tarefas
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="period-section-group">
-                <h2 className="period-section-title">Manhã</h2>
+                <h2 className="period-section-title">
+                  {selectedDate === todayStr ? 'Hoje' : getFormattedDateLabel(selectedDate)}
+                </h2>
                 <div className="period-section-box empty-box">
-                  <p className="empty-state-message">A sua lista de tarefas está vazia. Adicione uma nova tarefa para começar!</p>
+                  <p className="empty-state-message">
+                    {selectedDate === todayStr 
+                      ? 'A sua lista de tarefas para hoje está vazia.' 
+                      : `A sua lista de tarefas para ${getFormattedDateLabel(selectedDate)} está vazia.`}
+                  </p>
+
+                  {otherDatesWithTasks.length > 0 && (
+                    <div className="empty-state-other-dates">
+                      <span>Você possui tarefas agendadas em outros dias:</span>
+                      <div className="other-dates-badges">
+                        {otherDatesWithTasks.map(dateStr => (
+                          <button 
+                            key={dateStr} 
+                            type="button" 
+                            className="other-date-btn" 
+                            onClick={() => setSelectedDate(dateStr)}
+                            title={`Ver tarefas de ${getFormattedDateLabel(dateStr)}`}
+                          >
+                            📅 {getFormattedDateLabel(dateStr)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

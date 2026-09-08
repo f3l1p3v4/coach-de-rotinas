@@ -16,7 +16,6 @@
 
 .floating-menu-mobile button {
   background: transparent;
-  border: none;
   color: var(--primary-text);
   display: flex;
   flex-direction: row;
@@ -24,15 +23,33 @@
   border: 1px solid var(--primary-text);
   gap: 0.5rem;
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .floating-menu-mobile button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(125, 125, 125, 0.15);
+}
+
+/* Quando selecionado: deixar escuro com texto e ícone brancos */
+.floating-menu-mobile button.active {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #1a1a1a !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.floating-menu-mobile button.active svg {
+  color: #ffffff !important;
+}
+
+.floating-menu-mobile button.active:hover {
+  background-color: #2c2c2c !important;
+  color: #ffffff !important;
 }
 
 .floating-card-backdrop {

@@ -71,6 +71,39 @@ function getTodayStr() {
   return `${year}-${month}-${day}`;
 }
 
+function GoogleCalendarLogo({ size = 26 }) {
+  return (
+    <svg 
+      width={size} 
+      height={size} 
+      viewBox="0 0 48 48" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ verticalAlign: 'middle', flexShrink: 0 }}
+      aria-label="Google Calendar"
+    >
+      <rect width="48" height="48" rx="10" fill="#FFFFFF" />
+      <path d="M35 7H13C9.686 7 7 9.686 7 13V18H41V13C41 9.686 38.314 7 35 7Z" fill="#1A73E8" />
+      <path d="M41 18H33V30H41V18Z" fill="#FBBC04" />
+      <path d="M41 30H33V41H35C38.314 41 41 38.314 41 35V30Z" fill="#34A853" />
+      <path d="M15 33H7V35C7 38.314 9.686 41 13 41H15V33Z" fill="#EA4335" />
+      <path d="M15 18H7V33H15V18Z" fill="#1A73E8" />
+      <rect x="13" y="18" width="22" height="23" fill="#FFFFFF" />
+      <text 
+        x="24" 
+        y="34.5" 
+        textAnchor="middle" 
+        fontSize="17" 
+        fontWeight="bold" 
+        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
+        fill="#1A73E8"
+      >
+        31
+      </text>
+    </svg>
+  );
+}
+
 function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   const [viewMode, setViewMode] = useState('month'); // 'month' ou 'week'
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -410,7 +443,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
     <div className="google-calendar-card">
       <div className="calendar-card-header">
         <div className="header-title-wrapper">
-          <CalendarBlank size={24} className="calendar-brand-icon" weight="fill" />
+          <GoogleCalendarLogo size={28} />
           <h3>Google Agenda</h3>
         </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Pencil, Trash, XCircle, CheckCircle, ArrowLeft } from '@phosphor-icons/react';
+import { PlusCircle, Pencil, Trash, XCircle, CheckCircle, ArrowLeft, Funnel } from '@phosphor-icons/react';
 import { loadUserNotes, syncUserNotes } from '../../services/supabaseService';
+import { getStoredCategories, getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
@@ -26,10 +27,12 @@ function BlocoDeNotas({ onClose, user }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeNote, setActiveNote] = useState(null); // Note sendo editada ou visualizada
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all'); // Padrão: 'all' (Todas)
 
   // Form fields
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [category, setCategory] = useState('');
   const [selectedColor, setSelectedColor] = useState('#fff9c4');
 
   useEffect(() => {
@@ -59,6 +62,7 @@ function BlocoDeNotas({ onClose, user }) {
     setActiveNote(null);
     setTitle('');
     setContent('');
+    setCategory('');
     setSelectedColor('#fff9c4');
     setIsEditing(true);
   };
@@ -67,6 +71,7 @@ function BlocoDeNotas({ onClose, user }) {
     setActiveNote(note);
     setTitle(note.title);
     setContent(note.content);
+    setCategory(note.category || '');
     setSelectedColor(note.color || '#fff9c4');
     setIsEditing(true);
   };
@@ -88,6 +93,7 @@ function BlocoDeNotas({ onClose, user }) {
         ...n,
         title: title.trim() || 'Sem Título',
         content: content.trim(),
+        category: category || null,
         color: selectedColor,
         date: nowFormatted
       } : n));
@@ -97,6 +103,7 @@ function BlocoDeNotas({ onClose, user }) {
         id: Date.now().toString(),
         title: title.trim() || 'Sem Título',
         content: content.trim(),
+        category: category || null,
         color: selectedColor,
         date: nowFormatted
       };
@@ -126,6 +133,24 @@ function BlocoDeNotas({ onClose, user }) {
     { label: 'Azul', hex: '#bbdefb' },
     { label: 'Verde', hex: '#c8e6c9' },
   ];
+
+  // Contagem por categorias nas anotações
+  const categoryCounts = {};
+  let uncategorizedCount = 0;
+  notes.forEach(n => {
+    if (n.category) {
+      categoryCounts[n.category] = (categoryCounts[n.category] || 0) + 1;
+    } else {
+      uncategorizedCount += 1;
+    }
+  });
+
+  // Filtragem das anotações
+  const filteredNotes = notes.filter(n => {
+    if (!selectedCategory || selectedCategory === 'all') return true;
+    if (selectedCategory === '__none__') return !n.category;
+    return n.category === selectedCategory;
+  });
 
   return (
     <div className="bloco-notas-container">
@@ -160,9 +185,30 @@ function BlocoDeNotas({ onClose, user }) {
               <span>Nova Anotação</span>
             </button>
 
+            <div className="notepad-filter-row">
+              <label htmlFor="notepad-category-filter" className="notepad-filter-label">
+                <Funnel size={14} weight="bold" />
+                <span>Filtrar por:</span>
+              </label>
+              <select
+                id="notepad-category-filter"
+                className="notepad-category-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+              >
+                <option value="all">📁 Todas as Categorias ({notes.length})</option>
+                {getStoredCategories().map(cat => (
+                  <option key={cat.id || cat.name} value={cat.name}>
+                    {cat.emoji || '🏷️'} {cat.name} ({categoryCounts[cat.name] || 0})
+                  </option>
+                ))}
+                <option value="__none__">📝 Sem Categoria ({uncategorizedCount})</option>
+              </select>
+            </div>
+
             <div className="notes-list">
-              {notes.length > 0 ? (
-                notes.map(note => (
+              {filteredNotes.length > 0 ? (
+                filteredNotes.map(note => (
                   <div 
                     key={note.id} 
                     className="note-paper-item"
@@ -170,12 +216,26 @@ function BlocoDeNotas({ onClose, user }) {
                     onClick={() => handleOpenEdit(note)}
                   >
                     <div className="note-paper-top">
-                      <h4 className="note-title">{note.title}</h4>
+                      <div className="note-title-wrapper">
+                        <h4 className="note-title">{note.title}</h4>
+                        {note.category && (
+                          <span 
+                            className="note-category-tag"
+                            style={{
+                              backgroundColor: `${getCategoryColor(note.category)}24`,
+                              color: getCategoryColor(note.category),
+                              borderColor: `${getCategoryColor(note.category)}55`
+                            }}
+                          >
+                            {note.category}
+                          </span>
+                        )}
+                      </div>
                       <div className="note-actions" onClick={e => e.stopPropagation()}>
-                        <button onClick={() => handleOpenEdit(note)} className="icon-btn edit">
+                        <button onClick={() => handleOpenEdit(note)} className="icon-btn edit" title="Editar anotação">
                           <Pencil size={16} />
                         </button>
-                        <button onClick={() => handleDelete(note.id, note.title)} className="icon-btn delete">
+                        <button onClick={() => handleDelete(note.id, note.title)} className="icon-btn delete" title="Excluir anotação">
                           <Trash size={16} />
                         </button>
                       </div>
@@ -184,6 +244,17 @@ function BlocoDeNotas({ onClose, user }) {
                     <span className="note-date">{note.date}</span>
                   </div>
                 ))
+              ) : notes.length > 0 ? (
+                <div className="empty-notes">
+                  <p>Nenhuma anotação com os filtros selecionados.</p>
+                  <button 
+                    type="button" 
+                    onClick={() => setSelectedCategory('all')}
+                    className="reset-filter-notes-btn"
+                  >
+                    Mostrar todas
+                  </button>
+                </div>
               ) : (
                 <div className="empty-notes">
                   <p>Sua caderneta está vazia.</p>
@@ -203,6 +274,22 @@ function BlocoDeNotas({ onClose, user }) {
                 className="note-title-input"
                 autoFocus
               />
+            </div>
+
+            <div className="note-category-row">
+              <span className="color-label">Categoria:</span>
+              <select 
+                value={category} 
+                onChange={e => setCategory(e.target.value)}
+                className="note-category-select"
+              >
+                <option value="">📝 Sem Categoria</option>
+                {getStoredCategories().map(cat => (
+                  <option key={cat.id || cat.name} value={cat.name}>
+                    {cat.emoji || '🏷️'} {cat.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="color-selector">

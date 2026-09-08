@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { XCircle, Trash, PlusCircle } from '@phosphor-icons/react';
+import CategoryPicker from '../CategoryPicker';
+import RecurrenceSelector from '../RecurrenceSelector';
+import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
@@ -7,7 +10,11 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
   const [text, setText] = useState('');
   const [emoji, setEmoji] = useState('✨');
   const [description, setDescription] = useState('');
-  const [time, setTime] = useState('');
+  const [period, setPeriod] = useState('Manhã');
+  const [category, setCategory] = useState('');
+  const [color, setColor] = useState('#3b82f6');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringDays, setRecurringDays] = useState([]);
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
 
@@ -19,7 +26,11 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       setText('');
       setEmoji('✨');
       setDescription('');
-      setTime('');
+      setPeriod('Manhã');
+      setCategory('');
+      setColor('#3b82f6');
+      setIsRecurring(false);
+      setRecurringDays([]);
       setSubtasks([]);
       setNewSubtaskText('');
       setSaveAsTemplate(false);
@@ -33,7 +44,11 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       setText('');
       setEmoji('✨');
       setDescription('');
-      setTime('');
+      setPeriod('Manhã');
+      setCategory('');
+      setColor('#3b82f6');
+      setIsRecurring(false);
+      setRecurringDays([]);
       setSubtasks([]);
       return;
     }
@@ -42,6 +57,11 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       setText(template.text);
       setEmoji(template.emoji);
       setDescription(template.description);
+      setPeriod(template.period || 'Manhã');
+      setCategory(template.category || '');
+      setColor(template.color || (template.category ? getCategoryColor(template.category) : '#3b82f6'));
+      setIsRecurring(template.isRecurring || false);
+      setRecurringDays(template.recurringDays || []);
       setSubtasks(template.subtasks.map(st => ({ ...st, id: Date.now() + Math.random() }))); // Cria novos IDs
     }
   };
@@ -69,10 +89,16 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       text,
       emoji,
       description,
-      time,
+      period: period || 'Manhã',
+      category: category || null,
+      color: color || (category ? getCategoryColor(category) : null),
+      isRecurring,
+      recurringDays: isRecurring ? recurringDays : [],
+      completedDates: [],
       subtasks,
       completed: false,
       completedAt: null,
+      startedAt: null,
     };
     onAddTask(newTask, saveAsTemplate);
     onClose();
@@ -107,10 +133,32 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
               <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} className="emoji-input" />
             </div>
             <div className="form-group" style={{ flex: '0 0 auto' }}>
-              <label>Horário</label>
-              <input type="time" value={time} onChange={e => setTime(e.target.value)} />
+              <label>Período</label>
+              <select 
+                value={period} 
+                onChange={e => setPeriod(e.target.value)}
+                style={{ height: '42px', borderRadius: '8px', padding: '0 10px', background: 'var(--input-bg, #2a2a2a)', color: 'var(--text-color, #fff)', border: '1px solid var(--border-color, #444)' }}
+              >
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+              </select>
             </div>
           </div>
+
+          <CategoryPicker 
+            category={category}
+            onChangeCategory={setCategory}
+            color={color}
+            onChangeColor={setColor}
+          />
+
+          <RecurrenceSelector
+            isRecurring={isRecurring}
+            onChangeIsRecurring={setIsRecurring}
+            recurringDays={recurringDays}
+            onChangeRecurringDays={setRecurringDays}
+          />
           
           <div className="form-group">
             <label>Descrição / Notas</label>

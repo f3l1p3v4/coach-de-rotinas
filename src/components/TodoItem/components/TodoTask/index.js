@@ -1,26 +1,57 @@
 import React from 'react';
+import { getRecurrenceLabel } from '../../../../constants/recurrence';
 
 import './styles.css';
 
+const formatTimeStr = (isoDate) => {
+  if (!isoDate) return null;
+  try {
+    const d = new Date(isoDate);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return null;
+  }
+};
+
 function TodoTask({ task, onOpenDetails }) {
-  const displayTitle = task.time && !task.text.includes(task.time) 
-    ? `${task.text} - ${task.time}` 
-    : task.text;
+  const startTime = formatTimeStr(task.startedAt);
+  const endTime = formatTimeStr(task.completedAt);
+
+  let executionTimeText = null;
+  if (startTime && endTime) {
+    executionTimeText = `Iniciado ${startTime} - Finalizado ${endTime}`;
+  } else if (startTime && !task.completed) {
+    executionTimeText = `Iniciado ${startTime}`;
+  } else if (endTime) {
+    executionTimeText = `Finalizado às ${endTime}`;
+  }
+
+  const recurrenceLabel = task.isRecurring ? getRecurrenceLabel(task.recurringDays) : null;
 
   return (
     <div className="task-details">
-      <p 
-        className={`todo-paragraph ${task.completed ? 'paragraph-checked' : ''}`}
-        onClick={onOpenDetails}
-      >
-        {task.emoji && <span className="task-emoji">{task.emoji}</span>}
-        <span className="task-text-content">{displayTitle}</span>
-      </p>
-      {task.completed && (
-        <span className="completion-time">
-          Finalizado às {task.completedAt 
-            ? new Date(task.completedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) 
-            : (task.time ? task.time.split('-')[0].trim() : '07:00')}
+      <div className="task-title-line">
+        <p 
+          className={`todo-paragraph ${task.completed ? 'paragraph-checked' : ''}`}
+          onClick={onOpenDetails}
+        >
+          {task.emoji && <span className="task-emoji">{task.emoji}</span>}
+          <span className="task-text-content">{task.text}</span>
+        </p>
+        {recurrenceLabel && (
+          <span 
+            className="task-recurrence-badge" 
+            title={`Recorrência: ${recurrenceLabel}`}
+            onClick={onOpenDetails}
+          >
+            🔁 {recurrenceLabel}
+          </span>
+        )}
+      </div>
+      {executionTimeText && (
+        <span className="task-execution-time">
+          {executionTimeText}
         </span>
       )}
     </div>

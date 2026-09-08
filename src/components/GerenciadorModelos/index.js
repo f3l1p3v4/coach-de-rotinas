@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { PlusCircle, Pencil, Trash, XCircle, CheckCircle } from '@phosphor-icons/react';
+import CategoryPicker from '../CategoryPicker';
+import RecurrenceSelector from '../RecurrenceSelector';
+import { getCategoryColor } from '../../constants/categories';
+import { getRecurrenceLabel } from '../../constants/recurrence';
 
 import './styles.css';
 
@@ -10,6 +14,10 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
   // Form states
   const [text, setText] = useState('');
   const [emoji, setEmoji] = useState('✨');
+  const [category, setCategory] = useState('');
+  const [color, setColor] = useState('#3b82f6');
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurringDays, setRecurringDays] = useState([]);
   const [description, setDescription] = useState('');
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
@@ -18,6 +26,10 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     setEditingTemplate(null);
     setText('');
     setEmoji('✨');
+    setCategory('');
+    setColor('#3b82f6');
+    setIsRecurring(false);
+    setRecurringDays([]);
     setDescription('');
     setSubtasks([]);
     setNewSubtaskText('');
@@ -28,6 +40,10 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     setEditingTemplate(template);
     setText(template.text || '');
     setEmoji(template.emoji || '✨');
+    setCategory(template.category || '');
+    setColor(template.color || (template.category ? getCategoryColor(template.category) : '#3b82f6'));
+    setIsRecurring(template.isRecurring || false);
+    setRecurringDays(template.recurringDays || []);
     setDescription(template.description || '');
     setSubtasks(template.subtasks ? template.subtasks.map(st => ({ ...st })) : []);
     setNewSubtaskText('');
@@ -56,6 +72,10 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
       id: editingTemplate ? editingTemplate.id : Date.now().toString(),
       text: text.trim(),
       emoji: emoji.trim() || '✨',
+      category: category || null,
+      color: color || (category ? getCategoryColor(category) : null),
+      isRecurring,
+      recurringDays: isRecurring ? recurringDays : [],
       description: description.trim(),
       subtasks: subtasks
     };
@@ -101,7 +121,29 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
                   <div className="modelo-info">
                     <span className="modelo-emoji">{tmpl.emoji || '✨'}</span>
                     <div className="modelo-details">
-                      <h4>{tmpl.text}</h4>
+                      <div className="modelo-title-row">
+                        <h4>{tmpl.text}</h4>
+                        {tmpl.category && (
+                          <span 
+                            className="modelo-category-badge"
+                            style={{ 
+                              backgroundColor: `${tmpl.color || getCategoryColor(tmpl.category)}22`,
+                              color: tmpl.color || getCategoryColor(tmpl.category),
+                              borderColor: `${tmpl.color || getCategoryColor(tmpl.category)}55`
+                            }}
+                          >
+                            {tmpl.category}
+                          </span>
+                        )}
+                        {tmpl.isRecurring && (
+                          <span 
+                            className="modelo-recurrence-badge"
+                            title={`Recorrência: ${getRecurrenceLabel(tmpl.recurringDays)}`}
+                          >
+                            🔁 {getRecurrenceLabel(tmpl.recurringDays)}
+                          </span>
+                        )}
+                      </div>
                       {tmpl.description && <p className="modelo-desc">{tmpl.description}</p>}
                       {tmpl.subtasks && tmpl.subtasks.length > 0 && (
                         <span className="modelo-subtasks-count">
@@ -150,6 +192,20 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
               />
             </div>
           </div>
+
+          <CategoryPicker 
+            category={category}
+            onChangeCategory={setCategory}
+            color={color}
+            onChangeColor={setColor}
+          />
+
+          <RecurrenceSelector
+            isRecurring={isRecurring}
+            onChangeIsRecurring={setIsRecurring}
+            recurringDays={recurringDays}
+            onChangeRecurringDays={setRecurringDays}
+          />
 
           <div className="form-group">
             <label>Descrição</label>

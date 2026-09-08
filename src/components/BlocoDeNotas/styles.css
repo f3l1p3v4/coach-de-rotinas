@@ -1,60 +1,66 @@
 .bloco-notas-container {
   width: 100%;
-  max-width: 420px;
-  background-color: #fff9c4; /* Amarelo fraco de bloco de notas */
+  max-width: 440px;
+  background-color: #fefce8; /* Papel marfim/amarelado claro */
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   color: #2c2c2c;
-  max-height: 80vh;
+  max-height: 82vh;
   overflow: hidden;
   position: relative;
-  border: 1px solid #e6df9c;
+  border: 1px solid #e2d98d;
 }
 
-/* Faixa amarela/marrom superior do bloco destacável com furos */
+/* Faixa superior estilo cabeçalho de bloco de notas encadernado */
 .notepad-header-tape {
-  background-color: #eab308;
-  height: 24px;
+  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
+  height: 26px;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 2px dashed #ca8a04;
-  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.1);
+  border-bottom: 2px dashed rgba(254, 240, 138, 0.6);
+  box-shadow: inset 0 -2px 5px rgba(0,0,0,0.25);
+  position: relative;
 }
 
 .notepad-holes {
   display: flex;
-  gap: 18px;
+  gap: 20px;
 }
 
 .notepad-holes span {
   width: 8px;
   height: 8px;
-  background-color: #333333;
+  background-color: #1a1a1a;
   border-radius: 50%;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.7), 0 1px 1px rgba(255,255,255,0.2);
 }
 
 .notepad-main-content {
-  padding: 1.25rem;
+  padding: 1.15rem 1.25rem;
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
   position: relative;
+  /* Pautas horizontais de caderno */
+  background-image: repeating-linear-gradient(transparent, transparent 31px, rgba(59, 130, 246, 0.05) 32px);
+  background-attachment: local;
 }
 
 .bloco-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px dashed #d4ce80;
+  border-bottom: 2px dashed rgba(180, 83, 9, 0.25);
+  position: relative;
+  z-index: 2;
 }
 
 .header-left {
@@ -65,10 +71,11 @@
 
 .bloco-header h3 {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.65rem;
   color: #1a1a1a;
   font-family: 'Caveat', cursive;
   font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .bloco-header .back-btn,
@@ -94,53 +101,97 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  background-color: #1a1a1a;
+  padding: 0.55rem 1rem;
+  background-color: #262626;
   color: #ffffff;
   border: none;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 600;
   font-family: 'Caveat', cursive;
   cursor: pointer;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
   transition: transform 0.1s, opacity 0.2s;
   box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+  position: relative;
+  z-index: 2;
 }
 
 .new-note-btn:hover {
-  opacity: 0.9;
+  opacity: 0.92;
   transform: translateY(-1px);
 }
 
 .notepad-list-view {
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 2;
 }
 
 .notes-list {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  max-height: 55vh;
+  gap: 1.15rem;
+  max-height: 52vh;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 0.35rem 4px;
 }
 
-/* Card individual de anotação estilo Post-it / Papel destacado */
+/* Card individual de anotação */
 .note-paper-item {
   border-radius: 8px;
-  padding: 0.85rem 1rem;
-  border: 1px solid rgba(0,0,0,0.1);
-  box-shadow: 2px 3px 8px rgba(0,0,0,0.08);
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
 }
 
 .note-paper-item:hover {
-  transform: translateY(-2px) rotate(-0.5deg);
-  box-shadow: 3px 5px 12px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+/* Filtro de categorias por select */
+.notepad-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.4rem 0 1rem 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.notepad-filter-label {
+  font-family: 'Caveat', cursive;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.notepad-category-select {
+  flex: 1;
+  font-family: 'Caveat', cursive;
+  font-size: 1.15rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background-color: #ffffff;
+  color: #1a1a1a;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.notepad-category-select:focus {
+  border-color: #1a1a1a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .note-paper-top {
@@ -335,3 +386,114 @@
 .save-note-btn:hover {
   opacity: 0.9;
 }
+
+/* Categorias em Anotações */
+.note-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.note-category-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: 12px;
+  border: 1px solid;
+  line-height: 1.2;
+  font-family: inherit;
+  display: inline-block;
+}
+
+.note-category-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0 4px;
+}
+
+.note-category-select {
+  flex: 1;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.7);
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.note-category-select:focus {
+  border-color: #000000;
+  background: #ffffff;
+}
+
+.reset-filter-notes-btn {
+  margin-top: 0.6rem;
+  background: #1a1a1a;
+  color: #ffffff;
+  border: none;
+  padding: 0.35rem 0.9rem;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s;
+}
+
+.reset-filter-notes-btn:hover {
+  opacity: 0.85;
+}
+
+.notepad-list-view .category-filter-bar-container {
+  margin: 0 0 0.85rem 0;
+}
+
+.notepad-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+  padding: 0 4px;
+}
+
+.notepad-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #444444;
+  font-family: 'Caveat', cursive, sans-serif;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.notepad-category-select {
+  flex: 1;
+  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  background: rgba(255, 255, 255, 0.85);
+  color: #1a1a1a;
+  font-size: 0.92rem;
+  font-weight: 500;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+
+.notepad-category-select:focus {
+  border-color: #000000;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12);
+}
+

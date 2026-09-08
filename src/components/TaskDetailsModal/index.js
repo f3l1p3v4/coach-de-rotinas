@@ -4,20 +4,25 @@ import {
   Circle, 
   CheckCircle, 
   Trash, 
-  Clock, 
   PlusCircle, 
   FloppyDisk, 
   Tag, 
   PencilSimple 
 } from '@phosphor-icons/react';
+import CategoryPicker from '../CategoryPicker';
+import RecurrenceSelector from '../RecurrenceSelector';
+import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
 function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
   const [text, setText] = useState(task?.text || '');
   const [emoji, setEmoji] = useState(task?.emoji || '✨');
-  const [time, setTime] = useState(task?.time || '');
   const [period, setPeriod] = useState(task?.period || 'Manhã');
+  const [category, setCategory] = useState(task?.category || '');
+  const [color, setColor] = useState(task?.color || (task?.category ? getCategoryColor(task.category) : '#3b82f6'));
+  const [isRecurring, setIsRecurring] = useState(task?.isRecurring || false);
+  const [recurringDays, setRecurringDays] = useState(task?.recurringDays || []);
   const [description, setDescription] = useState(task?.description || '');
   const [subtasks, setSubtasks] = useState(task?.subtasks || []);
   const [newSubtaskText, setNewSubtaskText] = useState('');
@@ -26,25 +31,15 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
     if (task) {
       setText(task.text || '');
       setEmoji(task.emoji || '✨');
-      setTime(task.time || '');
       setPeriod(task.period || 'Manhã');
+      setCategory(task.category || '');
+      setColor(task.color || (task.category ? getCategoryColor(task.category) : '#3b82f6'));
+      setIsRecurring(task.isRecurring || false);
+      setRecurringDays(task.recurringDays || []);
       setDescription(task.description || '');
       setSubtasks(task.subtasks || []);
     }
   }, [task]);
-
-  // Se o horário for alterado, sugere o período automaticamente
-  const handleTimeChange = (newTime) => {
-    setTime(newTime);
-    if (newTime) {
-      const hour = parseInt(newTime.split(':')[0], 10);
-      if (!isNaN(hour)) {
-        if (hour >= 12 && hour < 18) setPeriod('Tarde');
-        else if (hour >= 18) setPeriod('Noite');
-        else setPeriod('Manhã');
-      }
-    }
-  };
 
   const handleToggleSubtask = (subId) => {
     setSubtasks(prev => prev.map(sub => 
@@ -79,8 +74,11 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
         ...task,
         text: text.trim(),
         emoji,
-        time,
         period,
+        category: category || null,
+        color: color || (category ? getCategoryColor(category) : null),
+        isRecurring,
+        recurringDays: isRecurring ? recurringDays : [],
         description: description.trim(),
         subtasks
       });
@@ -129,17 +127,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
           </div>
 
           <div className="details-grid-row">
-            <div className="details-field">
-              <label><Clock size={16} /> Horário</label>
-              <input 
-                type="time" 
-                value={time} 
-                onChange={e => handleTimeChange(e.target.value)}
-                className="details-input"
-              />
-            </div>
-
-            <div className="details-field">
+            <div className="details-field" style={{ width: '100%' }}>
               <label><Tag size={16} /> Período</label>
               <select 
                 value={period} 
@@ -152,6 +140,20 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
               </select>
             </div>
           </div>
+
+          <CategoryPicker 
+            category={category}
+            onChangeCategory={setCategory}
+            color={color}
+            onChangeColor={setColor}
+          />
+
+          <RecurrenceSelector
+            isRecurring={isRecurring}
+            onChangeIsRecurring={setIsRecurring}
+            recurringDays={recurringDays}
+            onChangeRecurringDays={setRecurringDays}
+          />
 
           <div className="details-modal-section">
             <label><PencilSimple size={16} /> Descrição / Notas</label>

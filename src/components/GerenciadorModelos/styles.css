@@ -239,3 +239,32 @@
   display: flex;
   align-items: center;
 }
+
+.modelo-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.modelo-category-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.modelo-recurrence-badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  background-color: var(--border-color, #444);
+  color: var(--text-color, #eee);
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+

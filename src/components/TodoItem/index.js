@@ -6,6 +6,7 @@ import TodoCheckbox from './components/TodoCheckbox';
 import TodoTask from './components/TodoTask';
 import TodoActions from './components/TodoActions';
 import CustomTimerModal from './components/CustomTimerModal';
+import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
@@ -22,6 +23,8 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
     setIsCustomTimeModalOpen(false);
   };
 
+  const accentColor = task.color || getCategoryColor(task.category);
+
   return (
     <>
       <div 
@@ -31,10 +34,14 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
         {...attributes} 
         {...listeners}
       >
-        <div 
-          className="todo-item"
-          style={task.color ? { borderLeft: `5px solid ${task.color}` } : undefined}
-        >
+        <div className="todo-item">
+          {accentColor && (
+            <div 
+              className="category-accent-strip" 
+              style={{ backgroundColor: accentColor }}
+              title={task.category ? `Categoria: ${task.category}` : undefined}
+            />
+          )}
           <div className="task-wrapper">
             <TodoCheckbox completed={task.completed} onToggle={() => onToggle(task.id)} />
             <TodoTask task={task} onOpenDetails={onOpenDetails} />
