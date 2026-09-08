@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import DailyPlanner, { initialTaskTemplates } from './components/DailyPlanner';
 import BannerDinamico from './components/BannerDinamico';
@@ -39,7 +39,16 @@ function App() {
     localStorage.setItem('selected_planner_date', selectedDate);
   }, [selectedDate]);
 
-  const [templates, setTemplates] = useState(initialTaskTemplates);
+  const [templates, setTemplates] = useState(() => {
+    try {
+      const saved = localStorage.getItem('custom_task_templates');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return initialTaskTemplates;
+  });
 
   // Escutar autenticação do Supabase
   useEffect(() => {
@@ -63,6 +72,7 @@ function App() {
   }, []);
 
   const [isTemplatesLoaded, setIsTemplatesLoaded] = useState(false);
+  const hasTemplatesLoadedRef = useRef(false);
 
   // Carregar modelos de tarefa ao mudar usuário
   useEffect(() => {
@@ -71,10 +81,14 @@ function App() {
       if (user?.id) {
         const tmpls = await loadUserTemplates(user.id, initialTaskTemplates);
         if (isMounted) {
-          setTemplates(tmpls);
+          if (Array.isArray(tmpls) && tmpls.length > 0) {
+            setTemplates(tmpls);
+          }
+          hasTemplatesLoadedRef.current = true;
           setIsTemplatesLoaded(true);
         }
       } else {
+        hasTemplatesLoadedRef.current = true;
         setIsTemplatesLoaded(true);
       }
     }
@@ -82,9 +96,9 @@ function App() {
     return () => { isMounted = false; };
   }, [user]);
 
-  // Sincronizar modelos ao alterar
+  // Sincronizar modelos ao alterar (apenas após inicialização)
   useEffect(() => {
-    if (isTemplatesLoaded) {
+    if (isTemplatesLoaded && hasTemplatesLoadedRef.current) {
       syncUserTemplates(user?.id, templates);
     }
   }, [templates, user, isTemplatesLoaded]);

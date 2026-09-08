@@ -141,6 +141,17 @@ export async function syncUserTasks(userId, tasks) {
  * --- MODELOS DE TAREFA ---
  */
 export async function loadUserTemplates(userId, initialTemplates) {
+  let localTemplates = initialTemplates;
+  try {
+    const savedTemplates = localStorage.getItem('custom_task_templates');
+    if (savedTemplates) {
+      const parsed = JSON.parse(savedTemplates);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localTemplates = parsed;
+      }
+    }
+  } catch (e) {}
+
   if (isSupabaseConfigured && supabase && userId) {
     try {
       const { data, error } = await supabase
@@ -148,47 +159,59 @@ export async function loadUserTemplates(userId, initialTemplates) {
         .select('*')
         .eq('user_id', userId);
 
-      if (!error && data && data.length > 0) {
-        return data.map(t => ({
-          id: t.id,
-          text: t.text,
-          emoji: t.emoji,
-          category: t.category || null,
-          color: t.color || null,
-          isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
-          recurringDays: Array.isArray(t.recurring_days) ? t.recurring_days : (Array.isArray(t.recurringDays) ? t.recurringDays : []),
-          description: t.description,
-          subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
-        }));
+      if (!error && Array.isArray(data)) {
+        if (data.length > 0) {
+          const remoteTemplates = data.map(t => ({
+            id: String(t.id),
+            text: t.text || '',
+            emoji: t.emoji || '📋',
+            category: t.category || null,
+            color: t.color || null,
+            isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
+            recurringDays: Array.isArray(t.recurring_days) ? t.recurring_days : (Array.isArray(t.recurringDays) ? t.recurringDays : []),
+            description: t.description || '',
+            subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
+          }));
+
+          localStorage.setItem('custom_task_templates', JSON.stringify(remoteTemplates));
+          return remoteTemplates;
+        } else {
+          // Se o banco remoto retornou vazio ([]):
+          // Se temos modelos locais, salva-os no banco do usuário e mantém!
+          if (localTemplates && localTemplates.length > 0) {
+            syncUserTemplates(userId, localTemplates).catch(() => {});
+            return localTemplates;
+          }
+        }
       }
     } catch (err) {
       console.warn('Erro ao carregar modelos do Supabase:', err);
     }
   }
 
-  const savedTemplates = localStorage.getItem('custom_task_templates');
-  if (savedTemplates) {
-    try {
-      return JSON.parse(savedTemplates);
-    } catch (e) {
-      return initialTemplates;
-    }
-  }
-  return initialTemplates;
+  return localTemplates;
 }
 
 export async function syncUserTemplates(userId, templates) {
+  if (!Array.isArray(templates)) return;
   localStorage.setItem('custom_task_templates', JSON.stringify(templates));
 
   if (isSupabaseConfigured && supabase && userId) {
     try {
-      await supabase.from('task_templates').delete().eq('user_id', userId);
+      const { error: deleteError } = await supabase
+        .from('task_templates')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.warn('Erro ao limpar modelos no Supabase antes de inserir:', deleteError);
+      }
 
       if (templates.length > 0) {
         const fullPayload = templates.map(t => ({
           id: String(t.id),
           user_id: userId,
-          text: t.text,
+          text: t.text || '',
           emoji: t.emoji || '📋',
           category: t.category || null,
           color: t.color || null,
@@ -200,16 +223,19 @@ export async function syncUserTemplates(userId, templates) {
 
         const { error: insertError } = await supabase.from('task_templates').insert(fullPayload);
         if (insertError) {
-          console.warn('Falha ao inserir modelos com category/color, tentando payload básico:', insertError);
+          console.warn('Falha ao inserir modelos com category/color/is_recurring, tentando payload básico:', insertError);
           const basicPayload = templates.map(t => ({
             id: String(t.id),
             user_id: userId,
-            text: t.text,
+            text: t.text || '',
             emoji: t.emoji || '📋',
             description: t.description || '',
             subtasks: t.subtasks || []
           }));
-          await supabase.from('task_templates').insert(basicPayload);
+          const { error: basicError } = await supabase.from('task_templates').insert(basicPayload);
+          if (basicError) {
+            console.error('Erro ao sincronizar modelos mesmo com payload básico:', basicError);
+          }
         }
       }
     } catch (err) {
@@ -222,42 +248,90 @@ export async function syncUserTemplates(userId, templates) {
  * --- BLOCO DE NOTAS ---
  */
 export async function loadUserNotes(userId) {
+  let localNotes = [];
+  try {
+    const saved = localStorage.getItem('coach_anotacoes');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        localNotes = parsed;
+      }
+    }
+  } catch (e) {}
+
+  // Se coach_anotacoes estiver vazio, verificar backup de emergência
+  if (localNotes.length === 0) {
+    try {
+      const backup = localStorage.getItem('coach_anotacoes_backup');
+      if (backup) {
+        const parsedBackup = JSON.parse(backup);
+        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
+          localNotes = parsedBackup;
+          localStorage.setItem('coach_anotacoes', JSON.stringify(localNotes));
+        }
+      }
+    } catch (e) {}
+  }
+
   if (isSupabaseConfigured && supabase && userId) {
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('notes')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
-      if (!error && data) {
-        return data.map(n => ({
-          id: n.id,
-          title: n.title,
-          content: n.content,
-          category: n.category || null,
-          color: n.color,
-          date: n.date
-        }));
+      // Se falhar (ex: coluna created_at não existe no schema), tenta sem ordenação
+      if (error) {
+        const retry = await supabase
+          .from('notes')
+          .select('*')
+          .eq('user_id', userId);
+        if (!retry.error) {
+          data = retry.data;
+          error = null;
+        }
+      }
+
+      if (!error && Array.isArray(data)) {
+        if (data.length > 0) {
+          const remoteNotes = data.map(n => ({
+            id: String(n.id),
+            title: n.title || '',
+            content: n.content || '',
+            category: n.category || null,
+            color: n.color || '#fff9c4',
+            date: n.date || ''
+          }));
+
+          localStorage.setItem('coach_anotacoes', JSON.stringify(remoteNotes));
+          localStorage.setItem('coach_anotacoes_backup', JSON.stringify(remoteNotes));
+          return remoteNotes;
+        } else {
+          // Se o banco remoto retornou vazio (0 notas):
+          // Se o usuário já possui notas locais, NÃO as apague! Sincronize-as com a nuvem!
+          if (localNotes.length > 0) {
+            syncUserNotes(userId, localNotes).catch(() => {});
+            return localNotes;
+          }
+          return [];
+        }
       }
     } catch (err) {
-      console.warn('Erro ao carregar notas do Supabase:', err);
+      console.warn('Erro ao carregar notas do Supabase, usando localStorage:', err);
     }
   }
 
-  const saved = localStorage.getItem('coach_anotacoes');
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      return [];
-    }
-  }
-  return [];
+  return localNotes;
 }
 
 export async function syncUserNotes(userId, notes) {
+  if (!Array.isArray(notes)) return;
+
   localStorage.setItem('coach_anotacoes', JSON.stringify(notes));
+  if (notes.length > 0) {
+    localStorage.setItem('coach_anotacoes_backup', JSON.stringify(notes));
+  }
 
   if (isSupabaseConfigured && supabase && userId) {
     try {
@@ -267,11 +341,11 @@ export async function syncUserNotes(userId, notes) {
         const fullPayload = notes.map(n => ({
           id: String(n.id),
           user_id: userId,
-          title: n.title,
-          content: n.content,
+          title: n.title || '',
+          content: n.content || '',
           category: n.category || null,
           color: n.color || '#fff9c4',
-          date: n.date
+          date: n.date || ''
         }));
 
         const { error: insertError } = await supabase.from('notes').insert(fullPayload);
@@ -280,10 +354,10 @@ export async function syncUserNotes(userId, notes) {
           const basicPayload = notes.map(n => ({
             id: String(n.id),
             user_id: userId,
-            title: n.title,
-            content: n.content,
+            title: n.title || '',
+            content: n.content || '',
             color: n.color || '#fff9c4',
-            date: n.date
+            date: n.date || ''
           }));
           await supabase.from('notes').insert(basicPayload);
         }

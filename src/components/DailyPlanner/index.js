@@ -161,9 +161,6 @@ function DailyPlanner({
     }
   }, [tasks, user, isTasksLoaded]);
 
-  useEffect(() => {
-    localStorage.setItem('custom_task_templates', JSON.stringify(templates));
-  }, [templates]);
 
   const handlePrevDay = () => {
     const [y, m, d] = selectedDate.split('-').map(Number);

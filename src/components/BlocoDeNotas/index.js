@@ -7,13 +7,18 @@ import './styles.css';
 
 function BlocoDeNotas({ onClose, user }) {
   const [notes, setNotes] = useState(() => {
-    const saved = localStorage.getItem('coach_anotacoes');
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('coach_anotacoes');
+      if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.length > 0) return parsed;
-      } catch (e) {}
-    }
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+      const backup = localStorage.getItem('coach_anotacoes_backup');
+      if (backup) {
+        const parsedBackup = JSON.parse(backup);
+        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) return parsedBackup;
+      }
+    } catch (e) {}
     return [
       {
         id: '1',
