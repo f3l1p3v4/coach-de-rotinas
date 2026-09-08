@@ -203,6 +203,7 @@ function DailyPlanner({
             period: item.period || 'Manhã',
             completed: false,
             subtasks: item.subtasks || [],
+            color: item.color || null,
             date: selectedDate
           };
           setTasks(prev => sortTasksChronologically([...prev, newTask]));

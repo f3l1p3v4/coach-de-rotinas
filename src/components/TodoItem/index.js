@@ -31,7 +31,10 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
         {...attributes} 
         {...listeners}
       >
-        <div className="todo-item">
+        <div 
+          className="todo-item"
+          style={task.color ? { borderLeft: `5px solid ${task.color}` } : undefined}
+        >
           <div className="task-wrapper">
             <TodoCheckbox completed={task.completed} onToggle={() => onToggle(task.id)} />
             <TodoTask task={task} onOpenDetails={onOpenDetails} />

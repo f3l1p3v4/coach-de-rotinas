@@ -282,6 +282,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   const handleAddEventToTasks = (evt, e) => {
     if (e) e.stopPropagation();
     if (onAddTaskFromCalendar && evt) {
+      const eventColor = evt.color || getEventColor(evt);
       onAddTaskFromCalendar({
         text: evt.title,
         emoji: evt.emoji || '📅',
@@ -289,6 +290,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
         time: detailTime,
         period: detailPeriod,
         subtasks: detailSubtasks,
+        color: eventColor,
         date: selectedDate || evt.date || getTodayStr()
       });
     }
@@ -296,6 +298,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
 
   const handleDragStart = (evt, e) => {
     const { time, period } = parseTimeAndPeriod(evt.time, evt.period);
+    const eventColor = evt.color || getEventColor(evt);
     const payload = JSON.stringify({
       text: evt.title,
       emoji: evt.emoji || '📅',
@@ -303,6 +306,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
       time: time,
       period: period,
       subtasks: [],
+      color: eventColor,
       date: selectedDate || getTodayStr()
     });
     e.dataTransfer.setData('application/json', payload);

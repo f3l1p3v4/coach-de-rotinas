@@ -138,6 +138,22 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
         else if (hour >= 18) period = 'Noite';
       }
 
+      const GOOGLE_COLOR_MAP = {
+        '1': '#a4bdfc',
+        '2': '#7ae7bf',
+        '3': '#dbadff',
+        '4': '#ff887c',
+        '5': '#fbd75b',
+        '6': '#ffb878',
+        '7': '#46d6db',
+        '8': '#e1e1e1',
+        '9': '#5484ed',
+        '10': '#51b749',
+        '11': '#dc2127'
+      };
+
+      const eventColor = item.colorId ? GOOGLE_COLOR_MAP[item.colorId] : null;
+
       return {
         id: item.id,
         title: item.summary || 'Sem Título',
@@ -145,6 +161,7 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
         date: dateStr,
         time: timeStr,
         period,
+        color: eventColor,
         description: item.description || '',
         htmlLink: item.htmlLink
       };
