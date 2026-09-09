@@ -336,14 +336,18 @@ export async function loadUserNotes(userId) {
 
       if (!error && Array.isArray(data)) {
         if (data.length > 0) {
-          const remoteNotes = data.map(n => ({
-            id: String(n.id),
-            title: n.title || '',
-            content: n.content || '',
-            category: n.category || null,
-            color: n.color || '#fff9c4',
-            date: n.date || ''
-          }));
+          const remoteNotes = data.map(n => {
+            const isChecklist = n.type === 'checklist' || (n.content && /^[-*]\s*\[[ xX]\]/m.test(n.content));
+            return {
+              id: String(n.id),
+              title: n.title || '',
+              content: n.content || '',
+              category: n.category || null,
+              color: n.color || '#fff9c4',
+              date: n.date || '',
+              type: n.type || (isChecklist ? 'checklist' : 'text')
+            };
+          });
 
           localStorage.setItem('coach_anotacoes', JSON.stringify(remoteNotes));
           localStorage.setItem('coach_anotacoes_backup', JSON.stringify(remoteNotes));
@@ -379,6 +383,7 @@ export async function syncUserNotes(userId, notes) {
       await supabase.from('notes').delete().eq('user_id', userId);
 
       if (notes.length > 0) {
+        // 1. Tenta payload completo com type e category
         const fullPayload = notes.map(n => ({
           id: String(n.id),
           user_id: userId,
@@ -386,21 +391,36 @@ export async function syncUserNotes(userId, notes) {
           content: n.content || '',
           category: n.category || null,
           color: n.color || '#fff9c4',
-          date: n.date || ''
+          date: n.date || '',
+          type: n.type || 'text'
         }));
 
         const { error: insertError } = await supabase.from('notes').insert(fullPayload);
         if (insertError) {
-          console.warn('Falha ao sincronizar notas com category, tentando payload básico:', insertError);
-          const basicPayload = notes.map(n => ({
+          console.warn('Tentando payload de notas sem a coluna type:', insertError);
+          // 2. Fallback sem type (caso a coluna type não exista no Supabase)
+          const fallbackPayload = notes.map(n => ({
             id: String(n.id),
             user_id: userId,
             title: n.title || '',
             content: n.content || '',
+            category: n.category || null,
             color: n.color || '#fff9c4',
             date: n.date || ''
           }));
-          await supabase.from('notes').insert(basicPayload);
+          const { error: fallbackError } = await supabase.from('notes').insert(fallbackPayload);
+          if (fallbackError) {
+            console.warn('Tentando payload mínimo de notas:', fallbackError);
+            const basicPayload = notes.map(n => ({
+              id: String(n.id),
+              user_id: userId,
+              title: n.title || '',
+              content: n.content || '',
+              color: n.color || '#fff9c4',
+              date: n.date || ''
+            }));
+            await supabase.from('notes').insert(basicPayload);
+          }
         }
       }
     } catch (err) {

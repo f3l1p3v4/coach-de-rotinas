@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  PlusCircle, Pencil, Trash, XCircle, CheckCircle, ArrowLeft, Funnel, 
+  Pencil, Trash, XCircle, CheckCircle, ArrowLeft, Funnel, 
   Circle, Plus, ListChecks, Article 
 } from '@phosphor-icons/react';
 import { loadUserNotes, syncUserNotes } from '../../services/supabaseService';
 import { getStoredCategories, getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
+
+// Verifica se o conteúdo possui marcas explícitas de checklist (- [x], - [ ], [x], etc.)
+export function isChecklistContent(content) {
+  if (!content) return false;
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length === 0) return false;
+  return lines.some(line => /^[-*]?\s*\[[ xX]\]/.test(line) || /^~~.*~~$/.test(line));
+}
+
+// Determina se uma nota deve ser tratada como checklist ou como anotação de texto livre
+export function isNoteChecklist(note) {
+  if (!note) return false;
+  if (note.type === 'checklist') return true;
+  if (note.type === 'text') return false;
+  // Para notas antigas/sem tipo explícito: apenas se tiver marcas explícitas de checklist
+  return isChecklistContent(note.content);
+}
 
 // Converte texto em array de itens de checklist
 export function parseContentToItems(content) {
@@ -32,7 +49,7 @@ export function parseContentToItems(content) {
       .trim();
 
     items.push({
-      id: `it_${idx}_${Date.now()}`,
+      id: `it_${idx}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
       text: text || trimmed,
       completed: isDone
     });
@@ -41,13 +58,19 @@ export function parseContentToItems(content) {
   return items;
 }
 
-// Converte array de itens de volta para string estruturada
+// Converte array de itens de volta para string estruturada de checklist
 export function serializeItemsToContent(items) {
   if (!items || items.length === 0) return '';
   return items.map(item => {
     const check = item.completed ? '[x]' : '[ ]';
     return `- ${check} ${item.text}`;
   }).join('\n');
+}
+
+// Converte array de itens em texto livre puro (sem colchetes nem traços)
+export function serializeItemsToPlainText(items) {
+  if (!items || items.length === 0) return '';
+  return items.map(item => item.text).join('\n');
 }
 
 function BlocoDeNotas({ onClose, user }) {
@@ -70,7 +93,8 @@ function BlocoDeNotas({ onClose, user }) {
         title: 'Bem-vindo ao seu Bloco de Notas! 📝',
         content: 'Use este espaço para anotações rápidas, ideias do dia, lembretes de rotina ou pensamentos importantes.',
         date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-        color: '#fff9c4'
+        color: '#fff9c4',
+        type: 'text'
       }
     ];
   });
@@ -84,7 +108,7 @@ function BlocoDeNotas({ onClose, user }) {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
   const [selectedColor, setSelectedColor] = useState('#fff9c4');
-  const [editMode, setEditMode] = useState('list'); // 'list' ou 'text'
+  const [editMode, setEditMode] = useState('text'); // 'text' (Anotação simples) ou 'list' (Checklist com risco)
   const [items, setItems] = useState([]);
   const [newItemText, setNewItemText] = useState('');
 
@@ -111,7 +135,7 @@ function BlocoDeNotas({ onClose, user }) {
     }
   }, [notes, user, isLoaded]);
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = (initialMode = 'text') => {
     setActiveNote(null);
     setTitle('');
     setContent('');
@@ -119,18 +143,20 @@ function BlocoDeNotas({ onClose, user }) {
     setSelectedColor('#fff9c4');
     setItems([]);
     setNewItemText('');
-    setEditMode('list');
+    setEditMode(initialMode);
     setIsEditing(true);
   };
 
   const handleOpenEdit = (note) => {
     setActiveNote(note);
     setTitle(note.title);
-    setContent(note.content || '');
-    const parsed = parseContentToItems(note.content);
+    const isCheck = isNoteChecklist(note);
+    const noteContent = note.content || '';
+    setContent(noteContent);
+    const parsed = parseContentToItems(noteContent);
     setItems(parsed);
     setNewItemText('');
-    setEditMode(parsed.length > 0 ? 'list' : 'text');
+    setEditMode(isCheck ? 'list' : 'text');
     setCategory(note.category || '');
     setSelectedColor(note.color || '#fff9c4');
     setIsEditing(true);
@@ -170,14 +196,16 @@ function BlocoDeNotas({ onClose, user }) {
   };
 
   const handleSwitchToList = () => {
+    if (editMode === 'list') return;
     const parsed = parseContentToItems(content);
     setItems(parsed);
     setEditMode('list');
   };
 
   const handleSwitchToText = () => {
+    if (editMode === 'text') return;
     if (items.length > 0) {
-      setContent(serializeItemsToContent(items));
+      setContent(serializeItemsToPlainText(items));
     }
     setEditMode('text');
   };
@@ -193,14 +221,16 @@ function BlocoDeNotas({ onClose, user }) {
       }
       return {
         ...note,
-        content: serializeItemsToContent(noteItems)
+        content: serializeItemsToContent(noteItems),
+        type: 'checklist'
       };
     }));
   };
 
   const handleSave = (e) => {
     e.preventDefault();
-    const finalContent = editMode === 'list' 
+    const isList = editMode === 'list';
+    const finalContent = isList 
       ? serializeItemsToContent(items) 
       : content.trim();
 
@@ -209,6 +239,7 @@ function BlocoDeNotas({ onClose, user }) {
       return;
     }
 
+    const noteType = isList ? 'checklist' : 'text';
     const nowFormatted = new Date().toLocaleDateString('pt-BR', { 
       day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
     });
@@ -217,21 +248,23 @@ function BlocoDeNotas({ onClose, user }) {
       // Editar
       setNotes(prev => prev.map(n => n.id === activeNote.id ? {
         ...n,
-        title: title.trim() || 'Sem Título',
+        title: title.trim() || (isList ? 'Lista de Itens' : 'Sem Título'),
         content: finalContent,
         category: category || null,
         color: selectedColor,
-        date: nowFormatted
+        date: nowFormatted,
+        type: noteType
       } : n));
     } else {
       // Criar nova
       const newNote = {
         id: Date.now().toString(),
-        title: title.trim() || 'Sem Título',
+        title: title.trim() || (isList ? 'Lista de Itens' : 'Sem Título'),
         content: finalContent,
         category: category || null,
         color: selectedColor,
-        date: nowFormatted
+        date: nowFormatted,
+        type: noteType
       };
       setNotes(prev => [newNote, ...prev]);
     }
@@ -306,10 +339,26 @@ function BlocoDeNotas({ onClose, user }) {
 
         {!isEditing ? (
           <div className="notepad-list-view">
-            <button className="new-note-btn" onClick={handleOpenCreate}>
-              <PlusCircle size={20} />
-              <span>Nova Anotação</span>
-            </button>
+            <div className="new-note-actions-row">
+              <button 
+                type="button" 
+                className="new-note-action-btn text-type" 
+                onClick={() => handleOpenCreate('text')}
+                title="Criar anotação simples de texto livre (como antes)"
+              >
+                <Article size={18} weight="bold" />
+                <span>Nova Anotação</span>
+              </button>
+              <button 
+                type="button" 
+                className="new-note-action-btn list-type" 
+                onClick={() => handleOpenCreate('list')}
+                title="Criar lista de itens com risco de conclusão"
+              >
+                <ListChecks size={18} weight="bold" />
+                <span>Nova Lista (Risco)</span>
+              </button>
+            </div>
 
             <div className="notepad-filter-row">
               <label htmlFor="notepad-category-filter" className="notepad-filter-label">
@@ -344,18 +393,29 @@ function BlocoDeNotas({ onClose, user }) {
                     <div className="note-paper-top">
                       <div className="note-title-wrapper">
                         <h4 className="note-title">{note.title}</h4>
-                        {note.category && (
-                          <span 
-                            className="note-category-tag"
-                            style={{
-                              backgroundColor: `${getCategoryColor(note.category)}24`,
-                              color: getCategoryColor(note.category),
-                              borderColor: `${getCategoryColor(note.category)}55`
-                            }}
-                          >
-                            {note.category}
-                          </span>
-                        )}
+                        <div className="note-badges-row">
+                          {isNoteChecklist(note) ? (
+                            <span className="note-type-badge list-badge" title="Lista com risco de conclusão">
+                              <ListChecks size={12} weight="bold" /> Lista
+                            </span>
+                          ) : (
+                            <span className="note-type-badge text-badge" title="Anotação de texto livre">
+                              <Article size={12} weight="bold" /> Anotação
+                            </span>
+                          )}
+                          {note.category && (
+                            <span 
+                              className="note-category-tag"
+                              style={{
+                                backgroundColor: `${getCategoryColor(note.category)}24`,
+                                color: getCategoryColor(note.category),
+                                borderColor: `${getCategoryColor(note.category)}55`
+                              }}
+                            >
+                              {note.category}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="note-actions" onClick={e => e.stopPropagation()}>
                         <button onClick={() => handleOpenEdit(note)} className="icon-btn edit" title="Editar anotação">
@@ -366,32 +426,38 @@ function BlocoDeNotas({ onClose, user }) {
                         </button>
                       </div>
                     </div>
-                    {(() => {
-                      const noteItems = parseContentToItems(note.content);
-                      if (noteItems.length > 0) {
-                        return (
-                          <div className="note-card-items-list" onClick={e => e.stopPropagation()}>
-                            {noteItems.slice(0, 6).map((item, idx) => (
-                              <div 
-                                key={idx} 
-                                className={`note-card-item-row ${item.completed ? 'completed' : ''}`}
-                                onClick={(e) => handleToggleNoteItemInCard(e, note.id, idx)}
-                                title={item.completed ? 'Clique para desmarcar' : 'Clique para marcar como feito'}
-                              >
-                                <span className="note-item-check-indicator">
-                                  {item.completed ? '✓' : '–'}
-                                </span>
-                                <span className="note-item-text">{item.text}</span>
-                              </div>
-                            ))}
-                            {noteItems.length > 6 && (
-                              <span className="note-card-more-items">+{noteItems.length - 6} itens...</span>
-                            )}
-                          </div>
-                        );
-                      }
-                      return <p className="note-preview">{note.content}</p>;
-                    })()}
+
+                    {isNoteChecklist(note) ? (
+                      (() => {
+                        const noteItems = parseContentToItems(note.content);
+                        if (noteItems.length > 0) {
+                          return (
+                            <div className="note-card-items-list" onClick={e => e.stopPropagation()}>
+                              {noteItems.slice(0, 6).map((item, idx) => (
+                                <div 
+                                  key={idx} 
+                                  className={`note-card-item-row ${item.completed ? 'completed' : ''}`}
+                                  onClick={(e) => handleToggleNoteItemInCard(e, note.id, idx)}
+                                  title={item.completed ? 'Clique para desmarcar' : 'Clique para marcar como feito'}
+                                >
+                                  <span className="note-item-check-indicator">
+                                    {item.completed ? '✓' : '–'}
+                                  </span>
+                                  <span className="note-item-text">{item.text}</span>
+                                </div>
+                              ))}
+                              {noteItems.length > 6 && (
+                                <span className="note-card-more-items">+{noteItems.length - 6} itens...</span>
+                              )}
+                            </div>
+                          );
+                        }
+                        return <p className="note-preview-empty">Nenhum item na lista</p>;
+                      })()
+                    ) : (
+                      <p className="note-preview">{note.content}</p>
+                    )}
+
                     <span className="note-date">{note.date}</span>
                   </div>
                 ))
@@ -409,7 +475,7 @@ function BlocoDeNotas({ onClose, user }) {
               ) : (
                 <div className="empty-notes">
                   <p>Sua caderneta está vazia.</p>
-                  <p className="empty-sub">Clique acima para escrever sua primeira anotação!</p>
+                  <p className="empty-sub">Escolha acima para criar sua primeira anotação ou lista!</p>
                 </div>
               )}
             </div>
@@ -421,10 +487,35 @@ function BlocoDeNotas({ onClose, user }) {
                 type="text" 
                 value={title} 
                 onChange={e => setTitle(e.target.value)} 
-                placeholder="Título da anotação..." 
+                placeholder={editMode === 'list' ? 'Título da lista de tarefas...' : 'Título da anotação...'} 
                 className="note-title-input"
                 autoFocus
               />
+            </div>
+
+            {/* Seletor de 2 Opções de Bloco */}
+            <div className="note-type-selector-banner">
+              <span className="color-label">Tipo:</span>
+              <div className="note-type-pills">
+                <button
+                  type="button"
+                  className={`note-type-pill ${editMode === 'text' ? 'active' : ''}`}
+                  onClick={handleSwitchToText}
+                  title="Anotação simples de texto livre (como antes)"
+                >
+                  <Article size={16} weight={editMode === 'text' ? 'fill' : 'regular'} />
+                  <span>📝 Anotação de Texto</span>
+                </button>
+                <button
+                  type="button"
+                  className={`note-type-pill ${editMode === 'list' ? 'active' : ''}`}
+                  onClick={handleSwitchToList}
+                  title="Lista com itens e risco ao marcar como feito"
+                >
+                  <ListChecks size={16} weight={editMode === 'list' ? 'fill' : 'regular'} />
+                  <span>📋 Lista com Risco</span>
+                </button>
+              </div>
             </div>
 
             <div className="note-category-row">
@@ -455,30 +546,6 @@ function BlocoDeNotas({ onClose, user }) {
                   title={c.label}
                 />
               ))}
-            </div>
-
-            <div className="note-mode-toggle-row">
-              <span className="color-label">Formato:</span>
-              <div className="note-mode-buttons">
-                <button
-                  type="button"
-                  className={`note-mode-btn ${editMode === 'list' ? 'active' : ''}`}
-                  onClick={handleSwitchToList}
-                  title="Modo Lista de Itens (Checklist com risco de conclusão)"
-                >
-                  <ListChecks size={16} />
-                  <span>Lista de Itens</span>
-                </button>
-                <button
-                  type="button"
-                  className={`note-mode-btn ${editMode === 'text' ? 'active' : ''}`}
-                  onClick={handleSwitchToText}
-                  title="Modo Texto Livre"
-                >
-                  <Article size={16} />
-                  <span>Texto Livre</span>
-                </button>
-              </div>
             </div>
 
             {editMode === 'list' ? (
