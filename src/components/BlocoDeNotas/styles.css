@@ -497,3 +497,245 @@
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.12);
 }
 
+/* --- Checklist e Itens Interativos no Bloco de Notas --- */
+
+/* Lista de itens no card do Post-it */
+.note-card-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0.35rem 0 0.5rem 0;
+}
+
+.note-card-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.05rem;
+  font-family: 'Caveat', cursive;
+  color: #222222;
+  line-height: 1.25;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.note-card-item-row:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.note-item-check-indicator {
+  font-weight: 700;
+  color: #666666;
+  width: 14px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.note-card-item-row.completed .note-item-check-indicator {
+  color: #16a34a;
+}
+
+.note-card-item-row.completed .note-item-text {
+  text-decoration: line-through;
+  opacity: 0.55;
+  color: #666666;
+}
+
+.note-card-more-items {
+  font-size: 0.85rem;
+  color: #666666;
+  font-family: 'Caveat', cursive;
+  font-style: italic;
+  padding-left: 20px;
+}
+
+/* Alternância de Modo no Formulário */
+.note-mode-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.note-mode-buttons {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px;
+  border-radius: 6px;
+}
+
+.note-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #444444;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.note-mode-btn:hover {
+  color: #111111;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.note-mode-btn.active {
+  background: #1a1a1a;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Papel Pautado para Lista de Itens */
+.lined-paper-items-wrapper {
+  width: 100%;
+  min-height: 180px;
+  background: repeating-linear-gradient(
+    transparent,
+    transparent 27px,
+    #d4ce80 28px
+  );
+  padding: 2px 4px;
+  box-sizing: border-box;
+}
+
+.notepad-items-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.notepad-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.item-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555555;
+  flex-shrink: 0;
+  transition: transform 0.15s, color 0.15s;
+}
+
+.item-toggle-btn:hover {
+  transform: scale(1.15);
+}
+
+.item-icon-checked {
+  color: #16a34a;
+}
+
+.item-icon-unchecked {
+  color: #666666;
+}
+
+.item-text-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1.2rem;
+  font-family: 'Caveat', cursive;
+  color: #1a1a1a;
+  padding: 0;
+  height: 26px;
+  line-height: 28px;
+}
+
+.item-text-input.completed {
+  text-decoration: line-through;
+  opacity: 0.55;
+  color: #666666;
+}
+
+.item-delete-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  color: #888888;
+  opacity: 0;
+  border-radius: 4px;
+  transition: opacity 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.notepad-item-row:hover .item-delete-btn {
+  opacity: 1;
+}
+
+.item-delete-btn:hover {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+/* Linha de Adicionar Novo Item */
+.notepad-add-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.add-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777777;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.add-item-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 1.15rem;
+  font-family: 'Caveat', cursive;
+  color: #1a1a1a;
+  padding: 0;
+  height: 26px;
+}
+
+.add-item-input::placeholder {
+  color: #777777;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.add-item-confirm-btn {
+  background: #1a1a1a;
+  color: #ffffff;
+  border: none;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: 'Caveat', cursive;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.add-item-confirm-btn:hover {
+  opacity: 0.9;
+}
+

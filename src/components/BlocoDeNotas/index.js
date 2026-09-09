@@ -1,9 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Pencil, Trash, XCircle, CheckCircle, ArrowLeft, Funnel } from '@phosphor-icons/react';
+import { 
+  PlusCircle, Pencil, Trash, XCircle, CheckCircle, ArrowLeft, Funnel, 
+  Circle, Plus, ListChecks, Article 
+} from '@phosphor-icons/react';
 import { loadUserNotes, syncUserNotes } from '../../services/supabaseService';
 import { getStoredCategories, getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
+
+// Converte texto em array de itens de checklist
+export function parseContentToItems(content) {
+  if (!content) return [];
+  const lines = content.split('\n');
+  const items = [];
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    // Reconhece marcações de concluído (- [x], [x], - ~~texto~~, etc.)
+    const isDone = /^[-*]\s*\[[xX]\]/.test(trimmed) || 
+                   /^\[[xX]\]/.test(trimmed) || 
+                   /^[-*]\s*~~.*~~$/.test(trimmed) ||
+                   /^~~.*~~$/.test(trimmed);
+
+    let text = trimmed
+      .replace(/^[-*]\s*\[[ xX]\]\s*/, '')
+      .replace(/^\[[ xX]\]\s*/, '')
+      .replace(/^[-*]\s*/, '')
+      .replace(/^~~(.*)~~$/, '$1')
+      .trim();
+
+    items.push({
+      id: `it_${idx}_${Date.now()}`,
+      text: text || trimmed,
+      completed: isDone
+    });
+  });
+
+  return items;
+}
+
+// Converte array de itens de volta para string estruturada
+export function serializeItemsToContent(items) {
+  if (!items || items.length === 0) return '';
+  return items.map(item => {
+    const check = item.completed ? '[x]' : '[ ]';
+    return `- ${check} ${item.text}`;
+  }).join('\n');
+}
 
 function BlocoDeNotas({ onClose, user }) {
   const [notes, setNotes] = useState(() => {
@@ -39,6 +84,9 @@ function BlocoDeNotas({ onClose, user }) {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
   const [selectedColor, setSelectedColor] = useState('#fff9c4');
+  const [editMode, setEditMode] = useState('list'); // 'list' ou 'text'
+  const [items, setItems] = useState([]);
+  const [newItemText, setNewItemText] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -69,21 +117,94 @@ function BlocoDeNotas({ onClose, user }) {
     setContent('');
     setCategory('');
     setSelectedColor('#fff9c4');
+    setItems([]);
+    setNewItemText('');
+    setEditMode('list');
     setIsEditing(true);
   };
 
   const handleOpenEdit = (note) => {
     setActiveNote(note);
     setTitle(note.title);
-    setContent(note.content);
+    setContent(note.content || '');
+    const parsed = parseContentToItems(note.content);
+    setItems(parsed);
+    setNewItemText('');
+    setEditMode(parsed.length > 0 ? 'list' : 'text');
     setCategory(note.category || '');
     setSelectedColor(note.color || '#fff9c4');
     setIsEditing(true);
   };
 
+  // Manipulação de itens no modo lista
+  const handleAddItem = (e) => {
+    if (e) e.preventDefault();
+    if (!newItemText.trim()) return;
+    const newItem = {
+      id: `it_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      text: newItemText.trim(),
+      completed: false
+    };
+    const updated = [...items, newItem];
+    setItems(updated);
+    setContent(serializeItemsToContent(updated));
+    setNewItemText('');
+  };
+
+  const handleToggleItem = (itemId) => {
+    const updated = items.map(it => it.id === itemId ? { ...it, completed: !it.completed } : it);
+    setItems(updated);
+    setContent(serializeItemsToContent(updated));
+  };
+
+  const handleDeleteItem = (itemId) => {
+    const updated = items.filter(it => it.id !== itemId);
+    setItems(updated);
+    setContent(serializeItemsToContent(updated));
+  };
+
+  const handleUpdateItemText = (itemId, newText) => {
+    const updated = items.map(it => it.id === itemId ? { ...it, text: newText } : it);
+    setItems(updated);
+    setContent(serializeItemsToContent(updated));
+  };
+
+  const handleSwitchToList = () => {
+    const parsed = parseContentToItems(content);
+    setItems(parsed);
+    setEditMode('list');
+  };
+
+  const handleSwitchToText = () => {
+    if (items.length > 0) {
+      setContent(serializeItemsToContent(items));
+    }
+    setEditMode('text');
+  };
+
+  // Alternar conclusão de item diretamente no card da lista
+  const handleToggleNoteItemInCard = (e, noteId, itemIndex) => {
+    e.stopPropagation();
+    setNotes(prev => prev.map(note => {
+      if (note.id !== noteId) return note;
+      const noteItems = parseContentToItems(note.content);
+      if (noteItems[itemIndex]) {
+        noteItems[itemIndex].completed = !noteItems[itemIndex].completed;
+      }
+      return {
+        ...note,
+        content: serializeItemsToContent(noteItems)
+      };
+    }));
+  };
+
   const handleSave = (e) => {
     e.preventDefault();
-    if (!title.trim() && !content.trim()) {
+    const finalContent = editMode === 'list' 
+      ? serializeItemsToContent(items) 
+      : content.trim();
+
+    if (!title.trim() && !finalContent.trim()) {
       alert('Escreva pelo menos um título ou conteúdo para a nota.');
       return;
     }
@@ -97,7 +218,7 @@ function BlocoDeNotas({ onClose, user }) {
       setNotes(prev => prev.map(n => n.id === activeNote.id ? {
         ...n,
         title: title.trim() || 'Sem Título',
-        content: content.trim(),
+        content: finalContent,
         category: category || null,
         color: selectedColor,
         date: nowFormatted
@@ -107,7 +228,7 @@ function BlocoDeNotas({ onClose, user }) {
       const newNote = {
         id: Date.now().toString(),
         title: title.trim() || 'Sem Título',
-        content: content.trim(),
+        content: finalContent,
         category: category || null,
         color: selectedColor,
         date: nowFormatted
@@ -245,7 +366,32 @@ function BlocoDeNotas({ onClose, user }) {
                         </button>
                       </div>
                     </div>
-                    <p className="note-preview">{note.content}</p>
+                    {(() => {
+                      const noteItems = parseContentToItems(note.content);
+                      if (noteItems.length > 0) {
+                        return (
+                          <div className="note-card-items-list" onClick={e => e.stopPropagation()}>
+                            {noteItems.slice(0, 6).map((item, idx) => (
+                              <div 
+                                key={idx} 
+                                className={`note-card-item-row ${item.completed ? 'completed' : ''}`}
+                                onClick={(e) => handleToggleNoteItemInCard(e, note.id, idx)}
+                                title={item.completed ? 'Clique para desmarcar' : 'Clique para marcar como feito'}
+                              >
+                                <span className="note-item-check-indicator">
+                                  {item.completed ? '✓' : '–'}
+                                </span>
+                                <span className="note-item-text">{item.text}</span>
+                              </div>
+                            ))}
+                            {noteItems.length > 6 && (
+                              <span className="note-card-more-items">+{noteItems.length - 6} itens...</span>
+                            )}
+                          </div>
+                        );
+                      }
+                      return <p className="note-preview">{note.content}</p>;
+                    })()}
                     <span className="note-date">{note.date}</span>
                   </div>
                 ))
@@ -311,14 +457,104 @@ function BlocoDeNotas({ onClose, user }) {
               ))}
             </div>
 
-            <div className="lined-paper-textarea-wrapper">
-              <textarea 
-                value={content} 
-                onChange={e => setContent(e.target.value)} 
-                placeholder="Escreva aqui suas notas..."
-                className="note-content-textarea"
-              />
+            <div className="note-mode-toggle-row">
+              <span className="color-label">Formato:</span>
+              <div className="note-mode-buttons">
+                <button
+                  type="button"
+                  className={`note-mode-btn ${editMode === 'list' ? 'active' : ''}`}
+                  onClick={handleSwitchToList}
+                  title="Modo Lista de Itens (Checklist com risco de conclusão)"
+                >
+                  <ListChecks size={16} />
+                  <span>Lista de Itens</span>
+                </button>
+                <button
+                  type="button"
+                  className={`note-mode-btn ${editMode === 'text' ? 'active' : ''}`}
+                  onClick={handleSwitchToText}
+                  title="Modo Texto Livre"
+                >
+                  <Article size={16} />
+                  <span>Texto Livre</span>
+                </button>
+              </div>
             </div>
+
+            {editMode === 'list' ? (
+              <div className="lined-paper-items-wrapper">
+                <div className="notepad-items-list">
+                  {items.map((item) => (
+                    <div key={item.id} className={`notepad-item-row ${item.completed ? 'completed' : ''}`}>
+                      <button
+                        type="button"
+                        className="item-toggle-btn"
+                        onClick={() => handleToggleItem(item.id)}
+                        title={item.completed ? 'Clique para desmarcar' : 'Marcar como feito (riscar)'}
+                      >
+                        {item.completed ? (
+                          <CheckCircle size={20} weight="fill" className="item-icon-checked" />
+                        ) : (
+                          <Circle size={20} className="item-icon-unchecked" />
+                        )}
+                      </button>
+                      <input
+                        type="text"
+                        value={item.text}
+                        onChange={(e) => handleUpdateItemText(item.id, e.target.value)}
+                        className={`item-text-input ${item.completed ? 'completed' : ''}`}
+                        placeholder="Item da anotação..."
+                      />
+                      <button
+                        type="button"
+                        className="item-delete-btn"
+                        onClick={() => handleDeleteItem(item.id)}
+                        title="Apagar este item"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Linha para adicionar novo item rápido */}
+                <div className="notepad-add-item-row">
+                  <span className="add-item-icon"><Plus size={18} /></span>
+                  <input
+                    type="text"
+                    value={newItemText}
+                    onChange={(e) => setNewItemText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddItem();
+                      }
+                    }}
+                    placeholder="Adicionar item... (Pressione Enter)"
+                    className="add-item-input"
+                  />
+                  {newItemText.trim() && (
+                    <button
+                      type="button"
+                      className="add-item-confirm-btn"
+                      onClick={handleAddItem}
+                      title="Adicionar à lista"
+                    >
+                      Adicionar
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="lined-paper-textarea-wrapper">
+                <textarea 
+                  value={content} 
+                  onChange={e => setContent(e.target.value)} 
+                  placeholder="Escreva aqui suas notas..."
+                  className="note-content-textarea"
+                />
+              </div>
+            )}
 
             <div className="form-actions-row">
               <button type="button" className="cancel-note-btn" onClick={() => setIsEditing(false)}>

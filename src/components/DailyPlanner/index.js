@@ -85,7 +85,14 @@ function DailyPlanner({
     if (savedTasks) {
       try {
         const parsed = JSON.parse(savedTasks);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    const backup = localStorage.getItem('daily_tasks_backup');
+    if (backup) {
+      try {
+        const parsedBackup = JSON.parse(backup);
+        if (Array.isArray(parsedBackup)) return parsedBackup;
       } catch (e) {}
     }
     return [];
@@ -142,7 +149,12 @@ function DailyPlanner({
       if (user?.id) {
         const initialTasks = await loadUserTasks(user.id);
         if (isMounted) {
-          setTasks(initialTasks);
+          setTasks(prev => {
+            if (Array.isArray(initialTasks) && initialTasks.length > 0) {
+              return initialTasks;
+            }
+            return (prev && prev.length > 0) ? prev : (initialTasks || []);
+          });
           setIsTasksLoaded(true);
           hasInitializedRef.current = true;
         }

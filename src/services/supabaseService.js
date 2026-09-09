@@ -16,15 +16,41 @@ const parseLocalTasks = () => {
 };
 
 export async function loadUserTasks(userId) {
-  const localTasks = parseLocalTasks();
+  let localTasks = parseLocalTasks();
+
+  // Se daily_tasks estiver vazio, verificar backup de emergência
+  if (localTasks.length === 0) {
+    try {
+      const backup = localStorage.getItem('daily_tasks_backup');
+      if (backup) {
+        const parsedBackup = JSON.parse(backup);
+        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
+          localTasks = parsedBackup;
+          localStorage.setItem('daily_tasks', JSON.stringify(localTasks));
+        }
+      }
+    } catch (e) {}
+  }
 
   if (isSupabaseConfigured && supabase && userId) {
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('tasks')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: true });
+
+      // Se falhar (ex: created_at não existe no schema da tabela tasks), tenta sem ordenação
+      if (error) {
+        const retry = await supabase
+          .from('tasks')
+          .select('*')
+          .eq('user_id', userId);
+        if (!retry.error) {
+          data = retry.data;
+          error = null;
+        }
+      }
 
       if (!error && Array.isArray(data)) {
         if (data.length > 0) {
@@ -49,19 +75,15 @@ export async function loadUserTasks(userId) {
           }));
 
           localStorage.setItem('daily_tasks', JSON.stringify(remoteTasks));
+          localStorage.setItem('daily_tasks_backup', JSON.stringify(remoteTasks));
           return remoteTasks;
         } else {
           // Se o banco remoto retornou vazio ([]):
-          // Se o usuário tem tarefas locais que ainda não foram sincronizadas (ex: primeiro login pós offline):
-          const hasSynced = localStorage.getItem('has_synced_user_tasks');
-          if (localTasks.length > 0 && !hasSynced) {
-            localStorage.setItem('has_synced_user_tasks', 'true');
+          // Se o usuário tem tarefas locais, NÃO APAGUE! Salve-as no Supabase!
+          if (localTasks.length > 0) {
             syncUserTasks(userId, localTasks).catch(() => {});
             return localTasks;
           }
-
-          // Caso contrário, a lista está legitimamente vazia (ex: usuário apagou tudo)
-          localStorage.setItem('daily_tasks', JSON.stringify([]));
           return [];
         }
       }
@@ -78,19 +100,23 @@ export async function syncUserTasks(userId, tasks) {
 
   // 1. Salvar no localStorage sempre para cache offline
   localStorage.setItem('daily_tasks', JSON.stringify(tasks));
-  localStorage.setItem('has_synced_user_tasks', 'true');
-
-  // Limpar resíduo de backup antigo se existir
-  localStorage.removeItem('daily_tasks_backup');
+  if (tasks.length > 0) {
+    localStorage.setItem('daily_tasks_backup', JSON.stringify(tasks));
+  }
 
   // 2. Sincronizar com Supabase se configurado
   if (isSupabaseConfigured && supabase && userId) {
     try {
-      // Deletar tarefas anteriores para atualizar estado completo
-      await supabase.from('tasks').delete().eq('user_id', userId);
+      const { error: deleteError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        console.warn('Aviso ao deletar tarefas anteriores no Supabase:', deleteError);
+      }
 
       if (tasks.length > 0) {
-        // Tentar payload completo com todos os campos
         const fullPayload = tasks.map(t => ({
           id: String(t.id),
           user_id: userId,
@@ -113,22 +139,37 @@ export async function syncUserTasks(userId, tasks) {
 
         const { error: insertError } = await supabase.from('tasks').insert(fullPayload);
 
-        // Se falhar (ex: colunas extras não existem no schema do banco)
-        // faz fallback seguro para o schema básico sem quebrar
+        // Se falhar com payload completo, tenta payload intermediário seguro
         if (insertError) {
-          console.warn('Falha com payload completo, tentando schema básico:', insertError);
-          const basicPayload = tasks.map(t => ({
+          console.warn('Falha com payload completo de tarefas, tentando payload intermediário:', insertError);
+          const fallbackPayload = tasks.map(t => ({
             id: String(t.id),
             user_id: userId,
             text: t.text || '',
             emoji: t.emoji || '📝',
+            description: t.description || '',
             time: t.time || '',
             period: t.period || 'Manhã',
+            category: t.category || null,
+            color: t.color || null,
+            date: t.date || null,
             status: t.completed ? 'completed' : (t.status || 'pending'),
-            completed_at: t.completedAt || null,
-            subtasks: t.subtasks || []
+            completed_at: t.completedAt || null
           }));
-          await supabase.from('tasks').insert(basicPayload);
+          const { error: fallbackError } = await supabase.from('tasks').insert(fallbackPayload);
+          if (fallbackError) {
+            console.warn('Tentando payload mínimo de tarefas:', fallbackError);
+            const basicPayload = tasks.map(t => ({
+              id: String(t.id),
+              user_id: userId,
+              text: t.text || '',
+              emoji: t.emoji || '📝',
+              time: t.time || '',
+              period: t.period || 'Manhã',
+              status: t.completed ? 'completed' : (t.status || 'pending')
+            }));
+            await supabase.from('tasks').insert(basicPayload);
+          }
         }
       }
     } catch (err) {
