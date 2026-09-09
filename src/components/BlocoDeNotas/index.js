@@ -353,21 +353,12 @@ function BlocoDeNotas({ onClose, user }) {
             <div className="new-note-actions-row">
               <button 
                 type="button" 
-                className="new-note-action-btn text-type" 
+                className="new-note-action-btn primary-add-btn" 
                 onClick={() => handleOpenCreate('text')}
-                title="Criar anotação simples de texto livre (como antes)"
+                title="Adicionar nova nota"
               >
-                <Article size={18} weight="bold" />
-                <span>Nova Anotação</span>
-              </button>
-              <button 
-                type="button" 
-                className="new-note-action-btn list-type" 
-                onClick={() => handleOpenCreate('list')}
-                title="Criar lista de itens com risco de conclusão"
-              >
-                <ListChecks size={18} weight="bold" />
-                <span>Nova Lista (Risco)</span>
+                <Plus size={20} weight="bold" />
+                <span>Adicionar Nota</span>
               </button>
             </div>
 
@@ -486,7 +477,7 @@ function BlocoDeNotas({ onClose, user }) {
               ) : (
                 <div className="empty-notes">
                   <p>Sua caderneta está vazia.</p>
-                  <p className="empty-sub">Escolha acima para criar sua primeira anotação ou lista!</p>
+                  <p className="empty-sub">Clique em "Adicionar Nota" acima para criar sua primeira nota!</p>
                 </div>
               )}
             </div>

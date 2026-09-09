@@ -225,7 +225,9 @@ function DailyPlanner({
     const taskWithDate = {
       ...newTask,
       id: uniqueId,
-      date: selectedDate
+      date: newTask.date || selectedDate,
+      isRecurring: Boolean(newTask.isRecurring),
+      recurringDays: newTask.isRecurring ? (newTask.recurringDays || []).map(Number).filter(n => !isNaN(n)) : []
     };
     setTasks(prevTasks => sortTasksChronologically([...prevTasks, taskWithDate]));
     if (saveAsTemplate) {
@@ -236,15 +238,22 @@ function DailyPlanner({
         category: newTask.category || '',
         color: newTask.color || '',
         description: newTask.description || '',
-        subtasks: newTask.subtasks || []
+        subtasks: newTask.subtasks || [],
+        isRecurring: Boolean(newTask.isRecurring),
+        recurringDays: newTask.isRecurring ? (newTask.recurringDays || []).map(Number).filter(n => !isNaN(n)) : []
       };
       setTemplates(prev => [...prev, newTemplate]);
     }
   };
 
   const handleUpdateTask = (updatedTask) => {
+    const sanitizedTask = {
+      ...updatedTask,
+      isRecurring: Boolean(updatedTask.isRecurring),
+      recurringDays: updatedTask.isRecurring ? (updatedTask.recurringDays || []).map(Number).filter(n => !isNaN(n)) : []
+    };
     setTasks(prevTasks => {
-      const updatedList = prevTasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+      const updatedList = prevTasks.map(t => t.id === sanitizedTask.id ? sanitizedTask : t);
       return sortTasksChronologically(updatedList);
     });
     setSelectedTask(null);
@@ -400,20 +409,36 @@ function DailyPlanner({
 
   const getDayOfWeek = (dateStr) => {
     if (!dateStr) return new Date().getDay();
-    const [y, m, d] = dateStr.split('-').map(Number);
-    return new Date(y, m - 1, d).getDay();
+    const parts = String(dateStr).split('-');
+    if (parts.length === 3) {
+      const [y, m, d] = parts.map(Number);
+      // Usar 12:00:00 (meio-dia) para evitar desvios por fuso horário local/UTC
+      return new Date(y, m - 1, d, 12, 0, 0).getDay();
+    }
+    const parsed = new Date(dateStr);
+    return isNaN(parsed.getDay()) ? new Date().getDay() : parsed.getDay();
   };
 
   const isTaskForSelectedDate = (t, dateStr) => {
+    if (!t || !dateStr) return false;
     const dayOfWeek = getDayOfWeek(dateStr);
-    if (t.isRecurring) {
-      const days = (t.recurringDays || []).map(Number);
+
+    if (Boolean(t.isRecurring)) {
+      const days = (t.recurringDays || []).map(Number).filter(n => !isNaN(n));
+      // Se não há dias definidos na tarefa recorrente, não exibe
       if (days.length === 0) return false;
+      // Só deve aparecer se o dia da semana atual estiver nos dias selecionados
       if (!days.includes(dayOfWeek)) return false;
-      if (t.date && dateStr < t.date) return false;
+      // Se tiver data de início/criação, não exibe em dias anteriores
+      if (t.date && /^\d{4}-\d{2}-\d{2}$/.test(t.date) && dateStr < t.date) {
+        return false;
+      }
       return true;
     }
-    return (t.date || todayStr) === dateStr;
+
+    // Tarefa pontual: só deve aparecer na sua data exata
+    const taskDate = t.date || todayStr;
+    return taskDate === dateStr;
   };
 
   const isTaskCompletedForDate = (t, dateStr) => {

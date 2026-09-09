@@ -1,38 +1,40 @@
 export const DIFFICULTY_LEVELS = [
   { 
-    id: 'easy', 
-    label: 'Fácil (Easy)', 
-    shortLabel: 'Fácil', 
+    id: 'low', 
+    label: 'Baixa', 
+    shortLabel: 'Baixa', 
     color: '#10b981', 
     emoji: '🟢',
-    description: 'Tarefas simples, rotineiras ou rápidas'
+    description: 'Urgência / prioridade baixa'
   },
   { 
     id: 'medium', 
-    label: 'Médio (Medium)', 
-    shortLabel: 'Médio', 
+    label: 'Média', 
+    shortLabel: 'Média', 
     color: '#eab308', 
     emoji: '🟡',
-    description: 'Tarefas de esforço intermediário'
+    description: 'Urgência / prioridade média'
   },
   { 
-    id: 'hard', 
-    label: 'Difícil (Hard)', 
-    shortLabel: 'Difícil', 
+    id: 'high', 
+    label: 'Alta', 
+    shortLabel: 'Alta', 
     color: '#ef4444', 
     emoji: '🔴',
-    description: 'Tarefas complexas, pesadas ou de alta prioridade'
+    description: 'Urgência / prioridade alta'
   },
 ];
 
 export function getDifficultyByColor(color) {
-  if (!color) return DIFFICULTY_LEVELS[0]; // Padrão: Fácil
+  if (!color) return DIFFICULTY_LEVELS[0]; // Padrão: Baixa
   const lower = String(color).toLowerCase().trim();
   
   if (
     lower === '#10b981' || 
     lower === '#22c55e' || 
     lower === '#059669' || 
+    lower === 'low' || 
+    lower === 'baixa' || 
     lower === 'easy' || 
     lower === 'facil' || 
     lower === 'fácil'
@@ -45,6 +47,8 @@ export function getDifficultyByColor(color) {
     lower === '#f59e0b' || 
     lower === '#f97316' || 
     lower === 'medium' || 
+    lower === 'média' || 
+    lower === 'media' || 
     lower === 'medio' || 
     lower === 'médio'
   ) {
@@ -55,6 +59,8 @@ export function getDifficultyByColor(color) {
     lower === '#ef4444' || 
     lower === '#e63946' || 
     lower === '#dc2626' || 
+    lower === 'high' || 
+    lower === 'alta' || 
     lower === 'hard' || 
     lower === 'dificil' || 
     lower === 'difícil'

@@ -113,7 +113,7 @@ function CategoryPicker({
       </div>
 
       <div className="difficulty-selector-group">
-        <label className="picker-label">Nível de Dificuldade / Prioridade</label>
+        <label className="picker-label">Nível de Urgência / Prioridade</label>
         <div className="difficulty-options">
           {DIFFICULTY_LEVELS.map(level => {
             const isSelected = selectedDifficulty.id === level.id;

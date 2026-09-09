@@ -595,7 +595,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
                 >
                   <span className="day-number">{item.day}</span>
                   <div className="cell-events">
-                    {dayEvents.map(evt => (
+                    {dayEvents.slice(0, 2).map(evt => (
                       <div 
                         key={evt.id} 
                         className="event-badge"
@@ -611,6 +611,18 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
                         <span className="evt-title">{evt.title}</span>
                       </div>
                     ))}
+                    {dayEvents.length > 2 && (
+                      <span 
+                        className="more-events-indicator"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEventDetail(dayEvents[2]);
+                        }}
+                        title={`${dayEvents.length - 2} mais evento(s) neste dia`}
+                      >
+                        +{dayEvents.length - 2} mais
+                      </span>
+                    )}
                   </div>
                 </div>
               );

@@ -15,6 +15,21 @@ const parseLocalTasks = () => {
   }
 };
 
+const parseRecurringDaysList = (val) => {
+  if (Array.isArray(val)) {
+    return val.map(Number).filter(n => !isNaN(n));
+  }
+  if (typeof val === 'string' && val.trim()) {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed.map(Number).filter(n => !isNaN(n));
+    } catch (e) {}
+    const cleaned = val.replace(/[{}[\]"]/g, '').split(',');
+    return cleaned.map(Number).filter(n => !isNaN(n));
+  }
+  return [];
+};
+
 export async function loadUserTasks(userId) {
   let localTasks = parseLocalTasks();
 
@@ -40,7 +55,7 @@ export async function loadUserTasks(userId) {
         .eq('user_id', userId)
         .order('created_at', { ascending: true });
 
-      // Se falhar (ex: created_at não existe no schema da tabela tasks), tenta sem ordenação
+      // Se falhou por não ter coluna created_at, tenta busca simples
       if (error) {
         const retry = await supabase
           .from('tasks')
@@ -55,9 +70,9 @@ export async function loadUserTasks(userId) {
       if (!error && Array.isArray(data)) {
         if (data.length > 0) {
           const remoteTasks = data.map(t => {
-            const recurringDays = Array.isArray(t.recurring_days)
-              ? t.recurring_days.map(Number).filter(n => !isNaN(n))
-              : (Array.isArray(t.recurringDays) ? t.recurringDays.map(Number).filter(n => !isNaN(n)) : []);
+            const recurringDays = t.recurring_days !== undefined
+              ? parseRecurringDaysList(t.recurring_days)
+              : parseRecurringDaysList(t.recurringDays);
 
             const completedDates = Array.isArray(t.completed_dates)
               ? t.completed_dates.map(String)
@@ -243,7 +258,9 @@ export async function loadUserTemplates(userId, initialTemplates) {
             category: t.category || null,
             color: t.color || null,
             isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
-            recurringDays: Array.isArray(t.recurring_days) ? t.recurring_days : (Array.isArray(t.recurringDays) ? t.recurringDays : []),
+            recurringDays: t.recurring_days !== undefined
+              ? parseRecurringDaysList(t.recurring_days)
+              : parseRecurringDaysList(t.recurringDays),
             description: t.description || '',
             subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
           }));

@@ -355,7 +355,7 @@
   background-color: var(--sidebar-bg, #f9fafb);
   border: 1px solid var(--border-color, #e5e7eb);
   border-radius: 6px;
-  min-height: 65px;
+  min-height: 70px;
   padding: 4px;
   display: flex;
   flex-direction: column;
@@ -385,22 +385,51 @@
   flex-direction: column;
   gap: 3px;
   overflow-y: auto;
-  max-height: 45px;
+  overflow-x: hidden !important;
+  max-height: 50px;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.cell-events::-webkit-scrollbar {
+  display: none; /* Chrome, Edge, Safari */
+  width: 0;
+  height: 0;
+}
+
+.more-events-indicator {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-light-color, #9ca3af);
+  padding: 1px 2px;
+  line-height: 1;
+  cursor: pointer;
+  text-align: right;
+  white-space: nowrap;
+  opacity: 0.9;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.more-events-indicator:hover {
+  color: var(--title-color, #ffffff);
+  opacity: 1;
 }
 
 .event-badge {
   color: #ffffff;
   border-radius: 4px;
-  padding: 3px 6px;
-  font-size: 0.75rem;
+  padding: 2px 5px;
+  font-size: 0.72rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   cursor: grab;
   user-select: none;
   transition: transform 0.15s ease, filter 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-  margin-bottom: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  margin-bottom: 1px;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow: hidden;
 }
 
@@ -766,6 +795,16 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.week-col-events::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .no-events-text {

@@ -3,10 +3,12 @@ import { DAYS_OF_WEEK } from '../../constants/recurrence';
 import './styles.css';
 
 function RecurrenceSelector({ isRecurring, onChangeIsRecurring, recurringDays = [], onChangeRecurringDays }) {
+  const numericDays = (recurringDays || []).map(Number).filter(n => !isNaN(n));
+
   const getSelectedMode = () => {
     if (!isRecurring) return 'none';
-    if (recurringDays.length === 7) return 'daily';
-    const sorted = [...recurringDays].sort((a, b) => a - b);
+    if (numericDays.length === 7) return 'daily';
+    const sorted = [...numericDays].sort((a, b) => a - b);
     const isWeekdays = sorted.length === 5 && sorted.every((d, i) => d === i + 1);
     if (isWeekdays) return 'weekdays';
     return 'custom';
@@ -25,8 +27,8 @@ function RecurrenceSelector({ isRecurring, onChangeIsRecurring, recurringDays = 
       onChangeRecurringDays([1, 2, 3, 4, 5]);
     } else if (mode === 'custom') {
       onChangeIsRecurring(true);
-      // Se não tiver nada marcado, marca o dia atual ou segunda
-      if (recurringDays.length === 0) {
+      // Se antes estava em 'daily' ou 'weekdays' ou vazio, reseta para apenas o dia atual
+      if (numericDays.length === 7 || numericDays.length === 5 || numericDays.length === 0) {
         const todayDay = new Date().getDay();
         onChangeRecurringDays([todayDay]);
       }
@@ -34,24 +36,19 @@ function RecurrenceSelector({ isRecurring, onChangeIsRecurring, recurringDays = 
   };
 
   const handleToggleDay = (dayId) => {
-    if (!isRecurring) {
-      onChangeIsRecurring(true);
-      onChangeRecurringDays([dayId]);
-      return;
+    const numId = Number(dayId);
+    let nextDays;
+    if (numericDays.includes(numId)) {
+      nextDays = numericDays.filter(d => d !== numId);
+    } else {
+      nextDays = [...numericDays, numId];
     }
 
-    if (recurringDays.includes(dayId)) {
-      const next = recurringDays.filter(d => d !== dayId);
-      if (next.length === 0) {
-        onChangeIsRecurring(false);
-        onChangeRecurringDays([]);
-      } else {
-        onChangeRecurringDays(next);
-      }
-    } else {
-      onChangeRecurringDays([...recurringDays, dayId]);
-    }
+    onChangeIsRecurring(true);
+    onChangeRecurringDays(nextDays);
   };
+
+  const currentMode = getSelectedMode();
 
   return (
     <div className="recurrence-selector-container">
@@ -59,7 +56,7 @@ function RecurrenceSelector({ isRecurring, onChangeIsRecurring, recurringDays = 
       
       <div className="recurrence-mode-wrapper">
         <select 
-          value={getSelectedMode()} 
+          value={currentMode} 
           onChange={handleModeChange}
           className="recurrence-select"
         >
@@ -73,7 +70,7 @@ function RecurrenceSelector({ isRecurring, onChangeIsRecurring, recurringDays = 
       {isRecurring && (
         <div className="recurrence-days-row">
           {DAYS_OF_WEEK.map(d => {
-            const isSelected = recurringDays.includes(d.id);
+            const isSelected = numericDays.includes(d.id);
             return (
               <button
                 key={d.id}

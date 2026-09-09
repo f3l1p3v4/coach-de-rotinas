@@ -77,8 +77,8 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
       emoji: emoji.trim() || '✨',
       category: category || null,
       color: color || '#10b981',
-      isRecurring,
-      recurringDays: isRecurring ? recurringDays : [],
+      isRecurring: Boolean(isRecurring && recurringDays && recurringDays.length > 0),
+      recurringDays: isRecurring ? (recurringDays || []).map(Number).filter(n => !isNaN(n)) : [],
       description: description.trim(),
       subtasks: subtasks
     };
