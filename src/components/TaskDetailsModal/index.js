@@ -7,7 +7,8 @@ import {
   PlusCircle, 
   FloppyDisk, 
   Tag, 
-  PencilSimple 
+  PencilSimple,
+  CalendarBlank
 } from '@phosphor-icons/react';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
@@ -15,10 +16,22 @@ import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
-function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
+const getTodayString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const getTomorrowString = () => {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedDate }) {
   const [text, setText] = useState(task?.text || '');
   const [emoji, setEmoji] = useState(task?.emoji || '✨');
   const [period, setPeriod] = useState(task?.period || 'Manhã');
+  const [date, setDate] = useState(task?.date || selectedDate || getTodayString());
   const [category, setCategory] = useState(task?.category || '');
   const [color, setColor] = useState(task?.color || (task?.category ? getCategoryColor(task.category) : '#3b82f6'));
   const [isRecurring, setIsRecurring] = useState(task?.isRecurring || false);
@@ -32,6 +45,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
       setText(task.text || '');
       setEmoji(task.emoji || '✨');
       setPeriod(task.period || 'Manhã');
+      setDate(task.date || selectedDate || getTodayString());
       setCategory(task.category || '');
       setColor(task.color || (task.category ? getCategoryColor(task.category) : '#3b82f6'));
       setIsRecurring(task.isRecurring || false);
@@ -39,7 +53,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
       setDescription(task.description || '');
       setSubtasks(task.subtasks || []);
     }
-  }, [task]);
+  }, [task, selectedDate]);
 
   const handleToggleSubtask = (subId) => {
     setSubtasks(prev => prev.map(sub => 
@@ -75,6 +89,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
         text: text.trim(),
         emoji,
         period,
+        date: isRecurring ? (task.date || date) : (date || getTodayString()),
         category: category || null,
         color: color || (category ? getCategoryColor(category) : null),
         isRecurring,
@@ -127,7 +142,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
           </div>
 
           <div className="details-grid-row">
-            <div className="details-field" style={{ width: '100%' }}>
+            <div className="details-field">
               <label><Tag size={16} /> Período</label>
               <select 
                 value={period} 
@@ -139,6 +154,38 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask }) {
                 <option value="Noite">Noite</option>
               </select>
             </div>
+
+            {!isRecurring && (
+              <div className="details-field">
+                <label><CalendarBlank size={16} /> Data da Tarefa</label>
+                <div className="task-date-input-group">
+                  <input 
+                    type="date" 
+                    value={date} 
+                    onChange={e => setDate(e.target.value)}
+                    className="details-input task-date-input"
+                  />
+                  <div className="task-date-shortcuts">
+                    <button 
+                      type="button" 
+                      className={`task-date-btn ${date === getTodayString() ? 'active' : ''}`}
+                      onClick={() => setDate(getTodayString())}
+                      title="Mover para Hoje"
+                    >
+                      Hoje
+                    </button>
+                    <button 
+                      type="button" 
+                      className={`task-date-btn ${date === getTomorrowString() ? 'active' : ''}`}
+                      onClick={() => setDate(getTomorrowString())}
+                      title="Mover para Amanhã"
+                    >
+                      Amanhã
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <CategoryPicker 

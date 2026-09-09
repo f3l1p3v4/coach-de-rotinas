@@ -1,16 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Trash, XCircle, PlayCircle, PauseCircle } from '@phosphor-icons/react';
+import { Play, Trash, XCircle, PlayCircle, PauseCircle, CalendarPlus } from '@phosphor-icons/react';
 
 import { POMODORO_CONFIG } from '../../../DailyPlanner';
 
 import './styles.css';
 
-function TodoActions({ task, activeTimer, onStartTimer, onPauseResume, onCancel, onRemove, openCustomModal }) {
+function TodoActions({ 
+  task, 
+  activeTimer, 
+  onStartTimer, 
+  onPauseResume, 
+  onCancel, 
+  onRemove, 
+  openCustomModal,
+  selectedDate,
+  todayStr,
+  onMoveToToday
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   
   const isThisTaskActive = activeTimer.taskId === task.id;
   const isAnyTimerActive = activeTimer.taskId !== null;
+
+  // Pode mover para hoje se:
+  // - A tarefa não está concluída;
+  // - Não é uma tarefa com recorrência fixa semanal;
+  // - A data da tarefa é anterior à data de hoje, OU o dia visualizado é anterior a hoje;
+  // - Existe a função onMoveToToday.
+  const taskDate = task.date || selectedDate;
+  const canMoveToToday = !task.completed && 
+                         !task.isRecurring && 
+                         Boolean(todayStr) && 
+                         Boolean(taskDate && taskDate < todayStr) && 
+                         Boolean(onMoveToToday);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -74,6 +97,21 @@ function TodoActions({ task, activeTimer, onStartTimer, onPauseResume, onCancel,
             </div>
           )}
         </>
+      )}
+      {canMoveToToday && (
+        <button 
+          type="button"
+          className="move-to-today-btn" 
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoveToToday(task.id);
+          }}
+          disabled={isAnyTimerActive}
+          title="Passar esta tarefa para a data de hoje"
+        >
+          <CalendarPlus size={15} weight="bold" />
+          <span className="move-to-today-label">Hoje</span>
+        </button>
       )}
       <button className="delete-button" onClick={() => onRemove(task.id)} disabled={isAnyTimerActive} title="Excluir tarefa">
         <Trash size={18} />

@@ -105,7 +105,7 @@ function DailyPlanner({
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
-  const hasInitializedRef = useRef(false);
+  const loadedUserIdRef = useRef(null);
 
   const [internalTemplates, setInternalTemplates] = useState(() => {
     const savedTemplates = localStorage.getItem('custom_task_templates');
@@ -147,6 +147,8 @@ function DailyPlanner({
     let isMounted = true;
     async function initTasks() {
       if (user?.id) {
+        // Bloqueia sincronização enquanto carrega
+        setIsTasksLoaded(false);
         const initialTasks = await loadUserTasks(user.id);
         if (isMounted) {
           setTasks(prev => {
@@ -155,23 +157,37 @@ function DailyPlanner({
             }
             return (prev && prev.length > 0) ? prev : (initialTasks || []);
           });
+          loadedUserIdRef.current = user.id;
           setIsTasksLoaded(true);
-          hasInitializedRef.current = true;
         }
       } else {
+        loadedUserIdRef.current = null;
         setIsTasksLoaded(true);
-        hasInitializedRef.current = true;
       }
     }
     initTasks();
     return () => { isMounted = false; };
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
-    if (isTasksLoaded && hasInitializedRef.current) {
-      syncUserTasks(user?.id, tasks);
-    }
-  }, [tasks, user, isTasksLoaded]);
+    // SÓ sincroniza se a carga inicial deste usuário já foi totalmente concluída
+    if (!isTasksLoaded) return;
+    if (user?.id && loadedUserIdRef.current !== user.id) return;
+
+    syncUserTasks(user?.id, tasks);
+  }, [tasks, user?.id, isTasksLoaded]);
+
+  const handleMoveToToday = (taskId) => {
+    setTasks(prev => prev.map(t => {
+      if (t.id === taskId) {
+        return {
+          ...t,
+          date: todayStr
+        };
+      }
+      return t;
+    }));
+  };
 
 
   const handlePrevDay = () => {
@@ -381,8 +397,9 @@ function DailyPlanner({
   const isTaskForSelectedDate = (t, dateStr) => {
     const dayOfWeek = getDayOfWeek(dateStr);
     if (t.isRecurring) {
-      if (!Array.isArray(t.recurringDays) || t.recurringDays.length === 0) return false;
-      if (!t.recurringDays.includes(dayOfWeek)) return false;
+      const days = (t.recurringDays || []).map(Number);
+      if (days.length === 0) return false;
+      if (!days.includes(dayOfWeek)) return false;
       if (t.date && dateStr < t.date) return false;
       return true;
     }
@@ -665,6 +682,9 @@ function DailyPlanner({
                           activeTimer={activeTimer}
                           currentTimeDisplay={currentTimeDisplay}
                           onOpenDetails={() => setSelectedTask(tasks.find(t => t.id === task.id) || task)}
+                          selectedDate={selectedDate}
+                          todayStr={todayStr}
+                          onMoveToToday={handleMoveToToday}
                         />
                       ))}
                     </div>
@@ -735,6 +755,8 @@ function DailyPlanner({
       {selectedTask && (
         <TaskDetailsModal
           task={selectedTask}
+          selectedDate={selectedDate}
+          todayStr={todayStr}
           onClose={() => setSelectedTask(null)}
           onUpdateTask={handleUpdateTask}
           onRemoveTask={handleRemove}
@@ -745,6 +767,7 @@ function DailyPlanner({
         onClose={() => setIsAddTaskModalOpen(false)}
         onAddTask={handleAddTask}
         taskTemplates={templates}
+        selectedDate={selectedDate}
       />
     </div>
   );

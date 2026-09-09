@@ -54,32 +54,42 @@ export async function loadUserTasks(userId) {
 
       if (!error && Array.isArray(data)) {
         if (data.length > 0) {
-          const remoteTasks = data.map(t => ({
-            id: String(t.id),
-            text: t.text || '',
-            emoji: t.emoji || '✨',
-            time: t.time || '',
-            period: t.period || 'Manhã',
-            category: t.category || null,
-            color: t.color || null,
-            status: t.status || (t.completed ? 'completed' : 'pending'),
-            completed: t.completed !== undefined ? Boolean(t.completed) : t.status === 'completed',
-            completedAt: t.completed_at || t.completedAt || null,
-            startedAt: t.started_at || t.startedAt || null,
-            date: t.date || null,
-            isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
-            recurringDays: Array.isArray(t.recurring_days) ? t.recurring_days : (Array.isArray(t.recurringDays) ? t.recurringDays : []),
-            completedDates: Array.isArray(t.completed_dates) ? t.completed_dates : (Array.isArray(t.completedDates) ? t.completedDates : []),
-            description: t.description || '',
-            subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
-          }));
+          const remoteTasks = data.map(t => {
+            const recurringDays = Array.isArray(t.recurring_days)
+              ? t.recurring_days.map(Number).filter(n => !isNaN(n))
+              : (Array.isArray(t.recurringDays) ? t.recurringDays.map(Number).filter(n => !isNaN(n)) : []);
+
+            const completedDates = Array.isArray(t.completed_dates)
+              ? t.completed_dates.map(String)
+              : (Array.isArray(t.completedDates) ? t.completedDates.map(String) : []);
+
+            return {
+              id: String(t.id),
+              text: t.text || '',
+              emoji: t.emoji || '✨',
+              time: t.time || '',
+              period: t.period || 'Manhã',
+              category: t.category || null,
+              color: t.color || null,
+              status: t.status || (t.completed ? 'completed' : 'pending'),
+              completed: t.completed !== undefined ? Boolean(t.completed) : t.status === 'completed',
+              completedAt: t.completed_at || t.completedAt || null,
+              startedAt: t.started_at || t.startedAt || null,
+              date: t.date || null,
+              isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
+              recurringDays,
+              completedDates,
+              description: t.description || '',
+              subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
+            };
+          });
 
           localStorage.setItem('daily_tasks', JSON.stringify(remoteTasks));
           localStorage.setItem('daily_tasks_backup', JSON.stringify(remoteTasks));
           return remoteTasks;
         } else {
           // Se o banco remoto retornou vazio ([]):
-          // Se o usuário tem tarefas locais, NÃO APAGUE! Salve-as no Supabase!
+          // Se o usuário tem tarefas locais salvas, NÃO APAGUE! Salve-as no Supabase!
           if (localTasks.length > 0) {
             syncUserTasks(userId, localTasks).catch(() => {});
             return localTasks;
@@ -107,17 +117,41 @@ export async function syncUserTasks(userId, tasks) {
   // 2. Sincronizar com Supabase se configurado
   if (isSupabaseConfigured && supabase && userId) {
     try {
-      const { error: deleteError } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('user_id', userId);
-
-      if (deleteError) {
-        console.warn('Aviso ao deletar tarefas anteriores no Supabase:', deleteError);
+      if (tasks.length === 0) {
+        await supabase.from('tasks').delete().eq('user_id', userId);
+        return;
       }
 
-      if (tasks.length > 0) {
-        const fullPayload = tasks.map(t => ({
+      // Tentativa 1: recurring_days como array de strings (compatível com colunas text[] e varchar[])
+      const payloadStringRecurrence = tasks.map(t => ({
+        id: String(t.id),
+        user_id: userId,
+        text: t.text || '',
+        emoji: t.emoji || '📝',
+        description: t.description || '',
+        time: t.time || '',
+        period: t.period || 'Manhã',
+        category: t.category || null,
+        color: t.color || null,
+        date: t.date || null,
+        status: t.completed ? 'completed' : (t.status || 'pending'),
+        completed_at: t.completedAt || null,
+        started_at: t.startedAt || null,
+        is_recurring: Boolean(t.isRecurring),
+        recurring_days: (t.recurringDays || []).map(String),
+        completed_dates: (t.completedDates || []).map(String),
+        subtasks: t.subtasks || []
+      }));
+
+      // Limpa antes de gravar
+      await supabase.from('tasks').delete().eq('user_id', userId);
+
+      const { error: insertError1 } = await supabase.from('tasks').insert(payloadStringRecurrence);
+
+      if (insertError1) {
+        console.warn('Tentando payload com recurring_days numérico:', insertError1);
+        // Tentativa 2: recurring_days como array de números (caso a coluna seja int[] ou jsonb)
+        const payloadNumericRecurrence = tasks.map(t => ({
           id: String(t.id),
           user_id: userId,
           text: t.text || '',
@@ -132,16 +166,16 @@ export async function syncUserTasks(userId, tasks) {
           completed_at: t.completedAt || null,
           started_at: t.startedAt || null,
           is_recurring: Boolean(t.isRecurring),
-          recurring_days: t.recurringDays || [],
-          completed_dates: t.completedDates || [],
+          recurring_days: (t.recurringDays || []).map(Number),
+          completed_dates: (t.completedDates || []).map(String),
           subtasks: t.subtasks || []
         }));
 
-        const { error: insertError } = await supabase.from('tasks').insert(fullPayload);
+        const { error: insertError2 } = await supabase.from('tasks').insert(payloadNumericRecurrence);
 
-        // Se falhar com payload completo, tenta payload intermediário seguro
-        if (insertError) {
-          console.warn('Falha com payload completo de tarefas, tentando payload intermediário:', insertError);
+        if (insertError2) {
+          console.warn('Tentando payload intermediário sem colunas de array:', insertError2);
+          // Tentativa 3: payload intermediário seguro (caso colunas de array não existam no schema)
           const fallbackPayload = tasks.map(t => ({
             id: String(t.id),
             user_id: userId,

@@ -10,7 +10,20 @@ import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
-function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCancel, activeTimer, currentTimeDisplay, onOpenDetails }) {
+function TodoItem({ 
+  task, 
+  onToggle, 
+  onRemove, 
+  onStartTimer, 
+  onPauseResume, 
+  onCancel, 
+  activeTimer, 
+  currentTimeDisplay, 
+  onOpenDetails,
+  selectedDate,
+  todayStr,
+  onMoveToToday
+}) {
   const [isCustomTimeModalOpen, setIsCustomTimeModalOpen] = useState(false);
   
   const isThisTaskActive = activeTimer.taskId === task.id;
@@ -61,6 +74,9 @@ function TodoItem({ task, onToggle, onRemove, onStartTimer, onPauseResume, onCan
             onCancel={onCancel}
             onRemove={onRemove}
             openCustomModal={() => setIsCustomTimeModalOpen(true)}
+            selectedDate={selectedDate}
+            todayStr={todayStr}
+            onMoveToToday={onMoveToToday}
           />
         </div>
       </div>

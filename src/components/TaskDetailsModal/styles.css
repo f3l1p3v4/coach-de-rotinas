@@ -265,3 +265,42 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
 }
+
+.task-date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.task-date-input {
+  cursor: pointer;
+}
+
+.task-date-shortcuts {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.task-date-btn {
+  flex: 1;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.task-date-btn:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.task-date-btn.active {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #ffffff;
+}

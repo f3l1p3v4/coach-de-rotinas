@@ -6,11 +6,17 @@ import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
-function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
+const getTodayString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate }) {
   const [text, setText] = useState('');
   const [emoji, setEmoji] = useState('✨');
   const [description, setDescription] = useState('');
   const [period, setPeriod] = useState('Manhã');
+  const [taskDate, setTaskDate] = useState(selectedDate || getTodayString());
   const [category, setCategory] = useState('');
   const [color, setColor] = useState('#3b82f6');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -27,6 +33,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       setEmoji('✨');
       setDescription('');
       setPeriod('Manhã');
+      setTaskDate(selectedDate || getTodayString());
       setCategory('');
       setColor('#3b82f6');
       setIsRecurring(false);
@@ -35,7 +42,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       setNewSubtaskText('');
       setSaveAsTemplate(false);
     }
-  }, [isOpen]);
+  }, [isOpen, selectedDate]);
 
   const handleTemplateChange = (e) => {
     const templateId = e.target.value;
@@ -90,6 +97,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
       emoji,
       description,
       period: period || 'Manhã',
+      date: isRecurring ? (selectedDate || getTodayString()) : (taskDate || selectedDate || getTodayString()),
       category: category || null,
       color: color || (category ? getCategoryColor(category) : null),
       isRecurring,
@@ -144,6 +152,17 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates }) {
                 <option value="Noite">Noite</option>
               </select>
             </div>
+            {!isRecurring && (
+              <div className="form-group" style={{ flex: '0 0 auto' }}>
+                <label>Data</label>
+                <input 
+                  type="date" 
+                  value={taskDate} 
+                  onChange={e => setTaskDate(e.target.value)}
+                  style={{ height: '42px', borderRadius: '8px', padding: '0 10px', background: 'var(--input-bg, #2a2a2a)', color: 'var(--text-color, #fff)', border: '1px solid var(--border-color, #444)' }}
+                />
+              </div>
+            )}
           </div>
 
           <CategoryPicker 
