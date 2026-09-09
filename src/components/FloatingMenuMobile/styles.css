@@ -73,7 +73,7 @@
 
 .floating-card-container {
   position: fixed;
-  bottom: 95px;
+  bottom: 85px;
   left: 20px;
   right: 20px;
   z-index: 1001;
@@ -85,19 +85,21 @@
 .floating-card-container .notepad-container,
 .floating-card-container .bloco-notas-container,
 .floating-card-container .placar-foco-container,
-.floating-card-container .gerenciador-modelos-container {
+.floating-card-container .gerenciador-modelos-container,
+.floating-card-container .ajustes-card-container {
   pointer-events: auto !important;
   width: 100%;
-  max-width: 400px;
-  max-height: 75vh;
+  max-width: 440px;
+  max-height: calc(100vh - 105px);
   margin-bottom: 0;
   box-shadow: 0 10px 30px rgba(0,0,0,0.4);
   animation: slideUpAndFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto !important;
   position: relative;
   z-index: 1002;
+  scrollbar-width: thin;
 }
 
 .floating-card-container .notepad-list {

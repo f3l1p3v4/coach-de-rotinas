@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { PlusCircle, User, CaretLeft, CaretRight, CalendarBlank } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 import { loadUserTasks, syncUserTasks } from '../../services/supabaseService';
 
 import TodoItem from '../TodoItem';
@@ -122,6 +123,14 @@ function DailyPlanner({
   const templates = propTemplates || internalTemplates;
   const setTemplates = propSetTemplates || setInternalTemplates;
 
+  const [plannerCategories, setPlannerCategories] = useState(() => getStoredCategories('task'));
+
+  useEffect(() => {
+    const handleCatsChanged = () => setPlannerCategories(getStoredCategories('task'));
+    window.addEventListener('coach-categories-changed', handleCatsChanged);
+    return () => window.removeEventListener('coach-categories-changed', handleCatsChanged);
+  }, []);
+
   // Efeito para adicionar tarefas vindas da Agenda
   useEffect(() => {
     if (calendarTaskToAdd) {
@@ -187,6 +196,7 @@ function DailyPlanner({
       }
       return t;
     }));
+    toast.success('Tarefa transferida para a data de hoje!');
   };
 
 
@@ -352,9 +362,9 @@ function DailyPlanner({
         startNextPhase();
       } else {
         const completedTask = tasks.find(t => t.id === activeTimer.taskId);
-        const endMessage = `Tempo para ${completedTask?.text} concluído!`;
+        const endMessage = `Tempo para ${completedTask?.text || 'a tarefa'} concluído!`;
         speak(endMessage);
-        alert(`🎉 ${endMessage}`);
+        toast.success(endMessage, { icon: '🎉' });
         handleCancelTimer();
       }
     }
@@ -456,6 +466,7 @@ function DailyPlanner({
   const handleRemove = (id) => {
     if (activeTimer.taskId === id) handleCancelTimer();
     setTasks(tasks.filter(t => t.id !== id));
+    toast.success('Tarefa removida.');
   };
 
   const handleToggleCategory = (catName) => {
@@ -646,7 +657,7 @@ function DailyPlanner({
       </div>
 
       <CategoryFilterBar
-        categories={getStoredCategories()}
+        categories={plannerCategories}
         categoryCounts={categoryCounts}
         totalCount={tasksForSelectedDate.length}
         uncategorizedCount={uncategorizedCount}

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { XCircle, Trash, PlusCircle } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
-import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
@@ -18,7 +18,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
   const [period, setPeriod] = useState('Manhã');
   const [taskDate, setTaskDate] = useState(selectedDate || getTodayString());
   const [category, setCategory] = useState('');
-  const [color, setColor] = useState('#3b82f6');
+  const [color, setColor] = useState('#10b981');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringDays, setRecurringDays] = useState([]);
   const [subtasks, setSubtasks] = useState([]);
@@ -35,7 +35,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
       setPeriod('Manhã');
       setTaskDate(selectedDate || getTodayString());
       setCategory('');
-      setColor('#3b82f6');
+      setColor('#10b981');
       setIsRecurring(false);
       setRecurringDays([]);
       setSubtasks([]);
@@ -53,7 +53,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
       setDescription('');
       setPeriod('Manhã');
       setCategory('');
-      setColor('#3b82f6');
+      setColor('#10b981');
       setIsRecurring(false);
       setRecurringDays([]);
       setSubtasks([]);
@@ -66,7 +66,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
       setDescription(template.description);
       setPeriod(template.period || 'Manhã');
       setCategory(template.category || '');
-      setColor(template.color || (template.category ? getCategoryColor(template.category) : '#3b82f6'));
+      setColor(template.color || '#10b981');
       setIsRecurring(template.isRecurring || false);
       setRecurringDays(template.recurringDays || []);
       setSubtasks(template.subtasks.map(st => ({ ...st, id: Date.now() + Math.random() }))); // Cria novos IDs
@@ -88,7 +88,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (text.trim() === '') {
-      alert('Por favor, dê um nome à tarefa.');
+      toast.warning('Por favor, dê um nome à tarefa.');
       return;
     }
     const newTask = {
@@ -99,7 +99,8 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
       period: period || 'Manhã',
       date: isRecurring ? (selectedDate || getTodayString()) : (taskDate || selectedDate || getTodayString()),
       category: category || null,
-      color: color || (category ? getCategoryColor(category) : null),
+      color: color || '#10b981',
+
       isRecurring,
       recurringDays: isRecurring ? recurringDays : [],
       completedDates: [],
@@ -109,6 +110,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
       startedAt: null,
     };
     onAddTask(newTask, saveAsTemplate);
+    toast.success(saveAsTemplate ? 'Tarefa e modelo criados com sucesso!' : 'Tarefa criada com sucesso!');
     onClose();
   };
 

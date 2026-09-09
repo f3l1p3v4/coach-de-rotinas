@@ -1,20 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { 
   getStoredCategories, 
-  CATEGORY_COLORS, 
-  addStoredCategory,
-  getCategoryColor
+  addStoredCategory
 } from '../../constants/categories';
+import { DIFFICULTY_LEVELS, getDifficultyByColor } from '../../constants/difficulty';
 import './styles.css';
 
-function CategoryPicker({ category, onChangeCategory, color, onChangeColor }) {
-  const [categories, setCategories] = useState(getStoredCategories());
+function CategoryPicker({ 
+  category, 
+  onChangeCategory, 
+  color, 
+  onChangeColor,
+  difficulty,
+  onChangeDifficulty,
+  appliesTo = 'task'
+}) {
+  const [categories, setCategories] = useState(() => getStoredCategories(appliesTo));
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newCatName, setNewCatName] = useState('');
 
   useEffect(() => {
-    setCategories(getStoredCategories());
-  }, []);
+    const refreshCategories = () => {
+      setCategories(getStoredCategories(appliesTo));
+    };
+
+    refreshCategories();
+    window.addEventListener('coach-categories-changed', refreshCategories);
+    return () => {
+      window.removeEventListener('coach-categories-changed', refreshCategories);
+    };
+  }, [appliesTo]);
 
   const handleSelectChange = (e) => {
     const val = e.target.value;
@@ -24,15 +39,6 @@ function CategoryPicker({ category, onChangeCategory, color, onChangeColor }) {
     } else {
       setIsCreatingNew(false);
       onChangeCategory(val);
-      if (val) {
-        const found = categories.find(c => c.name.toLowerCase() === val.toLowerCase());
-        if (found) {
-          onChangeColor(found.color);
-        } else {
-          const autoColor = getCategoryColor(val);
-          if (autoColor) onChangeColor(autoColor);
-        }
-      }
     }
   };
 
@@ -40,13 +46,24 @@ function CategoryPicker({ category, onChangeCategory, color, onChangeColor }) {
     if (e) e.preventDefault();
     if (!newCatName.trim()) return;
     const name = newCatName.trim();
-    const updated = addStoredCategory(name, color || '#3b82f6');
-    if (updated) setCategories(updated);
+    const updated = addStoredCategory(name, '#3b82f6', '🏷️', appliesTo);
+    if (updated) {
+      setCategories(getStoredCategories(appliesTo));
+    }
     onChangeCategory(name);
     setIsCreatingNew(false);
   };
 
-  const currentColor = color || (category ? getCategoryColor(category) : '#3b82f6');
+  const selectedDifficulty = getDifficultyByColor(color || difficulty);
+
+  const handleSelectDifficulty = (level) => {
+    if (onChangeColor) {
+      onChangeColor(level.color);
+    }
+    if (onChangeDifficulty) {
+      onChangeDifficulty(level.id);
+    }
+  };
 
   return (
     <div className="category-picker-container">
@@ -95,31 +112,32 @@ function CategoryPicker({ category, onChangeCategory, color, onChangeColor }) {
         )}
       </div>
 
-      <div className="color-palette-group">
-        <label className="picker-label">Cor da Categoria / Card</label>
-        <div className="color-swatches">
-          {CATEGORY_COLORS.map(swatchColor => (
-            <button
-              key={swatchColor}
-              type="button"
-              className={`color-swatch-btn ${currentColor?.toLowerCase() === swatchColor.toLowerCase() ? 'active' : ''}`}
-              style={{ backgroundColor: swatchColor }}
-              onClick={() => onChangeColor(swatchColor)}
-              title={swatchColor}
-            />
-          ))}
-          <label className="custom-color-picker-label" title="Cor personalizada">
-            <input 
-              type="color" 
-              value={currentColor?.startsWith('#') ? currentColor : '#3b82f6'} 
-              onChange={e => onChangeColor(e.target.value)} 
-              className="native-color-input"
-            />
-            <span 
-              className="custom-color-circle" 
-              style={{ backgroundColor: currentColor || '#3b82f6' }}
-            />
-          </label>
+      <div className="difficulty-selector-group">
+        <label className="picker-label">Nível de Dificuldade / Prioridade</label>
+        <div className="difficulty-options">
+          {DIFFICULTY_LEVELS.map(level => {
+            const isSelected = selectedDifficulty.id === level.id;
+            return (
+              <button
+                key={level.id}
+                type="button"
+                className={`difficulty-option-btn ${isSelected ? 'selected' : ''}`}
+                style={{
+                  borderColor: isSelected ? level.color : undefined,
+                  backgroundColor: isSelected ? `${level.color}26` : undefined,
+                  color: isSelected ? '#ffffff' : 'var(--text-light-color, #999999)'
+                }}
+                onClick={() => handleSelectDifficulty(level)}
+                title={level.description}
+              >
+                <span 
+                  className="diff-indicator-dot" 
+                  style={{ backgroundColor: level.color }} 
+                />
+                <span className="diff-option-text">{level.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

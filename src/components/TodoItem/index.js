@@ -6,6 +6,7 @@ import TodoCheckbox from './components/TodoCheckbox';
 import TodoTask from './components/TodoTask';
 import TodoActions from './components/TodoActions';
 import CustomTimerModal from './components/CustomTimerModal';
+import { getDifficultyByColor } from '../../constants/difficulty';
 import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
@@ -36,7 +37,8 @@ function TodoItem({
     setIsCustomTimeModalOpen(false);
   };
 
-  const accentColor = task.color || getCategoryColor(task.category);
+  const diffInfo = getDifficultyByColor(task.color || task.difficulty);
+  const accentColor = diffInfo ? diffInfo.color : (task.color || getCategoryColor(task.category));
 
   return (
     <>
@@ -52,7 +54,7 @@ function TodoItem({
             <div 
               className="category-accent-strip" 
               style={{ backgroundColor: accentColor }}
-              title={task.category ? `Categoria: ${task.category}` : undefined}
+              title={`Dificuldade: ${diffInfo?.label || 'Padrão'}${task.category ? ` • Categoria: ${task.category}` : ''}`}
             />
           )}
           <div className="task-wrapper">

@@ -2,10 +2,14 @@
   text-align: left;
   max-width: 580px;
   width: 90%;
+  max-height: calc(100vh - 3rem);
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 1.75rem 2rem 2rem 2rem;
   background-color: var(--card-bg);
   border-radius: 16px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  scrollbar-width: thin;
 }
 
 .task-details-form {

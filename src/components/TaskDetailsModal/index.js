@@ -10,9 +10,9 @@ import {
   PencilSimple,
   CalendarBlank
 } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
-import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
 
@@ -33,7 +33,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
   const [period, setPeriod] = useState(task?.period || 'Manhã');
   const [date, setDate] = useState(task?.date || selectedDate || getTodayString());
   const [category, setCategory] = useState(task?.category || '');
-  const [color, setColor] = useState(task?.color || (task?.category ? getCategoryColor(task.category) : '#3b82f6'));
+  const [color, setColor] = useState(task?.color || '#10b981');
   const [isRecurring, setIsRecurring] = useState(task?.isRecurring || false);
   const [recurringDays, setRecurringDays] = useState(task?.recurringDays || []);
   const [description, setDescription] = useState(task?.description || '');
@@ -47,7 +47,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
       setPeriod(task.period || 'Manhã');
       setDate(task.date || selectedDate || getTodayString());
       setCategory(task.category || '');
-      setColor(task.color || (task.category ? getCategoryColor(task.category) : '#3b82f6'));
+      setColor(task.color || '#10b981');
       setIsRecurring(task.isRecurring || false);
       setRecurringDays(task.recurringDays || []);
       setDescription(task.description || '');
@@ -80,7 +80,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
   const handleSave = (e) => {
     e.preventDefault();
     if (!text.trim()) {
-      alert('Por favor, informe um título para a tarefa.');
+      toast.warning('Por favor, informe um título para a tarefa.');
       return;
     }
     if (onUpdateTask) {
@@ -91,12 +91,14 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
         period,
         date: isRecurring ? (task.date || date) : (date || getTodayString()),
         category: category || null,
-        color: color || (category ? getCategoryColor(category) : null),
+        color: color || '#10b981',
+
         isRecurring,
         recurringDays: isRecurring ? recurringDays : [],
         description: description.trim(),
         subtasks
       });
+      toast.success('Tarefa atualizada com sucesso!');
     }
     onClose();
   };
@@ -105,6 +107,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
     if (window.confirm('Tem certeza que deseja excluir esta tarefa?')) {
       if (onRemoveTask) {
         onRemoveTask(task.id);
+        toast.success('Tarefa excluída.');
       }
       onClose();
     }

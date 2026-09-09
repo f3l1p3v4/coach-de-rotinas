@@ -4,10 +4,11 @@ import DailyPlanner, { initialTaskTemplates } from './components/DailyPlanner';
 import BannerDinamico from './components/BannerDinamico';
 import FloatingMenuMobile from './components/FloatingMenuMobile';
 import PlacarFoco from './components/PlacarFoco';
-import GerenciadorModelos from './components/GerenciadorModelos';
+import AjustesModal from './components/AjustesModal';
 import BlocoDeNotas from './components/BlocoDeNotas';
 import AuthModal from './components/AuthModal';
 import GoogleCalendarCard from './components/GoogleCalendarCard';
+import { Toaster } from 'sonner';
 
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import { loadUserTemplates, syncUserTemplates, loadUserFocusScore, syncUserFocusScore } from './services/supabaseService';
@@ -155,6 +156,7 @@ function App() {
 
   return (
     <div className="App">
+      <Toaster position="top-right" richColors theme={isDarkMode ? 'dark' : 'light'} closeButton />
       <BannerDinamico />
       <div className="app-body">
         <main className="main-content">
@@ -235,7 +237,7 @@ function App() {
             onPointerDown={e => e.stopPropagation()}
             onTouchStart={e => e.stopPropagation()}
           >
-            <GerenciadorModelos
+            <AjustesModal
               templates={templates}
               onAddTemplate={handleAddTemplate}
               onEditTemplate={handleEditTemplate}

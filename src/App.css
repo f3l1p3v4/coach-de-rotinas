@@ -14,6 +14,8 @@
   --border-color: #EAEAEA;
   --primary-bg: #1A1A1A;
   --primary-text: #FFFFFF;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.25);
+  --scrollbar-track: transparent;
 }
 
 [data-theme='dark'] {
@@ -32,6 +34,8 @@
   --border-color: #555555;
   --primary-bg: #FFFFFF;
   --primary-text: #1A1A1A;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.25);
+  --scrollbar-track: transparent;
 }
 
 html, body {
@@ -58,14 +62,32 @@ h3 {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 }
 
 /* --- Layout Principal --- */
 .app-body {
   display: flex;
-  /* flex-direction: column; Mobile-first */
+  flex-direction: column;
   flex-grow: 1;
-  overflow: hidden; /* Prevent double scrollbars */
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+@supports not (scrollbar-color: auto) {
+  .app-body::-webkit-scrollbar {
+    width: 8px;
+  }
+  .app-body::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+  .app-body::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
 }
 
 .main-content {
@@ -73,8 +95,7 @@ h3 {
   max-width: 1000px;
   margin: 20px auto;
   padding: 30px;
-  overflow-y: auto;
-  overflow-x: hidden; /* Corta qualquer vazamento horizontal da timeline */
+  overflow: visible;
   box-sizing: border-box;
   flex-grow: 1;
 }

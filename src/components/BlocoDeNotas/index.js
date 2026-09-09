@@ -5,6 +5,7 @@ import {
 } from '@phosphor-icons/react';
 import { loadUserNotes, syncUserNotes } from '../../services/supabaseService';
 import { getStoredCategories, getCategoryColor } from '../../constants/categories';
+import { toast } from 'sonner';
 
 import './styles.css';
 
@@ -111,6 +112,13 @@ function BlocoDeNotas({ onClose, user }) {
   const [editMode, setEditMode] = useState('text'); // 'text' (Anotação simples) ou 'list' (Checklist com risco)
   const [items, setItems] = useState([]);
   const [newItemText, setNewItemText] = useState('');
+  const [noteCategories, setNoteCategories] = useState(() => getStoredCategories('note'));
+
+  useEffect(() => {
+    const handleCatsChanged = () => setNoteCategories(getStoredCategories('note'));
+    window.addEventListener('coach-categories-changed', handleCatsChanged);
+    return () => window.removeEventListener('coach-categories-changed', handleCatsChanged);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -235,7 +243,7 @@ function BlocoDeNotas({ onClose, user }) {
       : content.trim();
 
     if (!title.trim() && !finalContent.trim()) {
-      alert('Escreva pelo menos um título ou conteúdo para a nota.');
+      toast.warning('Escreva pelo menos um título ou conteúdo para a nota.');
       return;
     }
 
@@ -255,6 +263,7 @@ function BlocoDeNotas({ onClose, user }) {
         date: nowFormatted,
         type: noteType
       } : n));
+      toast.success('Anotação atualizada!');
     } else {
       // Criar nova
       const newNote = {
@@ -267,6 +276,7 @@ function BlocoDeNotas({ onClose, user }) {
         type: noteType
       };
       setNotes(prev => [newNote, ...prev]);
+      toast.success('Anotação criada com sucesso!');
     }
 
     setIsEditing(false);
@@ -276,6 +286,7 @@ function BlocoDeNotas({ onClose, user }) {
   const handleDelete = (id, noteTitle) => {
     if (window.confirm(`Deseja realmente apagar a anotação "${noteTitle}"?`)) {
       setNotes(prev => prev.filter(n => n.id !== id));
+      toast.success('Anotação excluída.');
       if (activeNote && activeNote.id === id) {
         setIsEditing(false);
         setActiveNote(null);
@@ -372,7 +383,7 @@ function BlocoDeNotas({ onClose, user }) {
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
                 <option value="all">📁 Todas as Categorias ({notes.length})</option>
-                {getStoredCategories().map(cat => (
+                {noteCategories.map(cat => (
                   <option key={cat.id || cat.name} value={cat.name}>
                     {cat.emoji || '🏷️'} {cat.name} ({categoryCounts[cat.name] || 0})
                   </option>
@@ -526,7 +537,7 @@ function BlocoDeNotas({ onClose, user }) {
                 className="note-category-select"
               >
                 <option value="">📝 Sem Categoria</option>
-                {getStoredCategories().map(cat => (
+                {noteCategories.map(cat => (
                   <option key={cat.id || cat.name} value={cat.name}>
                     {cat.emoji || '🏷️'} {cat.name}
                   </option>

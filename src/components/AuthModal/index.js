@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { User, EnvelopeSimple, LockKey, SignOut, XCircle, UserPlus, SignIn, WarningCircle } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 
 import './styles.css';
 
@@ -40,9 +41,11 @@ function AuthModal({ user, onClose, onAuthSuccess }) {
 
         if (data.session) {
           setSuccessMessage('Conta criada e logada com sucesso!');
+          toast.success('Conta criada e conectada com sucesso!');
           if (onAuthSuccess) onAuthSuccess(data.session.user);
         } else {
           setSuccessMessage('Conta criada! Caso o Supabase exija verificação, verifique sua caixa de entrada.');
+          toast.success('Conta criada! Verifique sua caixa de entrada.');
         }
       } else {
         // Entrar
@@ -54,11 +57,13 @@ function AuthModal({ user, onClose, onAuthSuccess }) {
         if (error) throw error;
 
         setSuccessMessage('Login realizado com sucesso!');
+        toast.success('Login realizado com sucesso!');
         if (onAuthSuccess) onAuthSuccess(data.user);
         setTimeout(() => onClose(), 1000);
       }
     } catch (err) {
       setErrorMessage(err.message || 'Erro ao realizar autenticação.');
+      toast.error(err.message || 'Erro ao realizar autenticação.');
     } finally {
       setLoading(false);
     }
@@ -69,6 +74,7 @@ function AuthModal({ user, onClose, onAuthSuccess }) {
       await supabase.auth.signOut();
     }
     if (onAuthSuccess) onAuthSuccess(null);
+    toast.info('Você saiu da sua conta.');
     onClose();
   };
 

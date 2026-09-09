@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { PlusCircle, Pencil, Trash, XCircle, CheckCircle } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
 import { getCategoryColor } from '../../constants/categories';
 import { getRecurrenceLabel } from '../../constants/recurrence';
+import { getDifficultyByColor } from '../../constants/difficulty';
 
 import './styles.css';
 
-function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDeleteTemplate, onClose }) {
+function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDeleteTemplate, onClose, hideHeader = false }) {
   const [editingTemplate, setEditingTemplate] = useState(null); // null quando criando novo ou visualizando lista
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -15,7 +17,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
   const [text, setText] = useState('');
   const [emoji, setEmoji] = useState('✨');
   const [category, setCategory] = useState('');
-  const [color, setColor] = useState('#3b82f6');
+  const [color, setColor] = useState('#10b981');
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringDays, setRecurringDays] = useState([]);
   const [description, setDescription] = useState('');
@@ -27,7 +29,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     setText('');
     setEmoji('✨');
     setCategory('');
-    setColor('#3b82f6');
+    setColor('#10b981');
     setIsRecurring(false);
     setRecurringDays([]);
     setDescription('');
@@ -41,7 +43,8 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     setText(template.text || '');
     setEmoji(template.emoji || '✨');
     setCategory(template.category || '');
-    setColor(template.color || (template.category ? getCategoryColor(template.category) : '#3b82f6'));
+    setColor(template.color || '#10b981');
+
     setIsRecurring(template.isRecurring || false);
     setRecurringDays(template.recurringDays || []);
     setDescription(template.description || '');
@@ -64,7 +67,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
   const handleSubmitForm = (e) => {
     e.preventDefault();
     if (!text.trim()) {
-      alert('Por favor, digite um nome para o modelo.');
+      toast.warning('Por favor, digite um nome para o modelo.');
       return;
     }
 
@@ -73,7 +76,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
       text: text.trim(),
       emoji: emoji.trim() || '✨',
       category: category || null,
-      color: color || (category ? getCategoryColor(category) : null),
+      color: color || '#10b981',
       isRecurring,
       recurringDays: isRecurring ? recurringDays : [],
       description: description.trim(),
@@ -82,8 +85,10 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
 
     if (editingTemplate) {
       onEditTemplate(templateData);
+      toast.success('Modelo atualizado com sucesso!');
     } else {
       onAddTemplate(templateData);
+      toast.success('Modelo criado com sucesso!');
     }
 
     setIsFormOpen(false);
@@ -93,19 +98,22 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
   const handleDelete = (templateId, templateName) => {
     if (window.confirm(`Deseja realmente excluir o modelo "${templateName}"?`)) {
       onDeleteTemplate(templateId);
+      toast.success(`Modelo "${templateName}" excluído.`);
     }
   };
 
   return (
-    <div className="gerenciador-modelos-container">
-      <div className="gerenciador-header">
-        <h3>⚙️ Modelos de Tarefa</h3>
-        {onClose && (
-          <button className="close-btn" onClick={onClose} aria-label="Fechar">
-            <XCircle size={24} />
-          </button>
-        )}
-      </div>
+    <div className={`gerenciador-modelos-container ${hideHeader ? 'no-header' : ''}`}>
+      {!hideHeader && (
+        <div className="gerenciador-header">
+          <h3>⚙️ Modelos de Tarefa</h3>
+          {onClose && (
+            <button className="close-btn" onClick={onClose} aria-label="Fechar">
+              <XCircle size={24} />
+            </button>
+          )}
+        </div>
+      )}
 
       {!isFormOpen ? (
         <div className="modelos-list-wrapper">
@@ -116,58 +124,75 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
 
           <div className="modelos-list">
             {templates.length > 0 ? (
-              templates.map((tmpl) => (
-                <div key={tmpl.id} className="modelo-card-item">
-                  <div className="modelo-info">
-                    <span className="modelo-emoji">{tmpl.emoji || '✨'}</span>
-                    <div className="modelo-details">
-                      <div className="modelo-title-row">
-                        <h4>{tmpl.text}</h4>
-                        {tmpl.category && (
-                          <span 
-                            className="modelo-category-badge"
-                            style={{ 
-                              backgroundColor: `${tmpl.color || getCategoryColor(tmpl.category)}22`,
-                              color: tmpl.color || getCategoryColor(tmpl.category),
-                              borderColor: `${tmpl.color || getCategoryColor(tmpl.category)}55`
-                            }}
-                          >
-                            {tmpl.category}
-                          </span>
-                        )}
-                        {tmpl.isRecurring && (
-                          <span 
-                            className="modelo-recurrence-badge"
-                            title={`Recorrência: ${getRecurrenceLabel(tmpl.recurringDays)}`}
-                          >
-                            🔁 {getRecurrenceLabel(tmpl.recurringDays)}
+              templates.map((tmpl) => {
+                const diff = getDifficultyByColor(tmpl.color);
+                return (
+                  <div key={tmpl.id} className="modelo-card-item">
+                    <div className="modelo-info">
+                      <span className="modelo-emoji">{tmpl.emoji || '✨'}</span>
+                      <div className="modelo-details">
+                        <div className="modelo-title-row">
+                          <h4>{tmpl.text}</h4>
+                          {tmpl.category && (
+                            <span 
+                              className="modelo-category-badge"
+                              style={{ 
+                                backgroundColor: `${getCategoryColor(tmpl.category)}22`,
+                                color: getCategoryColor(tmpl.category),
+                                borderColor: `${getCategoryColor(tmpl.category)}55`
+                              }}
+                            >
+                              {tmpl.category}
+                            </span>
+                          )}
+                          {diff && (
+                            <span 
+                              className="modelo-diff-badge"
+                              style={{ 
+                                backgroundColor: `${diff.color}22`,
+                                color: diff.color,
+                                borderColor: `${diff.color}55`
+                              }}
+                              title={`Dificuldade: ${diff.label}`}
+                            >
+                              {diff.emoji} {diff.shortLabel}
+                            </span>
+                          )}
+                          {tmpl.isRecurring && (
+                            <span 
+                              className="modelo-recurrence-badge"
+                              title={`Recorrência: ${getRecurrenceLabel(tmpl.recurringDays)}`}
+                            >
+                              🔁 {getRecurrenceLabel(tmpl.recurringDays)}
+                            </span>
+                          )}
+                        </div>
+                        {tmpl.description && <p className="modelo-desc">{tmpl.description}</p>}
+                        {tmpl.subtasks && tmpl.subtasks.length > 0 && (
+                          <span className="modelo-subtasks-count">
+                            📋 {tmpl.subtasks.length} passo(s)
                           </span>
                         )}
                       </div>
-                      {tmpl.description && <p className="modelo-desc">{tmpl.description}</p>}
-                      {tmpl.subtasks && tmpl.subtasks.length > 0 && (
-                        <span className="modelo-subtasks-count">
-                          📋 {tmpl.subtasks.length} passo(s)
-                        </span>
-                      )}
+                    </div>
+                    <div className="modelo-actions">
+                      <button onClick={() => handleOpenEdit(tmpl)} title="Editar Modelo" className="edit-btn">
+                        <Pencil size={18} />
+                      </button>
+                      <button onClick={() => handleDelete(tmpl.id, tmpl.text)} title="Excluir Modelo" className="delete-btn">
+                        <Trash size={18} />
+                      </button>
                     </div>
                   </div>
-                  <div className="modelo-actions">
-                    <button onClick={() => handleOpenEdit(tmpl)} title="Editar Modelo" className="edit-btn">
-                      <Pencil size={18} />
-                    </button>
-                    <button onClick={() => handleDelete(tmpl.id, tmpl.text)} title="Excluir Modelo" className="delete-btn">
-                      <Trash size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="empty-templates-msg">Nenhum modelo cadastrado.</p>
             )}
           </div>
         </div>
       ) : (
+
         <form onSubmit={handleSubmitForm} className="modelo-form">
           <h4>{editingTemplate ? '✏️ Editar Modelo' : '➕ Novo Modelo'}</h4>
 

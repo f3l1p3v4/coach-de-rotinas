@@ -10,6 +10,7 @@ import {
   PlusCircle,
   Tag
 } from '@phosphor-icons/react';
+import { toast } from 'sonner';
 
 import { 
   signInWithGoogleCalendar, 
@@ -204,7 +205,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
       setSyncStatusMsg('Redirecionando para login do Google...');
       await signInWithGoogleCalendar();
     } catch (err) {
-      alert(err.message || 'Erro ao conectar com Google Agenda.');
+      toast.error(err.message || 'Erro ao conectar com Google Agenda.');
     }
   };
 
