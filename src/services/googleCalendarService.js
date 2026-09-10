@@ -152,17 +152,29 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
         '11': '#dc2127'
       };
 
-      const eventColor = item.colorId ? GOOGLE_COLOR_MAP[item.colorId] : null;
+      const isBirthday = isBirthdayEvent({
+        title: item.summary,
+        description: item.description
+      });
+
+      const eventColor = isBirthday 
+        ? '#a855f7' 
+        : (item.colorId ? GOOGLE_COLOR_MAP[item.colorId] : '#0284c7');
 
       return {
         id: item.id,
         title: item.summary || 'Sem Título',
-        emoji: '📅',
+        emoji: isBirthday ? '🎉' : '📅',
         date: dateStr,
         time: timeStr,
         period,
-        color: eventColor,
+        calendarColor: eventColor,
+        color: '#10b981',
+        difficulty: 'low',
         description: item.description || '',
+        category: 'Pessoal',
+        isBirthday,
+        isCalendarEvent: true,
         htmlLink: item.htmlLink
       };
     });
@@ -172,6 +184,23 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
     console.error('Erro ao buscar eventos do Google Calendar:', err);
     return { events: [], error: err.message };
   }
+}
+
+/**
+ * Verifica se um evento ou texto refere-se a um aniversário.
+ */
+export function isBirthdayEvent(item) {
+  if (!item) return false;
+  const title = (item.title || item.summary || item.text || '').toLowerCase();
+  const desc = (item.description || '').toLowerCase();
+  const fullText = `${title} ${desc}`;
+  
+  const birthdayRegex = /\b(anivers[aá]rio|birthday|bday|b-day|niver|parab[eé]ns|cumplea[ñn]os)\b/i;
+  const birthdayEmojis = ['🎂', '🎈', '🎉', '🍰', '🎁'];
+  
+  if (birthdayRegex.test(fullText)) return true;
+  if (birthdayEmojis.some(emoji => fullText.includes(emoji))) return true;
+  return false;
 }
 
 /**

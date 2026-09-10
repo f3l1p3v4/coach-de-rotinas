@@ -10,6 +10,11 @@ import TaskDetailsModal from '../TaskDetailsModal';
 import AddTaskModal from '../AddTaskModal';
 import CategoryFilterBar from '../CategoryFilterBar';
 import { getStoredCategories } from '../../constants/categories';
+import { 
+  getGoogleAccessToken, 
+  fetchGoogleEvents, 
+  isBirthdayEvent 
+} from '../../services/googleCalendarService';
 
 import './styles.css';
 
@@ -124,6 +129,83 @@ function DailyPlanner({
   const setTemplates = propSetTemplates || setInternalTemplates;
 
   const [plannerCategories, setPlannerCategories] = useState(() => getStoredCategories('task'));
+
+  const [calendarEvents, setCalendarEvents] = useState(() => {
+    try {
+      const saved = localStorage.getItem('google_calendar_events');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  const [calendarCompletedMap, setCalendarCompletedMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calendar_completed_map');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  const [hiddenCalendarEventIds, setHiddenCalendarEventIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calendar_hidden_ids');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  const [calendarPriorityMap, setCalendarPriorityMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calendar_priority_map');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  useEffect(() => {
+    const handleEventsUpdated = (e) => {
+      if (e?.detail && Array.isArray(e.detail)) {
+        setCalendarEvents(e.detail);
+      } else {
+        try {
+          const saved = localStorage.getItem('google_calendar_events');
+          if (saved) setCalendarEvents(JSON.parse(saved));
+        } catch (err) {}
+      }
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'google_calendar_events') {
+        try {
+          if (e.newValue) setCalendarEvents(JSON.parse(e.newValue));
+        } catch (err) {}
+      }
+    };
+
+    window.addEventListener('google-calendar-events-updated', handleEventsUpdated);
+    window.addEventListener('storage', handleStorageChange);
+
+    async function syncCalendarSilently() {
+      try {
+        const token = await getGoogleAccessToken();
+        if (token) {
+          const res = await fetchGoogleEvents(token);
+          if (res?.events && res.events.length > 0) {
+            setCalendarEvents(res.events);
+            localStorage.setItem('google_calendar_events', JSON.stringify(res.events));
+          }
+        }
+      } catch (err) {
+        console.warn('Erro ao sincronizar eventos em background:', err);
+      }
+    }
+    syncCalendarSilently();
+
+    return () => {
+      window.removeEventListener('google-calendar-events-updated', handleEventsUpdated);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   useEffect(() => {
     const handleCatsChanged = () => setPlannerCategories(getStoredCategories('task'));
@@ -247,6 +329,48 @@ function DailyPlanner({
   };
 
   const handleUpdateTask = (updatedTask) => {
+    if (String(updatedTask.id).startsWith('calendar-')) {
+      const origId = updatedTask.calendarOriginalId;
+      if (origId) {
+        setCalendarPriorityMap(prev => {
+          const next = {
+            ...prev,
+            [origId]: {
+              color: updatedTask.color || '#10b981',
+              difficulty: updatedTask.difficulty || 'low',
+              period: updatedTask.period,
+              description: updatedTask.description
+            }
+          };
+          try {
+            localStorage.setItem('calendar_priority_map', JSON.stringify(next));
+          } catch (e) {}
+          return next;
+        });
+      }
+      setCalendarEvents(prev => {
+        const next = prev.map(evt => {
+          if (evt.id === updatedTask.calendarOriginalId) {
+            return {
+              ...evt,
+              title: updatedTask.text,
+              description: updatedTask.description,
+              period: updatedTask.period,
+              time: updatedTask.time || evt.time,
+            };
+          }
+          return evt;
+        });
+        try {
+          localStorage.setItem('google_calendar_events', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+      setSelectedTask(null);
+      toast.success('Compromisso atualizado.');
+      return;
+    }
+
     const sanitizedTask = {
       ...updatedTask,
       isRecurring: Boolean(updatedTask.isRecurring),
@@ -449,6 +573,24 @@ function DailyPlanner({
   };
 
   const handleToggle = (id) => {
+    if (String(id).startsWith('calendar-')) {
+      const calTask = calendarTasksForSelectedDate.find(t => t.id === id);
+      if (!calTask) return;
+      if (calTask.isBirthday) {
+        // Aniversário não pode ser marcado como feito
+        return;
+      }
+      const key = `${selectedDate}_${calTask.calendarOriginalId}`;
+      setCalendarCompletedMap(prev => {
+        const next = { ...prev, [key]: !prev[key] };
+        try {
+          localStorage.setItem('calendar_completed_map', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+      return;
+    }
+
     const task = tasks.find(t => t.id === id);
     if (!task) return;
     const isCompletedCurrently = isTaskCompletedForDate(task, selectedDate);
@@ -489,6 +631,21 @@ function DailyPlanner({
   };
 
   const handleRemove = (id) => {
+    if (String(id).startsWith('calendar-')) {
+      const calTask = calendarTasksForSelectedDate.find(t => t.id === id);
+      if (!calTask) return;
+      const key = `${selectedDate}_${calTask.calendarOriginalId}`;
+      setHiddenCalendarEventIds(prev => {
+        const next = { ...prev, [key]: true };
+        try {
+          localStorage.setItem('calendar_hidden_ids', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+      toast.success('Compromisso removido da lista do dia.');
+      return;
+    }
+
     if (activeTimer.taskId === id) handleCancelTimer();
     setTasks(tasks.filter(t => t.id !== id));
     toast.success('Tarefa removida.');
@@ -511,17 +668,21 @@ function DailyPlanner({
   const handleOnDragEnd = (event) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-      setTasks((allTasks) => {
-        const currentDayTasks = allTasks.filter(t => isTaskForSelectedDate(t, selectedDate));
-        const otherDayTasks = allTasks.filter(t => !isTaskForSelectedDate(t, selectedDate));
+      if (!String(active.id).startsWith('calendar-') && !String(over.id).startsWith('calendar-')) {
+        setTasks((allTasks) => {
+          const currentDayTasks = allTasks.filter(t => isTaskForSelectedDate(t, selectedDate));
+          const otherDayTasks = allTasks.filter(t => !isTaskForSelectedDate(t, selectedDate));
 
-        const oldIndex = currentDayTasks.findIndex((item) => item.id === active.id);
-        const newIndex = currentDayTasks.findIndex((item) => item.id === over.id);
+          const oldIndex = currentDayTasks.findIndex((item) => item.id === active.id);
+          const newIndex = currentDayTasks.findIndex((item) => item.id === over.id);
 
-        const reordered = arrayMove(currentDayTasks, oldIndex, newIndex);
-
-        return [...otherDayTasks, ...reordered];
-      });
+          if (oldIndex !== -1 && newIndex !== -1) {
+            const reordered = arrayMove(currentDayTasks, oldIndex, newIndex);
+            return [...otherDayTasks, ...reordered];
+          }
+          return allTasks;
+        });
+      }
     }
   };
 
@@ -550,9 +711,80 @@ function DailyPlanner({
   const todayStr = getTodayString();
   const tasksForSelectedDate = tasks.filter(t => isTaskForSelectedDate(t, selectedDate));
 
+  const uniqueCalendarMap = new Map();
+  const existingTitles = new Set(
+    tasksForSelectedDate.map(t => (t.text || '').toLowerCase().trim())
+  );
+
+  (calendarEvents || []).forEach(evt => {
+    if (!evt || !evt.id) return;
+    const key = `${selectedDate}_${evt.id}`;
+    if (hiddenCalendarEventIds[key]) return;
+
+    const isBirthday = isBirthdayEvent(evt);
+    let matchesDate = false;
+
+    if (evt.date === selectedDate) {
+      matchesDate = true;
+    } else if (isBirthday && evt.date && evt.date.length >= 10 && selectedDate.length >= 10) {
+      matchesDate = (evt.date.slice(5) === selectedDate.slice(5));
+    }
+
+    if (!matchesDate) return;
+
+    const normTitle = (evt.title || evt.text || '').toLowerCase().trim();
+    if (!normTitle) return;
+
+    // Se já existe uma tarefa manual com o mesmo título, evita duplicata
+    if (existingTitles.has(normTitle)) return;
+
+    // Chave de desduplicação:
+    // Para aniversários: normTitle (ex: 'aniversário mãe'), garantindo apenas 1 card mesmo que haja instâncias em outros anos
+    // Para compromissos normais: normTitle + horário
+    const dedupeKey = isBirthday ? `bday_${normTitle}` : `evt_${normTitle}_${evt.time || 'all'}`;
+
+    if (!uniqueCalendarMap.has(dedupeKey)) {
+      uniqueCalendarMap.set(dedupeKey, evt);
+    } else {
+      const existing = uniqueCalendarMap.get(dedupeKey);
+      if (evt.date === selectedDate && existing.date !== selectedDate) {
+        uniqueCalendarMap.set(dedupeKey, evt);
+      }
+    }
+  });
+
+  const calendarTasksForSelectedDate = Array.from(uniqueCalendarMap.values()).map(evt => {
+    const isBirthday = isBirthdayEvent(evt);
+    const isCompleted = isBirthday ? false : Boolean(calendarCompletedMap[`${selectedDate}_${evt.id}`]);
+    const customPrio = calendarPriorityMap[evt.id] || {};
+    const priorityColor = isBirthday ? '#a855f7' : (customPrio.color || '#10b981');
+    const calendarBgColor = isBirthday ? '#a855f7' : (evt.calendarColor || evt.color || '#0284c7');
+
+    return {
+      id: `calendar-${evt.id}`,
+      calendarOriginalId: evt.id,
+      text: evt.title || evt.text || 'Compromisso',
+      emoji: isBirthday ? '🎉' : (evt.emoji || '📅'),
+      description: customPrio.description || evt.description || '',
+      time: evt.time || '09:00',
+      period: customPrio.period || evt.period || 'Manhã',
+      category: 'Pessoal',
+      calendarColor: calendarBgColor,
+      color: priorityColor,
+      difficulty: customPrio.difficulty || 'low',
+      completed: isCompleted,
+      isCalendarEvent: true,
+      isBirthday,
+      htmlLink: evt.htmlLink || null,
+      date: selectedDate
+    };
+  });
+
+  const allTasksForSelectedDate = [...tasksForSelectedDate, ...calendarTasksForSelectedDate];
+
   const categoryCounts = {};
   let uncategorizedCount = 0;
-  tasksForSelectedDate.forEach(t => {
+  allTasksForSelectedDate.forEach(t => {
     if (t.category) {
       categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
     } else {
@@ -560,7 +792,7 @@ function DailyPlanner({
     }
   });
 
-  const filteredTasks = tasksForSelectedDate.filter(t => {
+  const filteredTasks = allTasksForSelectedDate.filter(t => {
     if (selectedCategories.length === 0) return true;
     if (!t.category) return selectedCategories.includes('__none__');
     return selectedCategories.includes(t.category);
@@ -569,7 +801,7 @@ function DailyPlanner({
   const processedTasks = sortTasksChronologically(
     filteredTasks.map(t => ({
       ...t,
-      completed: isTaskCompletedForDate(t, selectedDate)
+      completed: t.isCalendarEvent ? t.completed : isTaskCompletedForDate(t, selectedDate)
     }))
   );
 
@@ -684,7 +916,7 @@ function DailyPlanner({
       <CategoryFilterBar
         categories={plannerCategories}
         categoryCounts={categoryCounts}
-        totalCount={tasksForSelectedDate.length}
+        totalCount={allTasksForSelectedDate.length}
         uncategorizedCount={uncategorizedCount}
         selectedCategories={selectedCategories}
         onToggleCategory={handleToggleCategory}

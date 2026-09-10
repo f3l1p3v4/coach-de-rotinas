@@ -7,9 +7,20 @@ import TodoTask from './components/TodoTask';
 import TodoActions from './components/TodoActions';
 import CustomTimerModal from './components/CustomTimerModal';
 import { getDifficultyByColor } from '../../constants/difficulty';
-import { getCategoryColor } from '../../constants/categories';
 
 import './styles.css';
+
+function isLightColor(hexColor) {
+  if (!hexColor) return false;
+  let hex = String(hexColor).replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  if (hex.length !== 6) return false;
+  const r = parseInt(hex.substring(0, 2), 16) || 0;
+  const g = parseInt(hex.substring(2, 4), 16) || 0;
+  const b = parseInt(hex.substring(4, 6), 16) || 0;
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness >= 155;
+}
 
 function TodoItem({ 
   task, 
@@ -37,8 +48,29 @@ function TodoItem({
     setIsCustomTimeModalOpen(false);
   };
 
-  const diffInfo = getDifficultyByColor(task.color || task.difficulty);
-  const accentColor = diffInfo ? diffInfo.color : (task.color || getCategoryColor(task.category));
+  const isCalendar = task.isCalendarEvent && !task.isBirthday;
+  const calendarBg = isCalendar ? (task.calendarColor || task.color || '#0284c7') : null;
+  const isLight = isCalendar && isLightColor(calendarBg);
+
+  const diffInfo = getDifficultyByColor(task.color || task.difficulty || '#10b981');
+  const accentColor = task.isBirthday 
+    ? '#c084fc' 
+    : (diffInfo ? diffInfo.color : (task.color || '#10b981'));
+
+  const itemClassNames = [
+    'todo-item',
+    task.isCalendarEvent ? 'calendar-event-item' : '',
+    task.isBirthday ? 'birthday-item' : '',
+    isLight ? 'light-calendar-item' : (isCalendar ? 'dark-calendar-item' : '')
+  ].filter(Boolean).join(' ');
+
+  const cardStyle = isCalendar ? {
+    backgroundColor: calendarBg,
+    background: calendarBg,
+    backgroundImage: 'none',
+    borderColor: isLight ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.3)',
+    boxShadow: isLight ? '0 3px 10px rgba(0, 0, 0, 0.12)' : '0 3px 12px rgba(0, 0, 0, 0.35)'
+  } : undefined;
 
   return (
     <>
@@ -49,16 +81,20 @@ function TodoItem({
         {...attributes} 
         {...listeners}
       >
-        <div className="todo-item">
-          {accentColor && (
+        <div className={itemClassNames} style={cardStyle}>
+          {accentColor && !task.isBirthday && (
             <div 
               className="category-accent-strip" 
               style={{ backgroundColor: accentColor }}
-              title={`Dificuldade: ${diffInfo?.label || 'Padrão'}${task.category ? ` • Categoria: ${task.category}` : ''}`}
+              title={`Prioridade: ${diffInfo?.label || 'Baixa'}${task.category ? ` • Categoria: ${task.category}` : ''}`}
             />
           )}
           <div className="task-wrapper">
-            <TodoCheckbox completed={task.completed} onToggle={() => onToggle(task.id)} />
+            <TodoCheckbox 
+              completed={task.completed} 
+              onToggle={() => onToggle(task.id)} 
+              isBirthday={task.isBirthday}
+            />
             <TodoTask task={task} onOpenDetails={onOpenDetails} />
           </div>
           

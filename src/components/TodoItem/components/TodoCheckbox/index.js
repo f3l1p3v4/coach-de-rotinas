@@ -3,7 +3,11 @@ import { Check } from '@phosphor-icons/react';
 
 import './styles.css';
 
-function TodoCheckbox({ completed, onToggle }) {
+function TodoCheckbox({ completed, onToggle, isBirthday }) {
+  if (isBirthday) {
+    return null;
+  }
+
   const checkboxClassName = completed ? 'checkbox-checked' : 'checkbox-unchecked';
 
   return (

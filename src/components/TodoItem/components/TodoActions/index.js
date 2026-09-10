@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Trash, XCircle, PlayCircle, PauseCircle, CalendarPlus } from '@phosphor-icons/react';
+import { Play, Trash, XCircle, PlayCircle, PauseCircle, CalendarPlus, ArrowSquareOut } from '@phosphor-icons/react';
 
 import { POMODORO_CONFIG } from '../../../DailyPlanner';
 
@@ -12,10 +12,10 @@ function TodoActions({
   onPauseResume, 
   onCancel, 
   onRemove, 
-  openCustomModal,
-  selectedDate,
-  todayStr,
-  onMoveToToday
+  openCustomModal, 
+  selectedDate, 
+  todayStr, 
+  onMoveToToday 
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -25,11 +25,14 @@ function TodoActions({
 
   // Pode mover para hoje se:
   // - A tarefa não está concluída;
+  // - Não é aniversário nem evento do Google Calendar;
   // - Não é uma tarefa com recorrência fixa semanal;
   // - A data da tarefa é anterior à data de hoje, OU o dia visualizado é anterior a hoje;
   // - Existe a função onMoveToToday.
   const taskDate = task.date || selectedDate;
-  const canMoveToToday = !task.completed && 
+  const canMoveToToday = !task.isBirthday &&
+                         !task.isCalendarEvent &&
+                         !task.completed && 
                          !task.isRecurring && 
                          Boolean(todayStr) && 
                          Boolean(taskDate && taskDate < todayStr) && 
@@ -74,7 +77,7 @@ function TodoActions({
 
   return (
     <div className={`todo-actions ${isMenuOpen ? 'menu-is-open' : ''}`} ref={menuRef}>
-      {!task.completed && (
+      {!task.isBirthday && !task.completed && (
         <>
           <button 
             className="menu-button start-timer-trigger" 
@@ -98,6 +101,17 @@ function TodoActions({
           )}
         </>
       )}
+      {task.htmlLink && (
+        <a 
+          href={task.htmlLink} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="calendar-external-link-btn" 
+          title="Ver no Google Agenda"
+        >
+          <ArrowSquareOut size={16} />
+        </a>
+      )}
       {canMoveToToday && (
         <button 
           type="button"
@@ -113,7 +127,12 @@ function TodoActions({
           <span className="move-to-today-label">Hoje</span>
         </button>
       )}
-      <button className="delete-button" onClick={() => onRemove(task.id)} disabled={isAnyTimerActive} title="Excluir tarefa">
+      <button 
+        className="delete-button" 
+        onClick={() => onRemove(task.id)} 
+        disabled={isAnyTimerActive} 
+        title={task.isCalendarEvent ? "Remover compromisso da lista do dia" : "Excluir tarefa"}
+      >
         <Trash size={18} />
       </button>
     </div>

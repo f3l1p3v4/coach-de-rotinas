@@ -29,16 +29,31 @@ function TodoTask({ task, onOpenDetails }) {
 
   const recurrenceLabel = task.isRecurring ? getRecurrenceLabel(task.recurringDays) : null;
 
+  const isChecked = !task.isBirthday && task.completed;
+
   return (
     <div className="task-details">
       <div className="task-title-line">
         <p 
-          className={`todo-paragraph ${task.completed ? 'paragraph-checked' : ''}`}
+          className={`todo-paragraph ${isChecked ? 'paragraph-checked' : ''}`}
           onClick={onOpenDetails}
         >
           {task.emoji && <span className="task-emoji">{task.emoji}</span>}
           <span className="task-text-content">{task.text}</span>
         </p>
+
+        {task.isCalendarEvent && (
+          <span className="calendar-badge-tag" onClick={onOpenDetails}>
+            📅 Google Agenda
+          </span>
+        )}
+
+        {task.isCalendarEvent && task.time && (
+          <span className="calendar-time-tag" onClick={onOpenDetails}>
+            ⏰ {task.time}
+          </span>
+        )}
+
         {recurrenceLabel && (
           <span 
             className="task-recurrence-badge" 

@@ -212,6 +212,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   useEffect(() => {
     if (events && events.length > 0) {
       localStorage.setItem('google_calendar_events', JSON.stringify(events));
+      window.dispatchEvent(new CustomEvent('google-calendar-events-updated', { detail: events }));
     }
   }, [events]);
 
