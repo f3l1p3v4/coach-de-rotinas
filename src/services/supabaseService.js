@@ -526,3 +526,88 @@ export async function syncUserFocusScore(userId, count) {
     }
   }
 }
+
+/**
+ * --- HISTÓRICO DIÁRIO DE EXECUÇÃO DE TAREFAS ---
+ */
+export async function loadUserTaskHistory(userId) {
+  let localHistory = {};
+  try {
+    const raw = localStorage.getItem('daily_task_history');
+    if (raw) {
+      localHistory = JSON.parse(raw) || {};
+    }
+  } catch (e) {
+    localHistory = {};
+  }
+
+  if (isSupabaseConfigured && supabase && userId) {
+    try {
+      const { data, error } = await supabase
+        .from('task_history')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (!error && Array.isArray(data)) {
+        const remoteMap = {};
+        data.forEach(row => {
+          const key = row.id || `${row.task_id}_${row.date}`;
+          let parsedSubtasks = [];
+          if (row.subtasks) {
+            parsedSubtasks = typeof row.subtasks === 'string' ? JSON.parse(row.subtasks) : row.subtasks;
+          }
+          remoteMap[key] = {
+            id: key,
+            taskId: String(row.task_id),
+            date: row.date,
+            status: row.status || 'pending',
+            observation: row.observation || '',
+            completedAt: row.completed_at || null,
+            startedAt: row.started_at || null,
+            subtasks: Array.isArray(parsedSubtasks) ? parsedSubtasks : []
+          };
+        });
+
+        // Faz merge com local para não perder dados criados offline
+        const merged = { ...localHistory, ...remoteMap };
+        localStorage.setItem('daily_task_history', JSON.stringify(merged));
+        return merged;
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar histórico do Supabase, usando localStorage:', err);
+    }
+  }
+
+  return localHistory;
+}
+
+export async function syncUserTaskHistory(userId, historyMap) {
+  if (!historyMap || typeof historyMap !== 'object') return;
+  try {
+    localStorage.setItem('daily_task_history', JSON.stringify(historyMap));
+  } catch (e) {}
+
+  if (isSupabaseConfigured && supabase && userId) {
+    try {
+      const items = Object.values(historyMap);
+      if (items.length === 0) return;
+
+      const payload = items.map(item => ({
+        id: item.id || `${item.taskId}_${item.date}`,
+        user_id: userId,
+        task_id: String(item.taskId),
+        date: item.date,
+        status: item.status || 'pending',
+        observation: item.observation || '',
+        completed_at: item.completedAt || null,
+        started_at: item.startedAt || null,
+        subtasks: item.subtasks || []
+      }));
+
+      await supabase.from('task_history').upsert(payload, { onConflict: 'id' });
+    } catch (err) {
+      console.warn('Erro ao sincronizar histórico de tarefas no Supabase:', err);
+    }
+  }
+}
+

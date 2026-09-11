@@ -8,7 +8,8 @@ function CategoryFilterBar({
   uncategorizedCount = 0,
   selectedCategories = [],
   onToggleCategory,
-  onSelectAll
+  onSelectAll,
+  weekday
 }) {
   const isAllSelected = selectedCategories.length === 0;
 
@@ -105,6 +106,12 @@ function CategoryFilterBar({
           </button>
         )}
       </div>
+
+      {weekday && (
+        <div className="planner-weekday-display" title={`Dia da semana: ${weekday}`}>
+          <span className="planner-weekday-text">{weekday}</span>
+        </div>
+      )}
     </div>
   );
 }

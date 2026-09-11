@@ -1,6 +1,4 @@
 import React from 'react';
-import { getRecurrenceLabel } from '../../../../constants/recurrence';
-
 import './styles.css';
 
 const formatTimeStr = (isoDate) => {
@@ -27,45 +25,35 @@ function TodoTask({ task, onOpenDetails }) {
     executionTimeText = `Finalizado às ${endTime}`;
   }
 
-  const recurrenceLabel = task.isRecurring ? getRecurrenceLabel(task.recurringDays) : null;
+  const isChecked = !task.isBirthday && (task.status === 'completed' || (task.completed && task.status !== 'failed'));
+  const isFailed = !task.isBirthday && task.status === 'failed';
+  const hasObservation = Boolean(task.observation && task.observation.trim().length > 0);
 
-  const isChecked = !task.isBirthday && task.completed;
+  let paragraphStateClass = '';
+  if (isChecked) paragraphStateClass = 'paragraph-checked';
+  else if (isFailed) paragraphStateClass = 'paragraph-failed';
 
   return (
     <div className="task-details">
       <div className="task-title-line">
         <p 
-          className={`todo-paragraph ${isChecked ? 'paragraph-checked' : ''}`}
+          className={`todo-paragraph ${paragraphStateClass}`}
           onClick={onOpenDetails}
         >
           {task.emoji && <span className="task-emoji">{task.emoji}</span>}
           <span className="task-text-content">{task.text}</span>
+          {hasObservation && (
+            <span 
+              className="task-has-observation-badge" 
+              title={`Observação: ${task.observation}`}
+            >
+              💬
+            </span>
+          )}
         </p>
-
-        {task.isCalendarEvent && (
-          <span className="calendar-badge-tag" onClick={onOpenDetails}>
-            📅 Google Agenda
-          </span>
-        )}
-
-        {task.isCalendarEvent && task.time && (
-          <span className="calendar-time-tag" onClick={onOpenDetails}>
-            ⏰ {task.time}
-          </span>
-        )}
-
-        {recurrenceLabel && (
-          <span 
-            className="task-recurrence-badge" 
-            title={`Recorrência: ${recurrenceLabel}`}
-            onClick={onOpenDetails}
-          >
-            🔁 {recurrenceLabel}
-          </span>
-        )}
       </div>
       {executionTimeText && (
-        <span className="task-execution-time">
+        <span className={`task-execution-time ${task.emoji ? 'with-emoji' : ''}`}>
           {executionTimeText}
         </span>
       )}

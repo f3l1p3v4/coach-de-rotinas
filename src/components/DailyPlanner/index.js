@@ -3,11 +3,18 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { PlusCircle, User, CaretLeft, CaretRight, CalendarBlank } from '@phosphor-icons/react';
 import { toast } from 'sonner';
-import { loadUserTasks, syncUserTasks } from '../../services/supabaseService';
+import { 
+  loadUserTasks, 
+  syncUserTasks, 
+  loadUserTaskHistory, 
+  syncUserTaskHistory 
+} from '../../services/supabaseService';
 
 import TodoItem from '../TodoItem';
 import TaskDetailsModal from '../TaskDetailsModal';
 import AddTaskModal from '../AddTaskModal';
+import TaskCompletionModal from '../TaskCompletionModal';
+import TaskObservationModal from '../TaskObservationModal';
 import CategoryFilterBar from '../CategoryFilterBar';
 import { getStoredCategories } from '../../constants/categories';
 import { 
@@ -31,6 +38,15 @@ const getFormattedDateLabel = (dateStr) => {
   if (dateStr === today) return 'Hoje';
   const [y, m, d] = dateStr.split('-');
   return `${d}/${m}/${y}`;
+};
+
+export const getWeekdayLabel = (dateStr) => {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const weekday = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+  if (!weekday) return '';
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1);
 };
 
 const sortTasksChronologically = (taskList) => {
@@ -107,6 +123,8 @@ function DailyPlanner({
   const [isTasksLoaded, setIsTasksLoaded] = useState(false);
   const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [taskForCompletion, setTaskForCompletion] = useState(null);
+  const [taskForObservation, setTaskForObservation] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
@@ -141,6 +159,22 @@ function DailyPlanner({
   const [calendarCompletedMap, setCalendarCompletedMap] = useState(() => {
     try {
       const saved = localStorage.getItem('calendar_completed_map');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  const [calendarStatusMap, setCalendarStatusMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem('calendar_status_map');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {};
+  });
+
+  const [taskHistory, setTaskHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('daily_task_history');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -268,6 +302,27 @@ function DailyPlanner({
     syncUserTasks(user?.id, tasks);
   }, [tasks, user?.id, isTasksLoaded]);
 
+  useEffect(() => {
+    let isMounted = true;
+    async function initHistory() {
+      if (user?.id) {
+        const remoteHistory = await loadUserTaskHistory(user.id);
+        if (isMounted && remoteHistory && Object.keys(remoteHistory).length > 0) {
+          setTaskHistory(prev => ({ ...prev, ...remoteHistory }));
+        }
+      }
+    }
+    initHistory();
+    return () => { isMounted = false; };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!isTasksLoaded) return;
+    if (user?.id && loadedUserIdRef.current !== user.id) return;
+
+    syncUserTaskHistory(user?.id, taskHistory);
+  }, [taskHistory, user?.id, isTasksLoaded]);
+
   const handleMoveToToday = (taskId) => {
     setTasks(prev => prev.map(t => {
       if (t.id === taskId) {
@@ -376,8 +431,49 @@ function DailyPlanner({
       isRecurring: Boolean(updatedTask.isRecurring),
       recurringDays: updatedTask.isRecurring ? (updatedTask.recurringDays || []).map(Number).filter(n => !isNaN(n)) : []
     };
+
+    // 1. Salva o estado das subtarefas daquele dia específico no taskHistory
+    const historyKey = `${sanitizedTask.id}_${selectedDate}`;
+    setTaskHistory(prev => {
+      const existing = prev[historyKey] || {};
+      return {
+        ...prev,
+        [historyKey]: {
+          ...existing,
+          id: historyKey,
+          taskId: String(sanitizedTask.id),
+          date: selectedDate,
+          status: existing.status || 'pending',
+          observation: existing.observation || '',
+          subtasks: sanitizedTask.subtasks || []
+        }
+      };
+    });
+
+    // 2. Cria o modelo base de subtarefas (com completed: false) para que outros dias não sejam afetados
+    const baseSubtasksModel = (sanitizedTask.subtasks || []).map(st => ({
+      id: st.id,
+      text: st.text,
+      completed: false
+    }));
+
     setTasks(prevTasks => {
-      const updatedList = prevTasks.map(t => t.id === sanitizedTask.id ? sanitizedTask : t);
+      const updatedList = prevTasks.map(t => {
+        if (t.id !== sanitizedTask.id) return t;
+        return {
+          ...t,
+          text: sanitizedTask.text,
+          emoji: sanitizedTask.emoji,
+          period: sanitizedTask.period,
+          category: sanitizedTask.category,
+          color: sanitizedTask.color,
+          date: sanitizedTask.date,
+          isRecurring: sanitizedTask.isRecurring,
+          recurringDays: sanitizedTask.recurringDays,
+          description: sanitizedTask.description,
+          subtasks: baseSubtasksModel
+        };
+      });
       return sortTasksChronologically(updatedList);
     });
     setSelectedTask(null);
@@ -565,39 +661,13 @@ function DailyPlanner({
     return taskDate === dateStr;
   };
 
-  const isTaskCompletedForDate = (t, dateStr) => {
-    if (t.isRecurring) {
-      return Array.isArray(t.completedDates) && t.completedDates.includes(dateStr);
-    }
-    return Boolean(t.completed);
-  };
-
   const handleToggle = (id) => {
-    if (String(id).startsWith('calendar-')) {
-      const calTask = calendarTasksForSelectedDate.find(t => t.id === id);
-      if (!calTask) return;
-      if (calTask.isBirthday) {
-        // Aniversário não pode ser marcado como feito
-        return;
-      }
-      const key = `${selectedDate}_${calTask.calendarOriginalId}`;
-      setCalendarCompletedMap(prev => {
-        const next = { ...prev, [key]: !prev[key] };
-        try {
-          localStorage.setItem('calendar_completed_map', JSON.stringify(next));
-        } catch (e) {}
-        return next;
-      });
-      return;
-    }
-
-    const task = tasks.find(t => t.id === id);
+    const task = processedTasks.find(t => t.id === id);
     if (!task) return;
-    const isCompletedCurrently = isTaskCompletedForDate(task, selectedDate);
-    const isCompleting = !isCompletedCurrently;
+    if (task.isBirthday) return;
 
-    if (isCompleting && activeTimer.taskId === id) {
-      const userConfirmed = window.confirm("⏱️ A atividade está em andamento. Deseja realmente finalizá-la e parar o timer?");
+    if (activeTimer.taskId === id) {
+      const userConfirmed = window.confirm("⏱️ A atividade está em andamento. Deseja realmente parar o timer e definir a conclusão?");
       if (userConfirmed) {
         handleCancelTimer();
       } else {
@@ -605,29 +675,202 @@ function DailyPlanner({
       }
     }
 
-    setTasks(tasks.map(t => {
-      if (t.id !== id) return t;
+    setTaskForCompletion(task);
+  };
+
+  const handleSaveCompletion = (taskId, { status, observation }) => {
+    if (String(taskId).startsWith('calendar-')) {
+      const calTask = calendarTasksForSelectedDate.find(t => t.id === taskId);
+      if (!calTask) return;
+      const key = `${selectedDate}_${calTask.calendarOriginalId}`;
+      const isCompleted = status === 'completed';
+
+      setCalendarStatusMap(prev => {
+        const next = { ...prev, [key]: { status, observation } };
+        try {
+          localStorage.setItem('calendar_status_map', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+
+      setCalendarCompletedMap(prev => {
+        const next = { ...prev, [key]: isCompleted };
+        try {
+          localStorage.setItem('calendar_completed_map', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+
+      setTaskForCompletion(null);
+      toast.success(status === 'completed' ? 'Compromisso concluído! ✅' : 'Compromisso marcado como não concluído. ❌');
+      return;
+    }
+
+    if (activeTimer.taskId === taskId) {
+      handleCancelTimer();
+    }
+
+    const currentTask = processedTasks.find(t => t.id === taskId);
+    const historyKey = `${taskId}_${selectedDate}`;
+    const nowIso = new Date().toISOString();
+
+    // 1. Grava no taskHistory a ocorrência exclusiva deste dia
+    setTaskHistory(prev => {
+      const existing = prev[historyKey] || {};
+      return {
+        ...prev,
+        [historyKey]: {
+          ...existing,
+          id: historyKey,
+          taskId: String(taskId),
+          date: selectedDate,
+          status,
+          observation: observation || '',
+          completedAt: (status === 'completed' || status === 'failed') ? nowIso : null,
+          startedAt: currentTask?.startedAt || existing.startedAt || null,
+          subtasks: currentTask?.subtasks || existing.subtasks || []
+        }
+      };
+    });
+
+    // 2. Mantém compatibilidade com a tabela base tasks
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
 
       if (t.isRecurring) {
         const currentDates = Array.isArray(t.completedDates) ? t.completedDates : [];
-        const updatedDates = isCompleting
-          ? [...currentDates, selectedDate]
-          : currentDates.filter(d => d !== selectedDate);
+        const currentFailedDates = Array.isArray(t.failedDates) ? t.failedDates : [];
+        const currentObs = { ...(t.dateObservations || {}) };
+
+        let updatedDates = currentDates.filter(d => d !== selectedDate);
+        let updatedFailedDates = currentFailedDates.filter(d => d !== selectedDate);
+
+        if (status === 'completed') {
+          updatedDates.push(selectedDate);
+        } else if (status === 'failed') {
+          updatedFailedDates.push(selectedDate);
+        }
+
+        if (observation) {
+          currentObs[selectedDate] = observation;
+        } else {
+          delete currentObs[selectedDate];
+        }
+
+        const isTodayDone = selectedDate === todayStr ? (status === 'completed') : (updatedDates.includes(todayStr));
 
         return {
           ...t,
           completedDates: updatedDates,
-          completed: selectedDate === todayStr ? isCompleting : (Array.isArray(updatedDates) && updatedDates.includes(todayStr)),
-          completedAt: isCompleting ? new Date().toISOString() : null
+          failedDates: updatedFailedDates,
+          dateObservations: currentObs,
+          completed: isTodayDone,
+          status: selectedDate === todayStr ? status : t.status,
+          completedAt: (status === 'completed' || status === 'failed') ? nowIso : null
         };
       }
 
-      return {
-        ...t,
-        completed: isCompleting,
-        completedAt: isCompleting ? new Date().toISOString() : null
-      };
+      if (t.date === selectedDate || (!t.date && selectedDate === todayStr)) {
+        return {
+          ...t,
+          status,
+          completed: status === 'completed',
+          observation: observation || '',
+          completedAt: (status === 'completed' || status === 'failed') ? nowIso : null
+        };
+      }
+
+      return t;
     }));
+
+    setTaskForCompletion(null);
+    toast.success(status === 'completed' ? 'Tarefa concluída! ✅' : 'Tarefa marcada como não concluída. ❌');
+  };
+
+  const handleResetPending = (taskId) => {
+    if (String(taskId).startsWith('calendar-')) {
+      const calTask = calendarTasksForSelectedDate.find(t => t.id === taskId);
+      if (!calTask) return;
+      const key = `${selectedDate}_${calTask.calendarOriginalId}`;
+
+      setCalendarStatusMap(prev => {
+        const next = { ...prev };
+        delete next[key];
+        try {
+          localStorage.setItem('calendar_status_map', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+
+      setCalendarCompletedMap(prev => {
+        const next = { ...prev };
+        delete next[key];
+        try {
+          localStorage.setItem('calendar_completed_map', JSON.stringify(next));
+        } catch (e) {}
+        return next;
+      });
+
+      setTaskForCompletion(null);
+      toast.info('Compromisso voltou para o estado pendente.');
+      return;
+    }
+
+    const historyKey = `${taskId}_${selectedDate}`;
+    setTaskHistory(prev => {
+      const next = { ...prev };
+      if (next[historyKey]) {
+        next[historyKey] = {
+          ...next[historyKey],
+          status: 'pending',
+          observation: '',
+          completedAt: null
+        };
+      }
+      return next;
+    });
+
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+
+      if (t.isRecurring) {
+        const currentDates = Array.isArray(t.completedDates) ? t.completedDates : [];
+        const currentFailedDates = Array.isArray(t.failedDates) ? t.failedDates : [];
+        const currentObs = { ...(t.dateObservations || {}) };
+
+        delete currentObs[selectedDate];
+
+        const updatedDates = currentDates.filter(d => d !== selectedDate);
+        const updatedFailedDates = currentFailedDates.filter(d => d !== selectedDate);
+
+        const isTodayDone = selectedDate === todayStr ? false : (updatedDates.includes(todayStr));
+
+        return {
+          ...t,
+          completedDates: updatedDates,
+          failedDates: updatedFailedDates,
+          dateObservations: currentObs,
+          completed: isTodayDone,
+          status: selectedDate === todayStr ? 'pending' : t.status,
+          completedAt: null
+        };
+      }
+
+      if (t.date === selectedDate || (!t.date && selectedDate === todayStr)) {
+        return {
+          ...t,
+          status: 'pending',
+          completed: false,
+          observation: '',
+          completedAt: null
+        };
+      }
+
+      return t;
+    }));
+
+    setTaskForCompletion(null);
+    toast.info('Tarefa voltou para o estado pendente.');
   };
 
   const handleRemove = (id) => {
@@ -755,7 +998,25 @@ function DailyPlanner({
 
   const calendarTasksForSelectedDate = Array.from(uniqueCalendarMap.values()).map(evt => {
     const isBirthday = isBirthdayEvent(evt);
-    const isCompleted = isBirthday ? false : Boolean(calendarCompletedMap[`${selectedDate}_${evt.id}`]);
+    const key = `${selectedDate}_${evt.id}`;
+    const calStatusObj = calendarStatusMap[key];
+    const legacyCompleted = Boolean(calendarCompletedMap[key]);
+
+    let isCompleted = false;
+    let status = 'pending';
+    let observation = '';
+
+    if (!isBirthday) {
+      if (calStatusObj) {
+        status = calStatusObj.status || 'pending';
+        isCompleted = status === 'completed';
+        observation = calStatusObj.observation || '';
+      } else if (legacyCompleted) {
+        status = 'completed';
+        isCompleted = true;
+      }
+    }
+
     const customPrio = calendarPriorityMap[evt.id] || {};
     const priorityColor = isBirthday ? '#a855f7' : (customPrio.color || '#10b981');
     const calendarBgColor = isBirthday ? '#a855f7' : (evt.calendarColor || evt.color || '#0284c7');
@@ -773,6 +1034,8 @@ function DailyPlanner({
       color: priorityColor,
       difficulty: customPrio.difficulty || 'low',
       completed: isCompleted,
+      status,
+      observation,
       isCalendarEvent: true,
       isBirthday,
       htmlLink: evt.htmlLink || null,
@@ -799,10 +1062,72 @@ function DailyPlanner({
   });
 
   const processedTasks = sortTasksChronologically(
-    filteredTasks.map(t => ({
-      ...t,
-      completed: t.isCalendarEvent ? t.completed : isTaskCompletedForDate(t, selectedDate)
-    }))
+    filteredTasks.map(t => {
+      if (t.isCalendarEvent) {
+        return t;
+      }
+
+      const historyKey = `${t.id}_${selectedDate}`;
+      const historyEntry = taskHistory[historyKey];
+
+      let status = 'pending';
+      let completed = false;
+      let observation = '';
+      let completedAt = null;
+      let startedAt = t.startedAt || null;
+
+      if (historyEntry) {
+        status = historyEntry.status || 'pending';
+        completed = status === 'completed';
+        observation = historyEntry.observation || '';
+        completedAt = historyEntry.completedAt || null;
+        if (historyEntry.startedAt) startedAt = historyEntry.startedAt;
+      } else {
+        // Fallback para tarefas salvas antes da migração para taskHistory
+        if (t.isRecurring) {
+          const completedDates = Array.isArray(t.completedDates) ? t.completedDates : [];
+          const failedDates = Array.isArray(t.failedDates) ? t.failedDates : [];
+          const dateObservations = t.dateObservations || {};
+
+          if (completedDates.includes(selectedDate)) {
+            status = 'completed';
+            completed = true;
+          } else if (failedDates.includes(selectedDate)) {
+            status = 'failed';
+            completed = false;
+          }
+          observation = dateObservations[selectedDate] || '';
+        } else if (t.date === selectedDate || (!t.date && selectedDate === todayStr)) {
+          status = t.status || (t.completed ? 'completed' : 'pending');
+          completed = status === 'completed';
+          observation = t.observation || '';
+          completedAt = t.completedAt || null;
+        }
+      }
+
+      // Subtarefas isoladas para o dia:
+      // Se houver histórico salvo no dia, usa-o; caso contrário, deriva do modelo base com completed: false
+      const baseSubtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
+      let daySubtasks = [];
+      if (historyEntry && Array.isArray(historyEntry.subtasks) && historyEntry.subtasks.length > 0) {
+        daySubtasks = historyEntry.subtasks;
+      } else {
+        daySubtasks = baseSubtasks.map(st => ({
+          ...st,
+          completed: false
+        }));
+      }
+
+      return {
+        ...t,
+        status,
+        completed,
+        observation,
+        completedAt,
+        startedAt,
+        subtasks: daySubtasks
+      };
+    })
   );
 
   const PERIOD_NAMES = ['Manhã', 'Tarde', 'Noite'];
@@ -921,6 +1246,7 @@ function DailyPlanner({
         selectedCategories={selectedCategories}
         onToggleCategory={handleToggleCategory}
         onSelectAll={handleSelectAll}
+        weekday={getWeekdayLabel(selectedDate)}
       />
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
@@ -949,10 +1275,11 @@ function DailyPlanner({
                           onCancel={handleCancelTimer}
                           activeTimer={activeTimer}
                           currentTimeDisplay={currentTimeDisplay}
-                          onOpenDetails={() => setSelectedTask(tasks.find(t => t.id === task.id) || task)}
+                          onOpenDetails={() => setSelectedTask(processedTasks.find(pt => pt.id === task.id) || task)}
                           selectedDate={selectedDate}
                           todayStr={todayStr}
                           onMoveToToday={handleMoveToToday}
+                          onOpenObservation={(t) => setTaskForObservation(processedTasks.find(pt => pt.id === t.id) || t)}
                         />
                       ))}
                     </div>
@@ -1037,6 +1364,24 @@ function DailyPlanner({
         taskTemplates={templates}
         selectedDate={selectedDate}
       />
+      {taskForCompletion && (
+        <TaskCompletionModal
+          task={taskForCompletion}
+          onClose={() => setTaskForCompletion(null)}
+          onConfirm={(data) => handleSaveCompletion(taskForCompletion.id, data)}
+          onResetPending={() => handleResetPending(taskForCompletion.id)}
+        />
+      )}
+      {taskForObservation && (
+        <TaskObservationModal
+          task={taskForObservation}
+          onClose={() => setTaskForObservation(null)}
+          onEditObservation={(t) => {
+            setTaskForObservation(null);
+            setTaskForCompletion(t);
+          }}
+        />
+      )}
     </div>
   );
 }

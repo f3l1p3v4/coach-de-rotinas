@@ -7,6 +7,7 @@ import TodoTask from './components/TodoTask';
 import TodoActions from './components/TodoActions';
 import CustomTimerModal from './components/CustomTimerModal';
 import { getDifficultyByColor } from '../../constants/difficulty';
+import { getRecurrenceLabel } from '../../constants/recurrence';
 
 import './styles.css';
 
@@ -34,7 +35,8 @@ function TodoItem({
   onOpenDetails,
   selectedDate,
   todayStr,
-  onMoveToToday
+  onMoveToToday,
+  onOpenObservation
 }) {
   const [isCustomTimeModalOpen, setIsCustomTimeModalOpen] = useState(false);
   
@@ -57,8 +59,15 @@ function TodoItem({
     ? '#c084fc' 
     : (diffInfo ? diffInfo.color : (task.color || '#10b981'));
 
+  const recurrenceLabel = task.isRecurring ? getRecurrenceLabel(task.recurringDays) : null;
+  const showCalendarBadge = task.isCalendarEvent && !task.isBirthday;
+  const showTimeBadge = task.isCalendarEvent && !task.isBirthday && Boolean(task.time);
+  const showRecurrenceBadge = Boolean(recurrenceLabel);
+  const hasFloatingBadges = showCalendarBadge || showTimeBadge || showRecurrenceBadge;
+
   const itemClassNames = [
     'todo-item',
+    hasFloatingBadges ? 'has-floating-badges' : '',
     task.isCalendarEvent ? 'calendar-event-item' : '',
     task.isBirthday ? 'birthday-item' : '',
     isLight ? 'light-calendar-item' : (isCalendar ? 'dark-calendar-item' : '')
@@ -89,9 +98,30 @@ function TodoItem({
               title={`Prioridade: ${diffInfo?.label || 'Baixa'}${task.category ? ` • Categoria: ${task.category}` : ''}`}
             />
           )}
+
+          {hasFloatingBadges && (
+            <div className="task-floating-badges">
+              {showCalendarBadge && (
+                <span className="calendar-badge-tag">
+                  📅 Google Agenda
+                </span>
+              )}
+              {showTimeBadge && (
+                <span className="calendar-time-tag">
+                  ⏰ {task.time}
+                </span>
+              )}
+              {showRecurrenceBadge && (
+                <span className="task-recurrence-badge">
+                  {recurrenceLabel}
+                </span>
+              )}
+            </div>
+          )}
           <div className="task-wrapper">
             <TodoCheckbox 
               completed={task.completed} 
+              status={task.status}
               onToggle={() => onToggle(task.id)} 
               isBirthday={task.isBirthday}
             />
@@ -115,6 +145,7 @@ function TodoItem({
             selectedDate={selectedDate}
             todayStr={todayStr}
             onMoveToToday={onMoveToToday}
+            onOpenObservation={onOpenObservation}
           />
         </div>
       </div>

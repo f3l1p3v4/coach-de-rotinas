@@ -145,6 +145,15 @@
   box-shadow: 0 4px 14px rgba(255, 255, 255, 0.4);
 }
 
+[data-theme='light'] .google-avatar-ring {
+  background: #18181b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme='light'] .google-avatar-ring:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
 .google-avatar-img {
   width: 100%;
   height: 100%;
@@ -184,6 +193,32 @@
   flex-direction: column;
   gap: 0.75rem;
   box-sizing: border-box;
+}
+
+/* Modo Desktop (>= 1024px): Períodos lado a lado em colunas */
+@media (min-width: 1024px) {
+  .planner-periods-wrapper {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 1.5rem;
+  }
+
+  .period-section-group {
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: stretch;
+  }
+
+  .period-section-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    white-space: nowrap;
+  }
+
+  .period-section-box {
+    min-height: 80px;
+  }
 }
 
 .period-section-box.empty-box {

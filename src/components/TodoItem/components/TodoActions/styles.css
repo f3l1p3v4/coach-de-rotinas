@@ -2,9 +2,197 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
 }
 
+.actions-menu-trigger {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 8px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+[data-theme='light'] .actions-menu-trigger {
+  color: #18181b;
+}
+
+.actions-menu-trigger:hover,
+.actions-menu-trigger.active {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+[data-theme='light'] .actions-menu-trigger:hover,
+[data-theme='light'] .actions-menu-trigger.active {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: #000000;
+}
+
+/* Em cards coloridos claros (ex: Google Agenda amarelo) */
+.todo-item.light-calendar-item .actions-menu-trigger {
+  color: #374151;
+}
+
+.todo-item.light-calendar-item .actions-menu-trigger:hover,
+.todo-item.light-calendar-item .actions-menu-trigger.active {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #111827;
+}
+
+/* Em cards coloridos escuros (ex: Google Agenda azul) ou aniversários */
+.todo-item.dark-calendar-item .actions-menu-trigger,
+.todo-item.birthday-item .actions-menu-trigger {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.todo-item.dark-calendar-item .actions-menu-trigger:hover,
+.todo-item.birthday-item .actions-menu-trigger:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+/* --- Popover Menu shadcn Style --- */
+.todo-actions.menu-is-open {
+  z-index: 100;
+}
+
+.shadcn-popover-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  min-width: 215px;
+  background-color: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.55), 0 8px 12px -6px rgba(0, 0, 0, 0.45);
+  padding: 5px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: popoverFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top right;
+}
+
+[data-theme='light'] .shadcn-popover-menu {
+  background-color: #ffffff;
+  border-color: #e4e4e7;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.shadcn-popover-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #e4e4e7;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+[data-theme='light'] .shadcn-popover-item {
+  color: #27272a;
+}
+
+.shadcn-popover-item:hover:not(:disabled) {
+  background-color: #27272a;
+  color: #ffffff;
+}
+
+[data-theme='light'] .shadcn-popover-item:hover:not(:disabled) {
+  background-color: #f4f4f5;
+  color: #09090b;
+}
+
+.shadcn-popover-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.popover-item-icon {
+  flex-shrink: 0;
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .popover-item-icon {
+  color: #18181b !important;
+}
+
+.shadcn-popover-separator {
+  height: 1px;
+  margin: 3px 0;
+  background-color: #27272a;
+}
+
+[data-theme='light'] .shadcn-popover-separator {
+  background-color: #e4e4e7;
+}
+
+/* Item de Perigo / Excluir */
+.shadcn-popover-item.danger {
+  color: #ffffff;
+}
+
+[data-theme='light'] .shadcn-popover-item.danger {
+  color: #18181b;
+}
+
+.shadcn-popover-item.danger .popover-item-icon {
+  color: #ffffff !important;
+}
+
+[data-theme='light'] .shadcn-popover-item.danger .popover-item-icon {
+  color: #18181b !important;
+}
+
+.shadcn-popover-item.danger:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.shadcn-popover-item.danger:hover:not(:disabled) .popover-item-icon {
+  color: #ef4444 !important;
+}
+
+[data-theme='light'] .shadcn-popover-item.danger:hover:not(:disabled) {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+[data-theme='light'] .shadcn-popover-item.danger:hover:not(:disabled) .popover-item-icon {
+  color: #dc2626 !important;
+}
+
+/* Ações durante timer ativo */
 .timer-action-btn {
   background: transparent;
   border: none;
@@ -29,105 +217,4 @@
 .timer-action-btn.danger:hover {
   background-color: var(--sidebar-bg);
   color: var(--danger-color);
-}
-
-.menu-button, .delete-button { 
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  color: var(--text-light-color);
-  display: flex;
-}
-
-.menu-button:hover, .delete-button:hover {
-  background-color: var(--sidebar-bg);
-  color: var(--title-color);
-}
-
-.start-timer-trigger {
-  color: #10b981;
-  transition: all 0.2s ease;
-}
-
-.start-timer-trigger:hover {
-  color: #059669;
-  background-color: rgba(16, 185, 129, 0.12);
-  transform: scale(1.08);
-}
-
-.todo-actions.menu-is-open {
-  z-index: 50;
-}
-
-.popover-menu { 
-  position: absolute;
-  right: 0;
-  top: calc(100% + 6px);
-  background-color: var(--card-bg, #262626);
-  border: 1px solid var(--border-color, #383838);
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  padding: 0.5rem;
-  z-index: 1000;
-  width: 195px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  white-space: nowrap;
-}
-
-.popover-menu button { 
-  background: none;
-  border: none;
-  text-align: left;
-  padding: 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  width: 100%;
-  color: var(--text-color);
-  font-size: 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.popover-menu button:hover {
-  background-color: var(--sidebar-bg);
-}
-
-.delete-button:hover { 
-  background-color: var(--danger-color);
-  color: white;
-}
-
-.move-to-today-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background-color: rgba(59, 130, 246, 0.12);
-  color: #3b82f6;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.move-to-today-btn:hover {
-  background-color: #3b82f6;
-  color: #ffffff;
-  border-color: #3b82f6;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
-}
-
-.move-to-today-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
 }
