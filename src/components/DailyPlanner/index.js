@@ -156,106 +156,163 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
     return DEFAULT_WORK_TASKS;
   }
 
-  // 1. Corrige e restaura recorrência de tarefas conhecidas que possam ter sido degradadas
-  const updated = taskList.map(t => {
+  const seenRoutines = new Set();
+  const cleanedList = [];
+
+  for (const t of taskList) {
     const textNorm = (t.text || '').toLowerCase().trim();
 
+    // 1. Suporte: desduplica e padroniza para Manhã / Trabalho
     if (textNorm === 'suporte') {
+      if (seenRoutines.has('suporte')) {
+        // Ignora duplicata!
+        continue;
+      }
+      seenRoutines.add('suporte');
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '9');
-      return {
+      cleanedList.push({
         ...t,
+        text: 'Suporte',
+        emoji: '📞',
         category: 'Trabalho',
-        color: t.color || '#3b82f6',
-        time: t.time || '09:00',
-        period: t.period || 'Manhã',
+        color: '#3b82f6',
+        time: '09:00',
+        period: 'Manhã',
         isRecurring: true,
-        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        recurringDays: [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
-      };
+      });
+      continue;
     }
 
-    if (textNorm.includes('faculdade') || textNorm.includes('concursos')) {
-      return {
-        ...t,
-        category: 'Estudos',
-        color: t.color || '#8b5cf6',
-        time: t.time || '19:00',
-        period: t.period || 'Noite',
-        isRecurring: true,
-        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
-        date: null
-      };
-    }
-
+    // 2. Organização do Dia: desduplica e padroniza para Manhã / Trabalho
     if (textNorm.includes('organização') || textNorm.includes('organizacao')) {
+      if (seenRoutines.has('organizacao')) {
+        continue;
+      }
+      seenRoutines.add('organizacao');
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '6');
-      return {
+      cleanedList.push({
         ...t,
+        text: 'Organização do Dia',
+        emoji: '📋',
         category: 'Trabalho',
-        color: t.color || '#3b82f6',
-        time: t.time || '08:00',
-        period: t.period || 'Manhã',
+        color: '#3b82f6',
+        time: '08:00',
+        period: 'Manhã',
         isRecurring: true,
-        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        recurringDays: [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
-      };
+      });
+      continue;
     }
 
+    // 3. Conferência de Serviços: desduplica e padroniza para Manhã / Trabalho
     if (textNorm.includes('conferência') || textNorm.includes('conferencia')) {
-      return {
+      if (seenRoutines.has('conferencia')) {
+        continue;
+      }
+      seenRoutines.add('conferencia');
+      cleanedList.push({
         ...t,
+        text: 'Conferência de Serviços',
+        emoji: '🔍',
         category: 'Trabalho',
-        color: t.color || '#3b82f6',
-        time: t.time || '08:30',
-        period: t.period || 'Manhã',
+        color: '#3b82f6',
+        time: '08:30',
+        period: 'Manhã',
         isRecurring: true,
-        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        recurringDays: [1, 2, 3, 4, 5],
         date: null
-      };
+      });
+      continue;
     }
 
+    // 4. Desenvolvimento de Software: desduplica e padroniza para Manhã / Trabalho
     if (textNorm.includes('desenvolvimento de software') || textNorm === 'desenvolvimento') {
+      if (seenRoutines.has('desenvolvimento')) {
+        continue;
+      }
+      seenRoutines.add('desenvolvimento');
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '10');
-      return {
+      cleanedList.push({
         ...t,
+        text: 'Desenvolvimento de Software',
+        emoji: '👨‍💻',
         category: 'Trabalho',
-        color: t.color || '#3b82f6',
-        time: t.time || '10:00',
-        period: t.period || 'Manhã',
+        color: '#3b82f6',
+        time: '10:00',
+        period: 'Manhã',
         isRecurring: true,
-        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        recurringDays: [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
-      };
+      });
+      continue;
     }
 
+    // 5. Estudo no Trabalho: desduplica e padroniza para Manhã / Trabalho
     if (textNorm.includes('estudo no trabalho')) {
+      if (seenRoutines.has('estudotrabalho')) {
+        continue;
+      }
+      seenRoutines.add('estudotrabalho');
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '8');
-      return {
+      cleanedList.push({
         ...t,
+        text: 'Estudo no Trabalho',
+        emoji: '🧠',
         category: 'Trabalho',
-        color: t.color || '#3b82f6',
-        time: t.time || '11:00',
-        period: t.period || 'Manhã',
+        color: '#3b82f6',
+        time: '11:00',
+        period: 'Manhã',
         isRecurring: true,
-        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        recurringDays: [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
-      };
+      });
+      continue;
     }
 
-    return t;
+    // 6. Faculdade / Concursos: desduplica e padroniza para Noite / Estudos
+    if (textNorm.includes('faculdade') || textNorm.includes('concursos')) {
+      if (seenRoutines.has('faculdade')) {
+        continue;
+      }
+      seenRoutines.add('faculdade');
+      cleanedList.push({
+        ...t,
+        text: 'Faculdade / Concursos',
+        emoji: '📚',
+        category: 'Estudos',
+        color: '#8b5cf6',
+        time: '19:00',
+        period: 'Noite',
+        isRecurring: true,
+        recurringDays: [1, 2, 3, 4, 5],
+        date: null
+      });
+      continue;
+    }
+
+    // Tarefas pessoais ou outras tarefas (ex: Pilha Geralda, Alterar plano claro vó, etc.)
+    cleanedList.push(t);
+  }
+
+  // Se alguma das tarefas de Trabalho padrão não existia no array, adiciona
+  const missingWork = DEFAULT_WORK_TASKS.filter(def => {
+    const defNorm = def.text.toLowerCase().trim();
+    if (defNorm.includes('organização') && seenRoutines.has('organizacao')) return false;
+    if (defNorm.includes('conferência') && seenRoutines.has('conferencia')) return false;
+    if (defNorm === 'suporte' && seenRoutines.has('suporte')) return false;
+    if (defNorm.includes('desenvolvimento') && seenRoutines.has('desenvolvimento')) return false;
+    if (defNorm.includes('estudo no trabalho') && seenRoutines.has('estudotrabalho')) return false;
+    return true;
   });
 
-  // 2. Adiciona tarefas padrão de Trabalho que não estejam presentes
-  const existingTexts = new Set(updated.map(t => (t.text || '').toLowerCase().trim()));
-  const missingWork = DEFAULT_WORK_TASKS.filter(
-    def => !existingTexts.has(def.text.toLowerCase().trim())
-  );
-
-  return sortTasksChronologically([...updated, ...missingWork]);
+  return sortTasksChronologically([...cleanedList, ...missingWork]);
 };
 
 const taskTemplates = [
