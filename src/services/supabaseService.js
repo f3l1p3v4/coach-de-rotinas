@@ -141,8 +141,10 @@ export async function syncUserTasks(userId, tasks) {
         return;
       }
 
-      // Tentativa 1: recurring_days como array de strings (compatível com colunas text[] e varchar[])
-      const payloadStringRecurrence = tasks.map(t => {
+      const currentIds = tasks.map(t => String(t.id));
+
+      // Payload base com colunas padrão confirmadas da tabela tasks
+      const buildPayload = (numRecurrence = false) => tasks.map(t => {
         const isRec = Boolean(t.isRecurring);
         return {
           id: String(t.id),
@@ -159,87 +161,33 @@ export async function syncUserTasks(userId, tasks) {
           completed_at: isRec ? null : (t.completedAt || null),
           started_at: isRec ? null : (t.startedAt || null),
           is_recurring: isRec,
-          recurring_days: (t.recurringDays || []).map(String),
+          recurring_days: numRecurrence 
+            ? (t.recurringDays || []).map(Number).filter(n => !isNaN(n))
+            : (t.recurringDays || []).map(String),
           completed_dates: (t.completedDates || []).map(String),
-          recurring_until: t.recurringUntil || null,
-          deleted_dates: (t.deletedDates || []).map(String),
           subtasks: t.subtasks || []
         };
       });
 
-      // Limpa antes de gravar
-      await supabase.from('tasks').delete().eq('user_id', userId);
+      // Tentativa 1: upsert seguro com recurring_days como string[]
+      let { error: syncError } = await supabase.from('tasks').upsert(buildPayload(false), { onConflict: 'id' });
 
-      const { error: insertError1 } = await supabase.from('tasks').insert(payloadStringRecurrence);
+      // Tentativa 2: se falhou por tipo de array, tenta com recurring_days numérico
+      if (syncError) {
+        console.warn('Tentando upsert com recurring_days numérico:', syncError);
+        const retry = await supabase.from('tasks').upsert(buildPayload(true), { onConflict: 'id' });
+        syncError = retry.error;
+      }
 
-      if (insertError1) {
-        console.warn('Tentando payload com recurring_days numérico:', insertError1);
-        // Tentativa 2: recurring_days como array de números (caso a coluna seja int[] ou jsonb)
-        const payloadNumericRecurrence = tasks.map(t => {
-          const isRec = Boolean(t.isRecurring);
-          return {
-            id: String(t.id),
-            user_id: userId,
-            text: t.text || '',
-            emoji: t.emoji || '📝',
-            description: t.description || '',
-            time: t.time || '',
-            period: t.period || 'Manhã',
-            category: t.category || null,
-            color: t.color || null,
-            date: t.date || null,
-            status: t.completed ? 'completed' : (t.status || 'pending'),
-            completed_at: isRec ? null : (t.completedAt || null),
-            started_at: isRec ? null : (t.startedAt || null),
-            is_recurring: isRec,
-            recurring_days: (t.recurringDays || []).map(Number),
-            completed_dates: (t.completedDates || []).map(String),
-            recurring_until: t.recurringUntil || null,
-            deleted_dates: (t.deletedDates || []).map(String),
-            subtasks: t.subtasks || []
-          };
-        });
-
-        const { error: insertError2 } = await supabase.from('tasks').insert(payloadNumericRecurrence);
-
-        if (insertError2) {
-          console.warn('Tentando payload intermediário sem colunas de array:', insertError2);
-          // Tentativa 3: payload intermediário seguro (caso colunas de array não existam no schema)
-          const fallbackPayload = tasks.map(t => {
-            const isRec = Boolean(t.isRecurring);
-            return {
-              id: String(t.id),
-              user_id: userId,
-              text: t.text || '',
-              emoji: t.emoji || '📝',
-              description: t.description || '',
-              time: t.time || '',
-              period: t.period || 'Manhã',
-              category: t.category || null,
-              color: t.color || null,
-              date: t.date || null,
-              status: t.completed ? 'completed' : (t.status || 'pending'),
-              completed_at: isRec ? null : (t.completedAt || null)
-            };
-          });
-          const { error: fallbackError } = await supabase.from('tasks').insert(fallbackPayload);
-          if (fallbackError) {
-            console.warn('Tentando payload mínimo de tarefas:', fallbackError);
-            const basicPayload = tasks.map(t => ({
-              id: String(t.id),
-              user_id: userId,
-              text: t.text || '',
-              emoji: t.emoji || '📝',
-              time: t.time || '',
-              period: t.period || 'Manhã',
-              status: t.completed ? 'completed' : (t.status || 'pending')
-            }));
-            await supabase.from('tasks').insert(basicPayload);
-          }
-        }
+      // Se o upsert foi bem-sucedido, remove do Supabase apenas as tarefas que realmente deixaram de existir
+      if (!syncError && currentIds.length > 0) {
+        const inClause = `(${currentIds.map(id => `"${id}"`).join(',')})`;
+        await supabase.from('tasks').delete().eq('user_id', userId).not('id', 'in', inClause);
+      } else if (syncError) {
+        console.warn('Erro ao sincronizar tarefas no Supabase:', syncError);
       }
     } catch (err) {
-      console.error('Erro ao sincronizar tarefas no Supabase:', err);
+      console.error('Erro geral ao sincronizar tarefas no Supabase:', err);
     }
   }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import { PlusCircle, User, CaretLeft, CaretRight, CalendarBlank } from '@phosphor-icons/react';
+import { PlusCircle, User, CaretLeft, CaretRight, CalendarBlank, ArrowsClockwise } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { 
   loadUserTasks, 
@@ -67,17 +67,208 @@ const sortTasksChronologically = (taskList) => {
   });
 };
 
+export const DEFAULT_WORK_TASKS = [
+  { 
+    id: '6', 
+    text: 'Organização do Dia', 
+    emoji: '📋', 
+    category: 'Trabalho', 
+    color: '#3b82f6', 
+    time: '08:00',
+    period: 'Manhã',
+    description: 'Organizar manhã de trabalho por 30 min', 
+    isRecurring: true,
+    recurringDays: [1, 2, 3, 4, 5],
+    subtasks: [
+      { id: 601, text: 'Verificar mensagens pessoais e profissionais no email e whatsapp', completed: false }, 
+      { id: 602, text: 'Processar todas as ULs', completed: false }, 
+      { id: 603, text: 'Organizar as tarefas pendentes no trello', completed: false }, 
+      { id: 604, text: 'Ler notícias', completed: false }
+    ] 
+  },
+  { 
+    id: '7', 
+    text: 'Conferência de Serviços', 
+    emoji: '🔍', 
+    category: 'Trabalho', 
+    color: '#3b82f6', 
+    time: '08:30',
+    period: 'Manhã',
+    description: 'Verificar relatório de inconsistencia e fazer backup e ajustes se necessário', 
+    isRecurring: true,
+    recurringDays: [1, 2, 3, 4, 5],
+    subtasks: [] 
+  },
+  { 
+    id: '9', 
+    text: 'Suporte', 
+    emoji: '📞', 
+    category: 'Trabalho', 
+    color: '#3b82f6', 
+    time: '09:00',
+    period: 'Manhã',
+    description: 'Solução de problemas aleatórios relacionadas ao Suporte', 
+    isRecurring: true,
+    recurringDays: [1, 2, 3, 4, 5],
+    subtasks: [
+      { id: 901, text: 'Conferência de inconsistencia de catraca se precisar', completed: false }, 
+      { id: 902, text: 'Estudar Maker Softwell', completed: false }
+    ] 
+  },
+  { 
+    id: '10', 
+    text: 'Desenvolvimento de Software', 
+    emoji: '👨‍💻', 
+    category: 'Trabalho', 
+    color: '#3b82f6', 
+    time: '10:00',
+    period: 'Manhã',
+    description: 'Focar em projetos de desenvolvimento e implementação de novas funcionalidades.', 
+    isRecurring: true,
+    recurringDays: [1, 2, 3, 4, 5],
+    subtasks: [
+      { id: 1001, text: 'Codificar e testar novas features', completed: false }, 
+      { id: 1002, text: 'Revisar código (Code Review)', completed: false }, 
+      { id: 1003, text: 'Corrigir bugs identificados', completed: false }, 
+      { id: 1004, text: 'Documentar a nova funcionalidade', completed: false }
+    ] 
+  },
+  { 
+    id: '8', 
+    text: 'Estudo no Trabalho', 
+    emoji: '🧠', 
+    category: 'Trabalho', 
+    color: '#3b82f6', 
+    time: '11:00',
+    period: 'Manhã',
+    description: 'Estudar ferramentas para usar no meu trabalho', 
+    isRecurring: true,
+    recurringDays: [1, 2, 3, 4, 5],
+    subtasks: [
+      { id: 801, text: 'Estudar SQL Server', completed: false }, 
+      { id: 802, text: 'Estudar Maker Softwell', completed: false }
+    ] 
+  }
+];
+
+export const ensureWorkAndRoutineTasks = (taskList) => {
+  if (!Array.isArray(taskList) || taskList.length === 0) {
+    return DEFAULT_WORK_TASKS;
+  }
+
+  // 1. Corrige e restaura recorrência de tarefas conhecidas que possam ter sido degradadas
+  const updated = taskList.map(t => {
+    const textNorm = (t.text || '').toLowerCase().trim();
+
+    if (textNorm === 'suporte') {
+      const def = DEFAULT_WORK_TASKS.find(w => w.id === '9');
+      return {
+        ...t,
+        category: 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '09:00',
+        period: t.period || 'Manhã',
+        isRecurring: true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        date: null,
+        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
+      };
+    }
+
+    if (textNorm.includes('faculdade') || textNorm.includes('concursos')) {
+      return {
+        ...t,
+        category: 'Estudos',
+        color: t.color || '#8b5cf6',
+        time: t.time || '19:00',
+        period: t.period || 'Noite',
+        isRecurring: true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        date: null
+      };
+    }
+
+    if (textNorm.includes('organização') || textNorm.includes('organizacao')) {
+      const def = DEFAULT_WORK_TASKS.find(w => w.id === '6');
+      return {
+        ...t,
+        category: 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '08:00',
+        period: t.period || 'Manhã',
+        isRecurring: true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        date: null,
+        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
+      };
+    }
+
+    if (textNorm.includes('conferência') || textNorm.includes('conferencia')) {
+      return {
+        ...t,
+        category: 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '08:30',
+        period: t.period || 'Manhã',
+        isRecurring: true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        date: null
+      };
+    }
+
+    if (textNorm.includes('desenvolvimento de software') || textNorm === 'desenvolvimento') {
+      const def = DEFAULT_WORK_TASKS.find(w => w.id === '10');
+      return {
+        ...t,
+        category: 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '10:00',
+        period: t.period || 'Manhã',
+        isRecurring: true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        date: null,
+        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
+      };
+    }
+
+    if (textNorm.includes('estudo no trabalho')) {
+      const def = DEFAULT_WORK_TASKS.find(w => w.id === '8');
+      return {
+        ...t,
+        category: 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '11:00',
+        period: t.period || 'Manhã',
+        isRecurring: true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
+        date: null,
+        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
+      };
+    }
+
+    return t;
+  });
+
+  // 2. Adiciona tarefas padrão de Trabalho que não estejam presentes
+  const existingTexts = new Set(updated.map(t => (t.text || '').toLowerCase().trim()));
+  const missingWork = DEFAULT_WORK_TASKS.filter(
+    def => !existingTexts.has(def.text.toLowerCase().trim())
+  );
+
+  return sortTasksChronologically([...updated, ...missingWork]);
+};
+
 const taskTemplates = [
-  { id: '1', text: 'Treino', emoji: '💪', category: 'Saúde / Treino', color: '#f97316', description: 'Foco em peito e tríceps. Manter a boa forma e controlar a respiração.', subtasks: [{ id: 101, text: 'Aquecimento - 10 min', completed: false }, { id: 102, text: 'Supino Reto - 4x8', completed: false }] },
-  { id: '2', text: 'Estudo Espiritual', emoji: '🙏', category: 'Espiritual', color: '#eab308', description: 'Leitura do capítulo de hoje e meditação. O objetivo é a reflexão.', subtasks: [] },
-  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', category: 'Estudos', color: '#8b5cf6', description: 'Praticar as escalas e a nova peça.', subtasks: [{ id: 301, text: 'Escalas - 15 min', completed: false }, { id: 302, text: 'Praticar nova música', completed: false }] },
-  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', category: 'Estudos', color: '#8b5cf6', description: 'Revisão da matéria e resolução de exercícios.', subtasks: [{ id: 401, text: 'Ler resumo do capítulo', completed: false }, { id: 402, text: 'Fazer 10 exercícios', completed: false }] },
-  { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', category: 'Casa', color: '#ec4899', description: 'Foco num cómodo por 15 minutos.', subtasks: [] },
-  { id: '6', text: 'Organização do Dia', emoji: '📋', category: 'Trabalho', color: '#3b82f6', description: 'Organizar manhã de trabalho por 30 min', subtasks: [{ id: 601, text: 'Verificar mensagens pessoais e profissionais no email e whatsapp', completed: false }, { id: 602, text: 'Processar todas as ULs', completed: false }, { id: 603, text: 'Organizar as tarefas pendentes no trello', completed: false }, { id: 604, text: 'Ler notícias', completed: false }] },
-  { id: '7', text: 'Conferência de Serviços', emoji: '🔍', category: 'Trabalho', color: '#3b82f6', description: 'Verificar relatório de inconsistencia e fazer backup e ajustes se necessário', subtasks: [] },
-  { id: '8', text: 'Estudo no Trabalho', emoji: '🧠', category: 'Trabalho', color: '#3b82f6', description: 'Estudar ferramentas para usar no meu trabalho', subtasks: [{ id: 801, text: 'Estudar SQL Server', completed: false }, { id: 802, text: 'Estudar Maker Softwell', completed: false },] },
-  { id: '9', text: 'Suporte', emoji: '📞', category: 'Trabalho', color: '#3b82f6', description: 'Solução de problemas aleatórios relacionadas ao Suporte', subtasks: [{ id: 901, text: 'Conferência de inconsistencia de catraca se precisar', completed: false }, { id: 902, text: 'Estudar Maker Softwell', completed: false },] },
-  { id: '10', text: 'Desenvolvimento de Software', emoji: '👨‍💻', category: 'Trabalho', color: '#3b82f6', description: 'Focar em projetos de desenvolvimento e implementação de novas funcionalidades.', subtasks: [{ id: 1001, text: 'Codificar e testar novas features', completed: false }, { id: 1002, text: 'Revisar código (Code Review)', completed: false }, { id: 1003, text: 'Corrigir bugs identificados', completed: false }, { id: 1004, text: 'Documentar a nova funcionalidade', completed: false }] },
+  { id: '1', text: 'Treino', emoji: '💪', category: 'Saúde / Treino', color: '#f97316', time: '07:00', period: 'Manhã', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Foco em peito e tríceps. Manter a boa forma e controlar a respiração.', subtasks: [{ id: 101, text: 'Aquecimento - 10 min', completed: false }, { id: 102, text: 'Supino Reto - 4x8', completed: false }] },
+  { id: '2', text: 'Estudo Espiritual', emoji: '🙏', category: 'Espiritual', color: '#eab308', time: '07:30', period: 'Manhã', isRecurring: true, recurringDays: [0, 1, 2, 3, 4, 5, 6], description: 'Leitura do capítulo de hoje e meditação. O objetivo é a reflexão.', subtasks: [] },
+  { id: '3', text: 'Estudo de Órgão', emoji: '🎹', category: 'Estudos', color: '#8b5cf6', time: '18:00', period: 'Noite', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Praticar as escalas e a nova peça.', subtasks: [{ id: 301, text: 'Escalas - 15 min', completed: false }, { id: 302, text: 'Praticar nova música', completed: false }] },
+  { id: '4', text: 'Faculdade / Concursos', emoji: '📚', category: 'Estudos', color: '#8b5cf6', time: '19:00', period: 'Noite', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Revisão da matéria e resolução de exercícios.', subtasks: [{ id: 401, text: 'Ler resumo do capítulo', completed: false }, { id: 402, text: 'Fazer 10 exercícios', completed: false }] },
+  { id: '5', text: 'Limpeza Rápida da Casa', emoji: '🧹', category: 'Casa', color: '#ec4899', time: '12:00', period: 'Tarde', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Foco num cómodo por 15 minutos.', subtasks: [] },
+  { id: '6', text: 'Organização do Dia', emoji: '📋', category: 'Trabalho', color: '#3b82f6', time: '08:00', period: 'Manhã', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Organizar manhã de trabalho por 30 min', subtasks: [{ id: 601, text: 'Verificar mensagens pessoais e profissionais no email e whatsapp', completed: false }, { id: 602, text: 'Processar todas as ULs', completed: false }, { id: 603, text: 'Organizar as tarefas pendentes no trello', completed: false }, { id: 604, text: 'Ler notícias', completed: false }] },
+  { id: '7', text: 'Conferência de Serviços', emoji: '🔍', category: 'Trabalho', color: '#3b82f6', time: '08:30', period: 'Manhã', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Verificar relatório de inconsistencia e fazer backup e ajustes se necessário', subtasks: [] },
+  { id: '8', text: 'Estudo no Trabalho', emoji: '🧠', category: 'Trabalho', color: '#3b82f6', time: '11:00', period: 'Manhã', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Estudar ferramentas para usar no meu trabalho', subtasks: [{ id: 801, text: 'Estudar SQL Server', completed: false }, { id: 802, text: 'Estudar Maker Softwell', completed: false },] },
+  { id: '9', text: 'Suporte', emoji: '📞', category: 'Trabalho', color: '#3b82f6', time: '09:00', period: 'Manhã', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Solução de problemas aleatórios relacionadas ao Suporte', subtasks: [{ id: 901, text: 'Conferência de inconsistencia de catraca se precisar', completed: false }, { id: 902, text: 'Estudar Maker Softwell', completed: false },] },
+  { id: '10', text: 'Desenvolvimento de Software', emoji: '👨‍💻', category: 'Trabalho', color: '#3b82f6', time: '10:00', period: 'Manhã', isRecurring: true, recurringDays: [1, 2, 3, 4, 5], description: 'Foco em projetos de desenvolvimento e implementação de novas funcionalidades.', subtasks: [{ id: 1001, text: 'Codificar e testar novas features', completed: false }, { id: 1002, text: 'Revisar código (Code Review)', completed: false }, { id: 1003, text: 'Corrigir bugs identificados', completed: false }, { id: 1004, text: 'Documentar a nova funcionalidade', completed: false }] },
 ];
 
 export const initialTaskTemplates = taskTemplates;
@@ -128,17 +319,21 @@ function DailyPlanner({
     if (savedTasks) {
       try {
         const parsed = JSON.parse(savedTasks);
-        if (Array.isArray(parsed) && parsed.length > 0) return sanitizeLoadedTasks(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsed));
+        }
       } catch (e) {}
     }
     const backup = localStorage.getItem('daily_tasks_backup');
     if (backup) {
       try {
         const parsedBackup = JSON.parse(backup);
-        if (Array.isArray(parsedBackup)) return sanitizeLoadedTasks(parsedBackup);
+        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
+          return ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsedBackup));
+        }
       } catch (e) {}
     }
-    return [];
+    return DEFAULT_WORK_TASKS;
   });
 
   const [isTasksLoaded, setIsTasksLoaded] = useState(false);
@@ -302,18 +497,20 @@ function DailyPlanner({
             const raw = (Array.isArray(initialTasks) && initialTasks.length > 0)
               ? initialTasks
               : ((prev && prev.length > 0) ? prev : (initialTasks || []));
-            return raw.map(t => {
+            const cleaned = raw.map(t => {
               if (t.isRecurring) {
                 const { startedAt, completedAt, ...clean } = t;
                 return clean;
               }
               return t;
             });
+            return ensureWorkAndRoutineTasks(cleaned);
           });
           loadedUserIdRef.current = user.id;
           setIsTasksLoaded(true);
         }
       } else {
+        setTasks(prev => ensureWorkAndRoutineTasks(prev));
         loadedUserIdRef.current = null;
         setIsTasksLoaded(true);
       }
@@ -1127,6 +1324,14 @@ function DailyPlanner({
     toast.success('Todas as repetições da tarefa foram removidas.');
   };
 
+  const handleRestoreWorkTasks = () => {
+    setTasks(prev => {
+      const restored = ensureWorkAndRoutineTasks(prev);
+      toast.success('Rotinas de Trabalho (Segunda a Sexta) restauradas com sucesso! 💼');
+      return restored;
+    });
+  };
+
   const handleToggleCategory = (catName) => {
     setSelectedCategories(prev => {
       if (prev.includes(catName)) {
@@ -1589,6 +1794,19 @@ function DailyPlanner({
                       </div>
                     </div>
                   )}
+
+                  <div className="empty-state-restore-box">
+                    <p>💼 Precisa restaurar suas rotinas de trabalho (Segunda a Sexta)?</p>
+                    <button 
+                      type="button" 
+                      className="restore-backup-btn"
+                      onClick={handleRestoreWorkTasks}
+                      title="Restaura tarefas de rotina: Organização do Dia, Suporte, Desenvolvimento de Software e repetições de Seg a Sex"
+                    >
+                      <ArrowsClockwise size={18} weight="bold" />
+                      <span>Restaurar Rotinas de Trabalho (Seg a Sex)</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
