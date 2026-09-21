@@ -103,18 +103,29 @@ function DailyPlanner({
   }, [selectedDate]);
 
   const [tasks, setTasks] = useState(() => {
+    const sanitizeLoadedTasks = (list) => {
+      if (!Array.isArray(list)) return [];
+      return list.map(t => {
+        if (t.isRecurring) {
+          const { startedAt, completedAt, ...clean } = t;
+          return clean;
+        }
+        return t;
+      });
+    };
+
     const savedTasks = localStorage.getItem('daily_tasks');
     if (savedTasks) {
       try {
         const parsed = JSON.parse(savedTasks);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) return sanitizeLoadedTasks(parsed);
       } catch (e) {}
     }
     const backup = localStorage.getItem('daily_tasks_backup');
     if (backup) {
       try {
         const parsedBackup = JSON.parse(backup);
-        if (Array.isArray(parsedBackup)) return parsedBackup;
+        if (Array.isArray(parsedBackup)) return sanitizeLoadedTasks(parsedBackup);
       } catch (e) {}
     }
     return [];
@@ -277,10 +288,16 @@ function DailyPlanner({
         const initialTasks = await loadUserTasks(user.id);
         if (isMounted) {
           setTasks(prev => {
-            if (Array.isArray(initialTasks) && initialTasks.length > 0) {
-              return initialTasks;
-            }
-            return (prev && prev.length > 0) ? prev : (initialTasks || []);
+            const raw = (Array.isArray(initialTasks) && initialTasks.length > 0)
+              ? initialTasks
+              : ((prev && prev.length > 0) ? prev : (initialTasks || []));
+            return raw.map(t => {
+              if (t.isRecurring) {
+                const { startedAt, completedAt, ...clean } = t;
+                return clean;
+              }
+              return t;
+            });
           });
           loadedUserIdRef.current = user.id;
           setIsTasksLoaded(true);
@@ -322,6 +339,71 @@ function DailyPlanner({
 
     syncUserTaskHistory(user?.id, taskHistory);
   }, [taskHistory, user?.id, isTasksLoaded]);
+
+  // Migra status locais antigos de compromissos da Google Agenda para o taskHistory para sincronização na nuvem
+  useEffect(() => {
+    try {
+      const savedStatus = localStorage.getItem('calendar_status_map');
+      const savedCompleted = localStorage.getItem('calendar_completed_map');
+      let statusObj = savedStatus ? JSON.parse(savedStatus) : {};
+      let completedObj = savedCompleted ? JSON.parse(savedCompleted) : {};
+
+      const migratedEntries = {};
+      let hasMigration = false;
+
+      Object.entries(statusObj).forEach(([k, val]) => {
+        const parts = k.split('_');
+        if (parts.length >= 2) {
+          const date = parts[0];
+          const eventId = parts.slice(1).join('_');
+          const historyKey = `calendar-${eventId}_${date}`;
+          if (!taskHistory[historyKey]) {
+            migratedEntries[historyKey] = {
+              id: historyKey,
+              taskId: `calendar-${eventId}`,
+              date: date,
+              status: (typeof val === 'object' && val?.status) ? val.status : 'completed',
+              observation: (typeof val === 'object' && val?.observation) ? val.observation : '',
+              completedAt: new Date().toISOString(),
+              startedAt: null,
+              subtasks: []
+            };
+            hasMigration = true;
+          }
+        }
+      });
+
+      Object.entries(completedObj).forEach(([k, isDone]) => {
+        if (!isDone) return;
+        const parts = k.split('_');
+        if (parts.length >= 2) {
+          const date = parts[0];
+          const eventId = parts.slice(1).join('_');
+          const historyKey = `calendar-${eventId}_${date}`;
+          if (!taskHistory[historyKey] && !migratedEntries[historyKey]) {
+            migratedEntries[historyKey] = {
+              id: historyKey,
+              taskId: `calendar-${eventId}`,
+              date: date,
+              status: 'completed',
+              observation: '',
+              completedAt: new Date().toISOString(),
+              startedAt: null,
+              subtasks: []
+            };
+            hasMigration = true;
+          }
+        }
+      });
+
+      if (hasMigration) {
+        setTaskHistory(prev => ({ ...prev, ...migratedEntries }));
+      }
+    } catch (e) {
+      console.warn('Erro ao migrar status de compromissos para taskHistory:', e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMoveToToday = (taskId) => {
     setTasks(prev => prev.map(t => {
@@ -604,15 +686,38 @@ function DailyPlanner({
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-    const currentTask = tasks.find(t => t.id === taskId);
-    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${currentTask?.text}.`);
+    const currentTask = tasks.find(t => t.id === taskId) || calendarTasksForSelectedDate.find(t => t.id === taskId);
+    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${currentTask?.text || 'selecionada'}.`);
     
-    // Registrar startedAt na tarefa se ainda não tiver sido iniciado
+    const nowIso = new Date().toISOString();
+    const historyKey = `${taskId}_${selectedDate}`;
+
+    // 1. Grava o horário de início única e exclusivamente no histórico da data selecionada
+    setTaskHistory(prev => {
+      const existing = prev[historyKey] || {};
+      if (existing.startedAt) return prev;
+      return {
+        ...prev,
+        [historyKey]: {
+          ...existing,
+          id: historyKey,
+          taskId: String(taskId),
+          date: selectedDate,
+          status: existing.status || 'pending',
+          observation: existing.observation || '',
+          completedAt: existing.completedAt || null,
+          startedAt: nowIso,
+          subtasks: existing.subtasks || (currentTask?.subtasks ? currentTask.subtasks.map(st => ({ ...st, completed: false })) : [])
+        }
+      };
+    });
+
+    // 2. Se for tarefa comum e NÃO for recorrente, atualiza em tasks apenas para a data correspondente
     setTasks(prev => prev.map(t => {
-      if (t.id === taskId) {
+      if (t.id === taskId && !t.isRecurring && (t.date === selectedDate || (!t.date && selectedDate === todayStr))) {
         return {
           ...t,
-          startedAt: t.startedAt || new Date().toISOString()
+          startedAt: t.startedAt || nowIso
         };
       }
       return t;
@@ -684,6 +789,8 @@ function DailyPlanner({
       if (!calTask) return;
       const key = `${selectedDate}_${calTask.calendarOriginalId}`;
       const isCompleted = status === 'completed';
+      const historyKey = `${taskId}_${selectedDate}`;
+      const nowIso = new Date().toISOString();
 
       setCalendarStatusMap(prev => {
         const next = { ...prev, [key]: { status, observation } };
@@ -700,6 +807,20 @@ function DailyPlanner({
         } catch (e) {}
         return next;
       });
+
+      setTaskHistory(prev => ({
+        ...prev,
+        [historyKey]: {
+          id: historyKey,
+          taskId: String(taskId),
+          date: selectedDate,
+          status,
+          observation: observation || '',
+          completedAt: (status === 'completed' || status === 'failed') ? nowIso : null,
+          startedAt: null,
+          subtasks: []
+        }
+      }));
 
       setTaskForCompletion(null);
       toast.success(status === 'completed' ? 'Compromisso concluído! ✅' : 'Compromisso marcado como não concluído. ❌');
@@ -758,15 +879,14 @@ function DailyPlanner({
         }
 
         const isTodayDone = selectedDate === todayStr ? (status === 'completed') : (updatedDates.includes(todayStr));
-
+        const { startedAt, completedAt, ...cleanRecurring } = t;
         return {
-          ...t,
+          ...cleanRecurring,
           completedDates: updatedDates,
           failedDates: updatedFailedDates,
           dateObservations: currentObs,
           completed: isTodayDone,
-          status: selectedDate === todayStr ? status : t.status,
-          completedAt: (status === 'completed' || status === 'failed') ? nowIso : null
+          status: selectedDate === todayStr ? status : t.status
         };
       }
 
@@ -792,6 +912,7 @@ function DailyPlanner({
       const calTask = calendarTasksForSelectedDate.find(t => t.id === taskId);
       if (!calTask) return;
       const key = `${selectedDate}_${calTask.calendarOriginalId}`;
+      const historyKey = `${taskId}_${selectedDate}`;
 
       setCalendarStatusMap(prev => {
         const next = { ...prev };
@@ -808,6 +929,19 @@ function DailyPlanner({
         try {
           localStorage.setItem('calendar_completed_map', JSON.stringify(next));
         } catch (e) {}
+        return next;
+      });
+
+      setTaskHistory(prev => {
+        const next = { ...prev };
+        if (next[historyKey]) {
+          next[historyKey] = {
+            ...next[historyKey],
+            status: 'pending',
+            observation: '',
+            completedAt: null
+          };
+        }
         return next;
       });
 
@@ -845,14 +979,14 @@ function DailyPlanner({
 
         const isTodayDone = selectedDate === todayStr ? false : (updatedDates.includes(todayStr));
 
+        const { startedAt, completedAt, ...cleanRecurring } = t;
         return {
-          ...t,
+          ...cleanRecurring,
           completedDates: updatedDates,
           failedDates: updatedFailedDates,
           dateObservations: currentObs,
           completed: isTodayDone,
-          status: selectedDate === todayStr ? 'pending' : t.status,
-          completedAt: null
+          status: selectedDate === todayStr ? 'pending' : t.status
         };
       }
 
@@ -999,15 +1133,25 @@ function DailyPlanner({
   const calendarTasksForSelectedDate = Array.from(uniqueCalendarMap.values()).map(evt => {
     const isBirthday = isBirthdayEvent(evt);
     const key = `${selectedDate}_${evt.id}`;
+    const historyKey = `calendar-${evt.id}_${selectedDate}`;
+    const historyEntry = taskHistory ? taskHistory[historyKey] : null;
     const calStatusObj = calendarStatusMap[key];
     const legacyCompleted = Boolean(calendarCompletedMap[key]);
 
     let isCompleted = false;
     let status = 'pending';
     let observation = '';
+    let startedAt = null;
+    let completedAt = null;
 
     if (!isBirthday) {
-      if (calStatusObj) {
+      if (historyEntry && historyEntry.status) {
+        status = historyEntry.status;
+        isCompleted = status === 'completed';
+        observation = historyEntry.observation || '';
+        startedAt = historyEntry.startedAt || null;
+        completedAt = historyEntry.completedAt || null;
+      } else if (calStatusObj) {
         status = calStatusObj.status || 'pending';
         isCompleted = status === 'completed';
         observation = calStatusObj.observation || '';
@@ -1036,6 +1180,8 @@ function DailyPlanner({
       completed: isCompleted,
       status,
       observation,
+      startedAt,
+      completedAt,
       isCalendarEvent: true,
       isBirthday,
       htmlLink: evt.htmlLink || null,
@@ -1074,14 +1220,14 @@ function DailyPlanner({
       let completed = false;
       let observation = '';
       let completedAt = null;
-      let startedAt = t.startedAt || null;
+      let startedAt = null;
 
       if (historyEntry) {
         status = historyEntry.status || 'pending';
         completed = status === 'completed';
         observation = historyEntry.observation || '';
         completedAt = historyEntry.completedAt || null;
-        if (historyEntry.startedAt) startedAt = historyEntry.startedAt;
+        startedAt = historyEntry.startedAt || null;
       } else {
         // Fallback para tarefas salvas antes da migração para taskHistory
         if (t.isRecurring) {
@@ -1097,11 +1243,14 @@ function DailyPlanner({
             completed = false;
           }
           observation = dateObservations[selectedDate] || '';
+          startedAt = null;
+          completedAt = null;
         } else if (t.date === selectedDate || (!t.date && selectedDate === todayStr)) {
           status = t.status || (t.completed ? 'completed' : 'pending');
           completed = status === 'completed';
           observation = t.observation || '';
           completedAt = t.completedAt || null;
+          startedAt = t.startedAt || null;
         }
       }
 

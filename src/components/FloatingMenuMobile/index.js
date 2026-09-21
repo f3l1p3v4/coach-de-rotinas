@@ -26,7 +26,8 @@ function FloatingMenuMobile({ activeCard, onNotepadClick, onCalendarClick, onSet
         title="Ajustes" 
         aria-label="Ajustes"
       >
-        <Gear size={22} />
+        <Gear size={18} />
+        <span>Ajustes</span>
       </button>
     </div>
   );
