@@ -96,6 +96,8 @@ export async function loadUserTasks(userId) {
               isRecurring,
               recurringDays,
               completedDates,
+              recurringUntil: t.recurring_until || t.recurringUntil || null,
+              deletedDates: Array.isArray(t.deleted_dates) ? t.deleted_dates.map(String) : (Array.isArray(t.deletedDates) ? t.deletedDates.map(String) : []),
               description: t.description || '',
               subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
             };
@@ -159,6 +161,8 @@ export async function syncUserTasks(userId, tasks) {
           is_recurring: isRec,
           recurring_days: (t.recurringDays || []).map(String),
           completed_dates: (t.completedDates || []).map(String),
+          recurring_until: t.recurringUntil || null,
+          deleted_dates: (t.deletedDates || []).map(String),
           subtasks: t.subtasks || []
         };
       });
@@ -190,6 +194,8 @@ export async function syncUserTasks(userId, tasks) {
             is_recurring: isRec,
             recurring_days: (t.recurringDays || []).map(Number),
             completed_dates: (t.completedDates || []).map(String),
+            recurring_until: t.recurringUntil || null,
+            deleted_dates: (t.deletedDates || []).map(String),
             subtasks: t.subtasks || []
           };
         });

@@ -104,10 +104,17 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
   };
 
   const handleDelete = () => {
+    if (task.isRecurring) {
+      if (onRemoveTask) {
+        onRemoveTask(task.id);
+      }
+      onClose();
+      return;
+    }
+
     if (window.confirm('Tem certeza que deseja excluir esta tarefa?')) {
       if (onRemoveTask) {
         onRemoveTask(task.id);
-        toast.success('Tarefa excluída.');
       }
       onClose();
     }

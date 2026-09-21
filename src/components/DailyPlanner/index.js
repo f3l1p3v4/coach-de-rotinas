@@ -15,6 +15,7 @@ import TaskDetailsModal from '../TaskDetailsModal';
 import AddTaskModal from '../AddTaskModal';
 import TaskCompletionModal from '../TaskCompletionModal';
 import TaskObservationModal from '../TaskObservationModal';
+import DeleteTaskModal from '../DeleteTaskModal';
 import CategoryFilterBar from '../CategoryFilterBar';
 import { getStoredCategories } from '../../constants/categories';
 import { 
@@ -145,6 +146,7 @@ function DailyPlanner({
   const [selectedTask, setSelectedTask] = useState(null);
   const [taskForCompletion, setTaskForCompletion] = useState(null);
   const [taskForObservation, setTaskForObservation] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
@@ -755,6 +757,13 @@ function DailyPlanner({
 
   const isTaskForSelectedDate = (t, dateStr) => {
     if (!t || !dateStr) return false;
+
+    // Se estiver marcado como deleted no taskHistory para esta data
+    const historyKey = `${t.id}_${dateStr}`;
+    if (taskHistory && taskHistory[historyKey]?.status === 'deleted') {
+      return false;
+    }
+
     const dayOfWeek = getDayOfWeek(dateStr);
 
     if (Boolean(t.isRecurring)) {
@@ -765,6 +774,14 @@ function DailyPlanner({
       if (!days.includes(dayOfWeek)) return false;
       // Se tiver data de início/criação, não exibe em dias anteriores
       if (t.date && /^\d{4}-\d{2}-\d{2}$/.test(t.date) && dateStr < t.date) {
+        return false;
+      }
+      // Se tiver data de término (recurringUntil), não exibe a partir desta data nem após ela
+      if (t.recurringUntil && /^\d{4}-\d{2}-\d{2}$/.test(t.recurringUntil) && dateStr >= t.recurringUntil) {
+        return false;
+      }
+      // Se esta data específica foi excluída da recorrência
+      if (Array.isArray(t.deletedDates) && t.deletedDates.includes(dateStr)) {
         return false;
       }
       return true;
@@ -1032,9 +1049,82 @@ function DailyPlanner({
       return;
     }
 
+    const targetTask = tasks.find(t => t.id === id) || processedTasks.find(t => t.id === id);
+    if (!targetTask) return;
+
+    // Se for uma tarefa recorrente, abre o modal de opções de exclusão
+    if (targetTask.isRecurring) {
+      setTaskToDelete(targetTask);
+      return;
+    }
+
+    // Tarefa simples (não recorrente): apaga diretamente
     if (activeTimer.taskId === id) handleCancelTimer();
-    setTasks(tasks.filter(t => t.id !== id));
+    setTasks(prev => prev.filter(t => t.id !== id));
     toast.success('Tarefa removida.');
+  };
+
+  const handleDeleteSingleDay = () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.id;
+    if (activeTimer.taskId === taskId) handleCancelTimer();
+
+    const historyKey = `${taskId}_${selectedDate}`;
+
+    // 1. Marca no taskHistory como deleted para sincronização em nuvem
+    setTaskHistory(prev => ({
+      ...prev,
+      [historyKey]: {
+        ...(prev[historyKey] || {}),
+        id: historyKey,
+        taskId: String(taskId),
+        date: selectedDate,
+        status: 'deleted',
+        completedAt: null
+      }
+    }));
+
+    // 2. Adiciona a data no array deletedDates da tarefa
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      const currentDeleted = Array.isArray(t.deletedDates) ? t.deletedDates : [];
+      if (currentDeleted.includes(selectedDate)) return t;
+      return {
+        ...t,
+        deletedDates: [...currentDeleted, selectedDate]
+      };
+    }));
+
+    setTaskToDelete(null);
+    toast.success('Tarefa removida apenas deste dia.');
+  };
+
+  const handleDeleteFromDayForward = () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.id;
+    if (activeTimer.taskId === taskId) handleCancelTimer();
+
+    // Define recurringUntil como a data selecionada (interrompe repetições a partir desta data)
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      return {
+        ...t,
+        recurringUntil: selectedDate
+      };
+    }));
+
+    setTaskToDelete(null);
+    toast.success('Tarefa cancelada a partir deste dia.');
+  };
+
+  const handleDeleteAll = () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.id;
+    if (activeTimer.taskId === taskId) handleCancelTimer();
+
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    setTaskToDelete(null);
+    toast.success('Todas as repetições da tarefa foram removidas.');
   };
 
   const handleToggleCategory = (catName) => {
@@ -1538,6 +1628,20 @@ function DailyPlanner({
             setTaskForObservation(null);
             setTaskForCompletion(t);
           }}
+        />
+      )}
+      {taskToDelete && (
+        <DeleteTaskModal
+          task={taskToDelete}
+          dateFormatted={(() => {
+            if (!selectedDate) return '';
+            const parts = selectedDate.split('-');
+            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : selectedDate;
+          })()}
+          onClose={() => setTaskToDelete(null)}
+          onDeleteSingleDay={handleDeleteSingleDay}
+          onDeleteFromDayForward={handleDeleteFromDayForward}
+          onDeleteAll={handleDeleteAll}
         />
       )}
     </div>
