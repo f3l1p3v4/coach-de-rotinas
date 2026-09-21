@@ -49,14 +49,74 @@
 .add-task-modal .form-group {
   margin-bottom: 1rem;
 }
-.add-task-modal .form-group-inline {
+
+/* Linha 1: Usar Modelo (3/4) e Emoji (20%) */
+.form-row-model-emoji {
   display: flex;
   gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
 }
-.add-task-modal .form-group-inline .form-group {
+
+.form-row-model-emoji .form-col-model {
   flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
 }
-.add-task-modal label {
+
+.form-row-model-emoji .form-col-emoji {
+  flex: 0 0 20%;
+  width: 20%;
+  min-width: 60px;
+  margin-bottom: 0;
+}
+
+/* Linha 2: Nome da Tarefa (3/4) e Categoria (1/4) */
+.form-row-name-category {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.form-row-name-category .form-col-name {
+  flex: 3;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.form-row-name-category .form-col-category {
+  flex: 1;
+  min-width: 140px;
+  margin-bottom: 0;
+}
+
+/* Linha 3: Período (2/4) e Data (2/4) */
+.form-row-period-date {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.form-row-period-date .form-col-half {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* Compactar CategoryPicker quando na mesma linha do Nome */
+.category-picker-compact {
+  margin-bottom: 0 !important;
+  gap: 0 !important;
+}
+
+.category-picker-compact .category-field-group {
+  margin-bottom: 0 !important;
+}
+
+.add-task-modal label,
+.add-task-modal .picker-label {
   font-weight: 600;
   font-size: 0.8rem;
   color: var(--text-light-color);
@@ -64,23 +124,43 @@
   display: block;
   margin-bottom: 0.5rem;
 }
-.add-task-modal input,
+
+.add-task-modal input:not([type="checkbox"]):not([type="radio"]),
 .add-task-modal select,
+.add-task-modal .category-dropdown {
+  height: 44px;
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  font-size: 1rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
 .add-task-modal textarea {
   width: 100%;
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 0.75rem;
   background-color: var(--card-bg);
   color: var(--text-color);
   font-size: 1rem;
   font-family: inherit;
-  box-sizing: border-box; /* Garante que padding não aumente a largura */
+  box-sizing: border-box;
 }
+
 .add-task-modal input.emoji-input {
   text-align: center;
   font-size: 1.5rem;
-  padding: 0.5rem;
+  padding: 0 0.5rem;
+  height: 44px;
+}
+
+[data-theme='dark'] .add-task-modal input[type="date"] {
+  color-scheme: dark;
 }
 
 .subtask-editor {

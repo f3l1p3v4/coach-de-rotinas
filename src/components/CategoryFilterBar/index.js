@@ -67,7 +67,7 @@ function CategoryFilterBar({
                 isSelected
                   ? {
                       borderColor: catColor,
-                      backgroundColor: `${catColor}24`,
+                      backgroundColor: 'transparent',
                     }
                   : undefined
               }
@@ -95,7 +95,7 @@ function CategoryFilterBar({
               selectedCategories.includes('__none__')
                 ? {
                     borderColor: '#6b7280',
-                    backgroundColor: 'rgba(107, 114, 128, 0.18)',
+                    backgroundColor: 'transparent',
                   }
                 : undefined
             }

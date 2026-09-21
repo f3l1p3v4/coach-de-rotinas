@@ -1,9 +1,9 @@
 import React from 'react';
-import { Trophy, Notepad, Gear, CalendarBlank } from '@phosphor-icons/react';
+import { Notepad, Gear, CalendarBlank } from '@phosphor-icons/react';
 
 import './styles.css';
 
-function FloatingMenuMobile({ activeCard, onNotepadClick, onPlacarClick, onCalendarClick, onSettingsClick }) {
+function FloatingMenuMobile({ activeCard, onNotepadClick, onCalendarClick, onSettingsClick }) {
   return (
     <div className="floating-menu-mobile">
       <button 
@@ -19,13 +19,6 @@ function FloatingMenuMobile({ activeCard, onNotepadClick, onPlacarClick, onCalen
       >
         <CalendarBlank size={18} />
         <span>Agenda</span>
-      </button>
-      <button 
-        className={activeCard === 'placar' ? 'active' : ''} 
-        onClick={onPlacarClick}
-      >
-        <Trophy size={18} />
-        <span>Placar</span>
       </button>
       <button 
         className={activeCard === 'settings' ? 'active' : ''} 

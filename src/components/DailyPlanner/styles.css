@@ -71,19 +71,19 @@
 }
 
 .today-shortcut-btn {
-  background-color: #0A84FF;
-  color: #ffffff;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
   border: none;
   padding: 0.35rem 0.75rem;
   border-radius: 16px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, background-color 0.2s, color 0.2s;
 }
 
 .today-shortcut-btn:hover {
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .top-actions-right {

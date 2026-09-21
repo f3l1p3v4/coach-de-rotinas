@@ -123,31 +123,59 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
         <h3>Criar Nova Tarefa</h3>
         
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Usar um modelo?</label>
-            <select onChange={handleTemplateChange}>
-              <option value="">Selecione um modelo</option>
-              {taskTemplates.map(template => (
-                <option key={template.id} value={template.id}>{template.emoji} {template.text}</option>
-              ))}
-            </select>
+          {/* Linha 1: Usar Modelo (3/4) e Emoji (20%) */}
+          <div className="form-row-model-emoji">
+            <div className="form-group form-col-model">
+              <label>Usar um modelo?</label>
+              <select onChange={handleTemplateChange}>
+                <option value="">Selecione um modelo</option>
+                {taskTemplates.map(template => (
+                  <option key={template.id} value={template.id}>{template.emoji} {template.text}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group form-col-emoji">
+              <label>Emoji</label>
+              <input 
+                type="text" 
+                value={emoji} 
+                onChange={e => setEmoji(e.target.value)} 
+                className="emoji-input" 
+              />
+            </div>
           </div>
           
-          <div className="form-group-inline">
-            <div className="form-group">
+          {/* Linha 2: Nome da Tarefa (3/4) e Categoria (1/4) */}
+          <div className="form-row-name-category">
+            <div className="form-group form-col-name">
               <label>Nome da Tarefa</label>
-              <input type="text" value={text} onChange={e => setText(e.target.value)} required />
+              <input 
+                type="text" 
+                value={text} 
+                onChange={e => setText(e.target.value)} 
+                required 
+                placeholder="Nome da tarefa..."
+              />
             </div>
-            <div className="form-group" style={{ flex: '0 0 auto' }}>
-              <label>Emoji</label>
-              <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} className="emoji-input" />
+            <div className="form-group form-col-category">
+              <CategoryPicker 
+                category={category}
+                onChangeCategory={setCategory}
+                showCategory={true}
+                showDifficulty={false}
+                className="category-picker-compact"
+                appliesTo="task"
+              />
             </div>
-            <div className="form-group" style={{ flex: '0 0 auto' }}>
+          </div>
+
+          {/* Linha 3: Período (2/4) e Data (2/4) */}
+          <div className="form-row-period-date">
+            <div className="form-group form-col-half">
               <label>Período</label>
               <select 
                 value={period} 
                 onChange={e => setPeriod(e.target.value)}
-                style={{ height: '42px', borderRadius: '8px', padding: '0 10px', background: 'var(--input-bg, #2a2a2a)', color: 'var(--text-color, #fff)', border: '1px solid var(--border-color, #444)' }}
               >
                 <option value="Manhã">Manhã</option>
                 <option value="Tarde">Tarde</option>
@@ -155,23 +183,24 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
               </select>
             </div>
             {!isRecurring && (
-              <div className="form-group" style={{ flex: '0 0 auto' }}>
+              <div className="form-group form-col-half">
                 <label>Data</label>
                 <input 
                   type="date" 
                   value={taskDate} 
                   onChange={e => setTaskDate(e.target.value)}
-                  style={{ height: '42px', borderRadius: '8px', padding: '0 10px', background: 'var(--input-bg, #2a2a2a)', color: 'var(--text-color, #fff)', border: '1px solid var(--border-color, #444)' }}
                 />
               </div>
             )}
           </div>
 
+          {/* Nível de Urgência / Prioridade */}
           <CategoryPicker 
-            category={category}
-            onChangeCategory={setCategory}
             color={color}
             onChangeColor={setColor}
+            showCategory={false}
+            showDifficulty={true}
+            appliesTo="task"
           />
 
           <RecurrenceSelector

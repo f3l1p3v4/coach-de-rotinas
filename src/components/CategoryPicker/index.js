@@ -10,10 +10,13 @@ function CategoryPicker({
   category, 
   onChangeCategory, 
   color, 
-  onChangeColor,
-  difficulty,
-  onChangeDifficulty,
-  appliesTo = 'task'
+  onChangeColor, 
+  difficulty, 
+  onChangeDifficulty, 
+  appliesTo = 'task',
+  showCategory = true,
+  showDifficulty = true,
+  className = ''
 }) {
   const [categories, setCategories] = useState(() => getStoredCategories(appliesTo));
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -66,8 +69,9 @@ function CategoryPicker({
   };
 
   return (
-    <div className="category-picker-container">
-      <div className="category-field-group">
+    <div className={`category-picker-container ${className}`.trim()}>
+      {showCategory && (
+        <div className="category-field-group">
         <label className="picker-label">Categoria</label>
         {!isCreatingNew ? (
           <select 
@@ -111,35 +115,38 @@ function CategoryPicker({
           </div>
         )}
       </div>
+      )}
 
-      <div className="difficulty-selector-group">
-        <label className="picker-label">Nível de Urgência / Prioridade</label>
-        <div className="difficulty-options">
-          {DIFFICULTY_LEVELS.map(level => {
-            const isSelected = selectedDifficulty.id === level.id;
-            return (
-              <button
-                key={level.id}
-                type="button"
-                className={`difficulty-option-btn ${isSelected ? 'selected' : ''}`}
-                style={{
-                  borderColor: isSelected ? level.color : undefined,
-                  backgroundColor: isSelected ? `${level.color}26` : undefined,
-                  color: isSelected ? '#ffffff' : 'var(--text-light-color, #999999)'
-                }}
-                onClick={() => handleSelectDifficulty(level)}
-                title={level.description}
-              >
-                <span 
-                  className="diff-indicator-dot" 
-                  style={{ backgroundColor: level.color }} 
-                />
-                <span className="diff-option-text">{level.label}</span>
-              </button>
-            );
-          })}
+      {showDifficulty && (
+        <div className="difficulty-selector-group">
+          <label className="picker-label">Nível de Urgência / Prioridade</label>
+          <div className="difficulty-options">
+            {DIFFICULTY_LEVELS.map(level => {
+              const isSelected = selectedDifficulty.id === level.id;
+              return (
+                <button
+                  key={level.id}
+                  type="button"
+                  className={`difficulty-option-btn ${isSelected ? 'selected' : ''}`}
+                  style={{
+                    borderColor: isSelected ? level.color : undefined,
+                    backgroundColor: isSelected ? `${level.color}26` : undefined,
+                    color: isSelected ? '#ffffff' : 'var(--text-light-color, #999999)'
+                  }}
+                  onClick={() => handleSelectDifficulty(level)}
+                  title={level.description}
+                >
+                  <span 
+                    className="diff-indicator-dot" 
+                    style={{ backgroundColor: level.color }} 
+                  />
+                  <span className="diff-option-text">{level.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

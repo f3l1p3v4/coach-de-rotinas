@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import DailyPlanner, { initialTaskTemplates } from './components/DailyPlanner';
-import BannerDinamico from './components/BannerDinamico';
 import FloatingMenuMobile from './components/FloatingMenuMobile';
-import PlacarFoco from './components/PlacarFoco';
 import AjustesModal from './components/AjustesModal';
 import BlocoDeNotas from './components/BlocoDeNotas';
 import AuthModal from './components/AuthModal';
@@ -23,7 +21,7 @@ const getTodayString = () => {
 
 function App() {
   const [mobileCard, setMobileCard] = useState(null);
-  const [pomodoroCount, setPomodoroCount] = useState(0);
+  const [, setPomodoroCount] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [user, setUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -157,7 +155,6 @@ function App() {
   return (
     <div className="App">
       <Toaster position="top-right" richColors theme={isDarkMode ? 'dark' : 'light'} closeButton />
-      <BannerDinamico />
       <div className="app-body">
         <main className="main-content">
           <DailyPlanner 
@@ -207,17 +204,6 @@ function App() {
             />
           </div>
         )}
-        {mobileCard === 'placar' && (
-          <div 
-            className="floating-card-container"
-            onClick={e => e.stopPropagation()}
-            onMouseDown={e => e.stopPropagation()}
-            onPointerDown={e => e.stopPropagation()}
-            onTouchStart={e => e.stopPropagation()}
-          >
-            <PlacarFoco count={pomodoroCount} />
-          </div>
-        )}
         {mobileCard === 'notepad' && (
           <div 
             className="floating-card-container"
@@ -251,7 +237,6 @@ function App() {
             activeCard={mobileCard}
             onNotepadClick={() => toggleMobileCard('notepad')}
             onCalendarClick={() => toggleMobileCard('calendar')}
-            onPlacarClick={() => toggleMobileCard('placar')}
             onSettingsClick={() => toggleMobileCard('settings')}
           />
         </div>
