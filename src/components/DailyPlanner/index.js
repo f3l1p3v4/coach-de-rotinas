@@ -162,7 +162,7 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
   for (const t of taskList) {
     const textNorm = (t.text || '').toLowerCase().trim();
 
-    // 1. Suporte: desduplica e padroniza para Manhã / Trabalho
+    // 1. Suporte: desduplica e preserva personalizações do usuário (período, horário, etc.)
     if (textNorm === 'suporte') {
       if (seenRoutines.has('suporte')) {
         // Ignora duplicata!
@@ -172,21 +172,21 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '9');
       cleanedList.push({
         ...t,
-        text: 'Suporte',
-        emoji: '📞',
-        category: 'Trabalho',
-        color: '#3b82f6',
-        time: '09:00',
-        period: 'Manhã',
-        isRecurring: true,
-        recurringDays: [1, 2, 3, 4, 5],
+        text: t.text || 'Suporte',
+        emoji: t.emoji || '📞',
+        category: t.category || 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '09:00',
+        period: t.period || 'Manhã',
+        isRecurring: t.isRecurring !== undefined ? Boolean(t.isRecurring) : true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
       });
       continue;
     }
 
-    // 2. Organização do Dia: desduplica e padroniza para Manhã / Trabalho
+    // 2. Organização do Dia: desduplica e preserva personalizações
     if (textNorm.includes('organização') || textNorm.includes('organizacao')) {
       if (seenRoutines.has('organizacao')) {
         continue;
@@ -195,21 +195,21 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '6');
       cleanedList.push({
         ...t,
-        text: 'Organização do Dia',
-        emoji: '📋',
-        category: 'Trabalho',
-        color: '#3b82f6',
-        time: '08:00',
-        period: 'Manhã',
-        isRecurring: true,
-        recurringDays: [1, 2, 3, 4, 5],
+        text: t.text || 'Organização do Dia',
+        emoji: t.emoji || '📋',
+        category: t.category || 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '08:00',
+        period: t.period || 'Manhã',
+        isRecurring: t.isRecurring !== undefined ? Boolean(t.isRecurring) : true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
       });
       continue;
     }
 
-    // 3. Conferência de Serviços: desduplica e padroniza para Manhã / Trabalho
+    // 3. Conferência de Serviços: desduplica e preserva personalizações
     if (textNorm.includes('conferência') || textNorm.includes('conferencia')) {
       if (seenRoutines.has('conferencia')) {
         continue;
@@ -217,20 +217,20 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
       seenRoutines.add('conferencia');
       cleanedList.push({
         ...t,
-        text: 'Conferência de Serviços',
-        emoji: '🔍',
-        category: 'Trabalho',
-        color: '#3b82f6',
-        time: '08:30',
-        period: 'Manhã',
-        isRecurring: true,
-        recurringDays: [1, 2, 3, 4, 5],
+        text: t.text || 'Conferência de Serviços',
+        emoji: t.emoji || '🔍',
+        category: t.category || 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '08:30',
+        period: t.period || 'Manhã',
+        isRecurring: t.isRecurring !== undefined ? Boolean(t.isRecurring) : true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
         date: null
       });
       continue;
     }
 
-    // 4. Desenvolvimento de Software: desduplica e padroniza para Manhã / Trabalho
+    // 4. Desenvolvimento de Software: desduplica e preserva personalizações (ex: Tarde!)
     if (textNorm.includes('desenvolvimento de software') || textNorm === 'desenvolvimento') {
       if (seenRoutines.has('desenvolvimento')) {
         continue;
@@ -239,21 +239,21 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '10');
       cleanedList.push({
         ...t,
-        text: 'Desenvolvimento de Software',
-        emoji: '👨‍💻',
-        category: 'Trabalho',
-        color: '#3b82f6',
-        time: '10:00',
-        period: 'Manhã',
-        isRecurring: true,
-        recurringDays: [1, 2, 3, 4, 5],
+        text: t.text || 'Desenvolvimento de Software',
+        emoji: t.emoji || '👨‍💻',
+        category: t.category || 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '10:00',
+        period: t.period || 'Manhã',
+        isRecurring: t.isRecurring !== undefined ? Boolean(t.isRecurring) : true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
       });
       continue;
     }
 
-    // 5. Estudo no Trabalho: desduplica e padroniza para Manhã / Trabalho
+    // 5. Estudo no Trabalho: desduplica e preserva personalizações
     if (textNorm.includes('estudo no trabalho')) {
       if (seenRoutines.has('estudotrabalho')) {
         continue;
@@ -262,21 +262,21 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
       const def = DEFAULT_WORK_TASKS.find(w => w.id === '8');
       cleanedList.push({
         ...t,
-        text: 'Estudo no Trabalho',
-        emoji: '🧠',
-        category: 'Trabalho',
-        color: '#3b82f6',
-        time: '11:00',
-        period: 'Manhã',
-        isRecurring: true,
-        recurringDays: [1, 2, 3, 4, 5],
+        text: t.text || 'Estudo no Trabalho',
+        emoji: t.emoji || '🧠',
+        category: t.category || 'Trabalho',
+        color: t.color || '#3b82f6',
+        time: t.time || '11:00',
+        period: t.period || 'Manhã',
+        isRecurring: t.isRecurring !== undefined ? Boolean(t.isRecurring) : true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
         date: null,
         subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : def.subtasks
       });
       continue;
     }
 
-    // 6. Faculdade / Concursos: desduplica e padroniza para Noite / Estudos
+    // 6. Faculdade / Concursos: desduplica e preserva personalizações
     if (textNorm.includes('faculdade') || textNorm.includes('concursos')) {
       if (seenRoutines.has('faculdade')) {
         continue;
@@ -284,14 +284,14 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
       seenRoutines.add('faculdade');
       cleanedList.push({
         ...t,
-        text: 'Faculdade / Concursos',
-        emoji: '📚',
-        category: 'Estudos',
-        color: '#8b5cf6',
-        time: '19:00',
-        period: 'Noite',
-        isRecurring: true,
-        recurringDays: [1, 2, 3, 4, 5],
+        text: t.text || 'Faculdade / Concursos',
+        emoji: t.emoji || '📚',
+        category: t.category || 'Estudos',
+        color: t.color || '#8b5cf6',
+        time: t.time || '19:00',
+        period: t.period || 'Noite',
+        isRecurring: t.isRecurring !== undefined ? Boolean(t.isRecurring) : true,
+        recurringDays: (Array.isArray(t.recurringDays) && t.recurringDays.length > 0) ? t.recurringDays : [1, 2, 3, 4, 5],
         date: null
       });
       continue;
