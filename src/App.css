@@ -54,6 +54,70 @@ button, input, textarea, select {
   font-family: inherit;
 }
 
+/* --- Estilos Globais Modernos para Select --- */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  height: 44px;
+  line-height: 1.4;
+  padding: 0.65rem 2.5rem 0.65rem 0.95rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #EAEAEA);
+  background-color: var(--card-bg, #FFFFFF);
+  color: var(--text-color, #333333);
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 16px 16px;
+  box-sizing: border-box;
+  outline: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+[data-theme='dark'] select {
+  border-color: var(--border-color, #555555);
+  background-color: var(--card-bg, #2C2C2C);
+  color: var(--text-color, #F9F9F9);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d1d5db' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
+
+select:hover {
+  border-color: var(--secondary-text, #9ca3af);
+}
+
+select:focus {
+  border-color: var(--accent-color, #007AFF);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.18);
+}
+
+[data-theme='dark'] select:focus {
+  border-color: var(--accent-color, #0A84FF);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
+}
+
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+select option {
+  background-color: var(--card-bg, #FFFFFF);
+  color: var(--text-color, #333333);
+  padding: 8px 12px;
+  font-size: 0.95rem;
+}
+
+[data-theme='dark'] select option {
+  background-color: #2C2C2C;
+  color: #F9F9F9;
+}
+
 h3 {
   margin-top: 0;
 }
