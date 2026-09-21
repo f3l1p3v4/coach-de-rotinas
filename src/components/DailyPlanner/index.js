@@ -34,10 +34,19 @@ const getTodayString = () => {
 };
 
 const getFormattedDateLabel = (dateStr) => {
+  if (!dateStr) return '';
   const today = getTodayString();
   if (dateStr === today) return 'Hoje';
-  const [y, m, d] = dateStr.split('-');
-  return `${d}/${m}/${y}`;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    const currentYear = String(new Date().getFullYear());
+    if (y === currentYear) {
+      return `${d}/${m}`;
+    }
+    return `${d}/${m}/${y}`;
+  }
+  return dateStr;
 };
 
 export const getWeekdayLabel = (dateStr) => {
