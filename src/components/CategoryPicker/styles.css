@@ -159,6 +159,8 @@
 .diff-option-text {
   white-space: nowrap;
   letter-spacing: 0.2px;
+  color: inherit;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 480px) {

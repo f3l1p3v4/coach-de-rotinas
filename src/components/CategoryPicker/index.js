@@ -130,8 +130,9 @@ function CategoryPicker({
                   className={`difficulty-option-btn ${isSelected ? 'selected' : ''}`}
                   style={{
                     borderColor: isSelected ? level.color : undefined,
-                    backgroundColor: isSelected ? `${level.color}26` : undefined,
-                    color: isSelected ? '#ffffff' : 'var(--text-light-color, #999999)'
+                    color: isSelected ? 'var(--title-color, #111827)' : 'var(--secondary-text, #4b5563)',
+                    fontWeight: isSelected ? 700 : 500,
+                    boxShadow: isSelected ? `0 0 0 1px ${level.color}` : undefined
                   }}
                   onClick={() => handleSelectDifficulty(level)}
                   title={level.description}
