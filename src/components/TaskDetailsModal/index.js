@@ -123,79 +123,147 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
         </button>
 
         <form onSubmit={handleSave} className="task-details-form">
-          <div className="details-modal-header">
-            <div className="title-edit-group">
-              <input 
-                type="text" 
-                value={emoji} 
-                onChange={e => setEmoji(e.target.value)} 
-                className="emoji-input"
-                maxLength={4}
-                title="Alterar emoji"
-              />
-              <input 
-                type="text" 
-                value={text} 
-                onChange={e => setText(e.target.value)} 
-                className="task-title-input"
-                placeholder="Título da Tarefa"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="details-grid-row">
-            <div className="details-field">
-              <label><Tag size={16} /> Período</label>
-              <select 
-                value={period} 
-                onChange={e => setPeriod(e.target.value)}
-                className="details-select"
-              >
-                <option value="Manhã">Manhã</option>
-                <option value="Tarde">Tarde</option>
-                <option value="Noite">Noite</option>
-              </select>
-            </div>
-
-            {!isRecurring && (
-              <div className="details-field">
-                <label><CalendarBlank size={16} /> Data da Tarefa</label>
-                <div className="task-date-input-group">
-                  <input 
-                    type="date" 
-                    value={date} 
-                    onChange={e => setDate(e.target.value)}
-                    className="details-input task-date-input"
+          {!isRecurring ? (
+            <>
+              {/* Linha 1: Nome da Tarefa (3/4) e Categoria (1/4) */}
+              <div className="form-row-name-category">
+                <div className="form-group form-col-name">
+                  <label>Nome da Tarefa</label>
+                  <div className="title-with-emoji-container">
+                    <input 
+                      type="text" 
+                      value={emoji} 
+                      onChange={e => setEmoji(e.target.value)} 
+                      className="emoji-input"
+                      maxLength={4}
+                      title="Alterar emoji"
+                    />
+                    <input 
+                      type="text" 
+                      value={text} 
+                      onChange={e => setText(e.target.value)} 
+                      className="details-input task-name-input"
+                      placeholder="Nome da tarefa..."
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="form-group form-col-category">
+                  <CategoryPicker 
+                    category={category}
+                    onChangeCategory={setCategory}
+                    showCategory={true}
+                    showDifficulty={false}
+                    className="category-picker-compact"
+                    appliesTo="task"
                   />
-                  <div className="task-date-shortcuts">
-                    <button 
-                      type="button" 
-                      className={`task-date-btn ${date === getTodayString() ? 'active' : ''}`}
-                      onClick={() => setDate(getTodayString())}
-                      title="Mover para Hoje"
-                    >
-                      Hoje
-                    </button>
-                    <button 
-                      type="button" 
-                      className={`task-date-btn ${date === getTomorrowString() ? 'active' : ''}`}
-                      onClick={() => setDate(getTomorrowString())}
-                      title="Mover para Amanhã"
-                    >
-                      Amanhã
-                    </button>
+                </div>
+              </div>
+
+              {/* Linha 2: Período (2/4) e Data da Tarefa (2/4) */}
+              <div className="details-grid-row">
+                <div className="details-field">
+                  <label><Tag size={16} /> Período</label>
+                  <select 
+                    value={period} 
+                    onChange={e => setPeriod(e.target.value)}
+                    className="details-select"
+                  >
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                  </select>
+                </div>
+
+                <div className="details-field">
+                  <label><CalendarBlank size={16} /> Data da Tarefa</label>
+                  <div className="task-date-input-group">
+                    <input 
+                      type="date" 
+                      value={date} 
+                      onChange={e => setDate(e.target.value)}
+                      className="details-input task-date-input"
+                    />
+                    <div className="task-date-shortcuts">
+                      <button 
+                        type="button" 
+                        className={`task-date-btn ${date === getTodayString() ? 'active' : ''}`}
+                        onClick={() => setDate(getTodayString())}
+                        title="Mover para Hoje"
+                      >
+                        Hoje
+                      </button>
+                      <button 
+                        type="button" 
+                        className={`task-date-btn ${date === getTomorrowString() ? 'active' : ''}`}
+                        onClick={() => setDate(getTomorrowString())}
+                        title="Mover para Amanhã"
+                      >
+                        Amanhã
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              {/* Tarefa baseada em modelo (recorrente) */}
+              <div className="details-modal-header">
+                <div className="title-edit-group">
+                  <input 
+                    type="text" 
+                    value={emoji} 
+                    onChange={e => setEmoji(e.target.value)} 
+                    className="emoji-input"
+                    maxLength={4}
+                    title="Alterar emoji"
+                  />
+                  <input 
+                    type="text" 
+                    value={text} 
+                    onChange={e => setText(e.target.value)} 
+                    className="task-title-input"
+                    placeholder="Título da Tarefa"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="details-grid-row">
+                <div className="details-field">
+                  <label><Tag size={16} /> Período</label>
+                  <select 
+                    value={period} 
+                    onChange={e => setPeriod(e.target.value)}
+                    className="details-select"
+                  >
+                    <option value="Manhã">Manhã</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noite">Noite</option>
+                  </select>
+                </div>
+
+                <div className="details-field">
+                  <CategoryPicker 
+                    category={category}
+                    onChangeCategory={setCategory}
+                    showCategory={true}
+                    showDifficulty={false}
+                    className="category-picker-compact"
+                    appliesTo="task"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <CategoryPicker 
-            category={category}
-            onChangeCategory={setCategory}
             color={color}
             onChangeColor={setColor}
+            showCategory={false}
+            showDifficulty={true}
+            appliesTo="task"
           />
 
           <RecurrenceSelector
@@ -263,9 +331,9 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
                 type="button" 
                 onClick={handleAddSubtask}
                 className="add-subtask-inline-btn"
+                title="Adicionar sub-tarefa"
               >
-                <PlusCircle size={20} />
-                <span>Adicionar</span>
+                <PlusCircle size={24} />
               </button>
             </div>
           </div>

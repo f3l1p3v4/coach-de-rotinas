@@ -66,6 +66,53 @@
   border-bottom-color: var(--accent-color);
 }
 
+.form-row-name-category {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.form-row-name-category .form-col-name {
+  flex: 3;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-row-name-category .form-col-category {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.title-with-emoji-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.title-with-emoji-container .emoji-input {
+  width: 44px;
+  height: 42px;
+  min-width: 44px;
+  border-radius: 10px;
+  padding: 0;
+  text-align: center;
+  font-size: 1.4rem;
+  box-sizing: border-box;
+}
+
+.title-with-emoji-container .task-name-input {
+  flex: 1;
+  height: 42px;
+  box-sizing: border-box;
+}
+
 .details-grid-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -79,7 +126,9 @@
 }
 
 .details-field label,
-.details-modal-section label {
+.details-modal-section label,
+.details-modal-content .picker-label,
+.form-col-name label {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -88,6 +137,35 @@
   color: var(--text-light-color);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin-bottom: 0;
+}
+
+.details-modal-content .category-picker-compact {
+  margin-bottom: 0 !important;
+  gap: 0 !important;
+}
+
+.details-modal-content .category-picker-compact .category-field-group {
+  margin-bottom: 0 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.details-modal-content .category-dropdown {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background-color: var(--sidebar-bg);
+  color: var(--title-color);
+  font-size: 0.95rem;
+  height: 42px;
+  box-sizing: border-box;
+}
+
+.details-modal-content .details-select {
+  height: 42px;
 }
 
 .details-input,
@@ -107,7 +185,8 @@
 
 .details-input:focus,
 .details-select:focus,
-.details-textarea:focus {
+.details-textarea:focus,
+.details-modal-content .category-dropdown:focus {
   border-color: var(--accent-color);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
@@ -143,6 +222,14 @@
 .subtask-list-view li.completed .subtask-text-view {
   text-decoration: line-through;
   opacity: 0.6;
+}
+
+.subtask-icon-completed {
+  color: #10b981 !important;
+}
+
+.subtask-list-view li.completed .subtask-toggle-btn {
+  opacity: 1 !important;
 }
 
 .subtask-toggle-btn {
@@ -193,6 +280,8 @@
   background-color: var(--sidebar-bg);
   color: var(--title-color);
   font-size: 0.9rem;
+  height: 40px;
+  box-sizing: border-box;
   outline: none;
 }
 
@@ -203,21 +292,24 @@
 .add-subtask-inline-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.55rem 0.9rem;
-  background-color: rgba(99, 102, 241, 0.1);
-  color: var(--accent-color);
-  border: 1px solid rgba(99, 102, 241, 0.3);
+  justify-content: center;
+  padding: 0 1rem;
+  height: 40px;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+  border: none;
   border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.add-subtask-inline-btn svg {
+  color: var(--primary-text) !important;
 }
 
 .add-subtask-inline-btn:hover {
-  background-color: var(--accent-color);
-  color: #ffffff;
+  opacity: 0.85;
 }
 
 .details-modal-footer {
@@ -233,20 +325,25 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.65rem 1.1rem;
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  padding: 0.65rem 1.2rem;
+  background-color: #ef4444;
+  color: #ffffff;
+  border: 1px solid #ef4444;
   border-radius: 10px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
+.details-delete-btn svg {
+  color: #ffffff !important;
+}
+
 .details-delete-btn:hover {
-  background-color: #ef4444;
-  color: #ffffff;
+  background-color: #dc2626;
+  border-color: #dc2626;
+  opacity: 0.92;
 }
 
 .details-save-btn {
@@ -254,20 +351,24 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.65rem 1.4rem;
-  background-color: var(--accent-color);
-  color: #ffffff;
-  border: none;
+  background-color: var(--primary-bg);
+  color: var(--primary-text);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.details-save-btn svg {
+  color: var(--primary-text) !important;
 }
 
 .details-save-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
+  opacity: 0.88;
 }
 
 .task-date-input-group {
