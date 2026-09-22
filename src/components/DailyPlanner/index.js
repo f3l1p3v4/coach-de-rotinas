@@ -813,7 +813,7 @@ function DailyPlanner({
           subtasks: baseSubtasksModel
         };
       });
-      return sortTasksChronologically(updatedList);
+      return updatedList;
     });
     setSelectedTask(null);
   };
@@ -1404,23 +1404,72 @@ function DailyPlanner({
 
   const handleOnDragEnd = (event) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      if (!String(active.id).startsWith('calendar-') && !String(over.id).startsWith('calendar-')) {
-        setTasks((allTasks) => {
-          const currentDayTasks = allTasks.filter(t => isTaskForSelectedDate(t, selectedDate));
-          const otherDayTasks = allTasks.filter(t => !isTaskForSelectedDate(t, selectedDate));
+    if (!over || active.id === over.id) return;
 
-          const oldIndex = currentDayTasks.findIndex((item) => item.id === active.id);
-          const newIndex = currentDayTasks.findIndex((item) => item.id === over.id);
-
-          if (oldIndex !== -1 && newIndex !== -1) {
-            const reordered = arrayMove(currentDayTasks, oldIndex, newIndex);
-            return [...otherDayTasks, ...reordered];
-          }
-          return allTasks;
-        });
-      }
+    if (String(active.id).startsWith('calendar-') || String(over.id).startsWith('calendar-')) {
+      return;
     }
+
+    setTasks((allTasks) => {
+      const activeTask = allTasks.find(t => t.id === active.id);
+      const overTask = allTasks.find(t => t.id === over.id);
+
+      if (!activeTask || !overTask) return allTasks;
+
+      const activePeriod = getPeriod(activeTask);
+      const overPeriod = getPeriod(overTask);
+
+      // Restringe o drag and drop estritamente ao mesmo período!
+      if (activePeriod !== overPeriod) {
+        return allTasks;
+      }
+
+      // Tarefas deste dia pertencentes a este período
+      const periodTasks = allTasks.filter(t => 
+        isTaskForSelectedDate(t, selectedDate) && getPeriod(t) === activePeriod
+      );
+
+      const oldIndex = periodTasks.findIndex(t => t.id === active.id);
+      const newIndex = periodTasks.findIndex(t => t.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return allTasks;
+      }
+
+      // Reordena apenas as tarefas daquele período
+      const reorderedPeriodTasks = arrayMove(periodTasks, oldIndex, newIndex);
+
+      // Se todas as tarefas do período têm horários definidos, ajusta os horários
+      // para acompanhar a nova ordem, para que fiquem cronologicamente consistentes
+      const existingTimes = periodTasks.map(t => t.time).filter(Boolean);
+      let adjustedTasks = reorderedPeriodTasks;
+
+      if (existingTimes.length === periodTasks.length) {
+        const sortedTimes = [...existingTimes].sort((a, b) => a.localeCompare(b));
+        adjustedTasks = reorderedPeriodTasks.map((t, idx) => ({
+          ...t,
+          time: sortedTimes[idx] || t.time
+        }));
+      }
+
+      // Atualiza allTasks mantendo as tarefas de outros períodos e outros dias nos seus lugares
+      const periodTaskIds = new Set(periodTasks.map(t => t.id));
+      const result = [];
+      let periodInserted = false;
+
+      for (const t of allTasks) {
+        if (periodTaskIds.has(t.id)) {
+          if (!periodInserted) {
+            result.push(...adjustedTasks);
+            periodInserted = true;
+          }
+        } else {
+          result.push(t);
+        }
+      }
+
+      return result;
+    });
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -1567,8 +1616,7 @@ function DailyPlanner({
     return selectedCategories.includes(t.category);
   });
 
-  const processedTasks = sortTasksChronologically(
-    filteredTasks.map(t => {
+  const processedTasks = filteredTasks.map(t => {
       if (t.isCalendarEvent) {
         return t;
       }
@@ -1636,8 +1684,7 @@ function DailyPlanner({
         startedAt,
         subtasks: daySubtasks
       };
-    })
-  );
+    });
 
   const PERIOD_NAMES = ['Manhã', 'Tarde', 'Noite'];
   const groupedPeriodTasks = PERIOD_NAMES.map(pName => {
@@ -1759,19 +1806,19 @@ function DailyPlanner({
       />
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
-        <SortableContext items={processedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <div 
-            className="planner-periods-wrapper"
-            onDragOver={handleDragOverFromCalendar}
-            onDrop={handleDropFromCalendar}
-          >
-            {processedTasks.length > 0 ? (
-              groupedPeriodTasks.map((group) => {
-                if (group.tasks.length === 0) return null;
+        <div 
+          className="planner-periods-wrapper"
+          onDragOver={handleDragOverFromCalendar}
+          onDrop={handleDropFromCalendar}
+        >
+          {processedTasks.length > 0 ? (
+            groupedPeriodTasks.map((group) => {
+              if (group.tasks.length === 0) return null;
 
-                return (
-                  <div key={group.period} className="period-section-group">
-                    <h2 className="period-section-title">{group.period}</h2>
+              return (
+                <div key={group.period} className="period-section-group">
+                  <h2 className="period-section-title">{group.period}</h2>
+                  <SortableContext items={group.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                     <div className="period-section-box">
                       {group.tasks.map((task) => (
                         <TodoItem
@@ -1792,9 +1839,10 @@ function DailyPlanner({
                         />
                       ))}
                     </div>
-                  </div>
-                );
-              })
+                  </SortableContext>
+                </div>
+              );
+            })
             ) : tasksForSelectedDate.length > 0 ? (
               <div className="period-section-group">
                 <div className="period-section-box empty-box" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
@@ -1867,7 +1915,6 @@ function DailyPlanner({
               </div>
             )}
           </div>
-        </SortableContext>
       </DndContext>
       {selectedTask && (
         <TaskDetailsModal
