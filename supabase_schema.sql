@@ -37,6 +37,7 @@ ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS color TEXT;
 ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS period TEXT DEFAULT 'Manhã';
 ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS started_at TEXT;
 ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS completed_at TEXT;
+ALTER TABLE public.tasks ADD COLUMN IF NOT EXISTS order_index INTEGER DEFAULT 0;
 
 -- Habilita RLS para tasks
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;

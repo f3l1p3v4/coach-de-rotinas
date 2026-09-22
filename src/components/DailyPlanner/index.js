@@ -303,8 +303,8 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
   }
 
   // IMPORTANTE: NÃO insere missingWork automaticamente!
-  // Se uma tarefa não está na lista, significa que o usuário a apagou voluntariamente.
-  return sortTasksChronologically(cleanedList);
+  // Preserva estritamente a ordem definida pelo usuário (não reordena por horário).
+  return cleanedList;
 };
 
 const taskTemplates = [
@@ -364,12 +364,28 @@ function DailyPlanner({
       });
     };
 
+    const restoreOrder = (list) => {
+      let savedOrder = [];
+      try {
+        const raw = localStorage.getItem('daily_tasks_order');
+        if (raw) savedOrder = JSON.parse(raw);
+      } catch (e) {}
+
+      if (!Array.isArray(savedOrder) || savedOrder.length === 0) return list;
+      const orderMap = new Map(savedOrder.map((id, idx) => [String(id), idx]));
+      return [...list].sort((a, b) => {
+        const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+        const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+        return posA - posB;
+      });
+    };
+
     const savedTasks = localStorage.getItem('daily_tasks');
     if (savedTasks) {
       try {
         const parsed = JSON.parse(savedTasks);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsed));
+          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsed)));
         }
       } catch (e) {}
     }
@@ -378,7 +394,7 @@ function DailyPlanner({
       try {
         const parsedBackup = JSON.parse(backup);
         if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
-          return ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsedBackup));
+          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsedBackup)));
         }
       } catch (e) {}
     }
@@ -529,7 +545,7 @@ function DailyPlanner({
         color: calendarTaskToAdd.color || null,
         date: taskDate
       };
-      setTasks(prev => sortTasksChronologically([...prev, newTask]));
+      setTasks(prev => [...prev, newTask]);
       if (onClearCalendarTaskToAdd) onClearCalendarTaskToAdd();
     }
   }, [calendarTaskToAdd, selectedDate, onClearCalendarTaskToAdd]);
@@ -553,13 +569,52 @@ function DailyPlanner({
               }
               return t;
             });
-            return ensureWorkAndRoutineTasks(cleaned);
+            const sanitized = ensureWorkAndRoutineTasks(cleaned);
+
+            let savedOrder = [];
+            try {
+              const rawOrder = localStorage.getItem('daily_tasks_order');
+              if (rawOrder) savedOrder = JSON.parse(rawOrder);
+            } catch (e) {}
+
+            const orderMap = new Map();
+            if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+              savedOrder.forEach((id, idx) => orderMap.set(String(id), idx));
+            } else if (Array.isArray(prev) && prev.length > 0) {
+              prev.forEach((t, idx) => orderMap.set(String(t.id), idx));
+            }
+
+            if (orderMap.size > 0) {
+              return [...sanitized].sort((a, b) => {
+                const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+                const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+                return posA - posB;
+              });
+            }
+
+            return sanitized;
           });
           loadedUserIdRef.current = user.id;
           setIsTasksLoaded(true);
         }
       } else {
-        setTasks(prev => ensureWorkAndRoutineTasks(prev));
+        setTasks(prev => {
+          const sanitized = ensureWorkAndRoutineTasks(prev);
+          let savedOrder = [];
+          try {
+            const rawOrder = localStorage.getItem('daily_tasks_order');
+            if (rawOrder) savedOrder = JSON.parse(rawOrder);
+          } catch (e) {}
+          if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+            const orderMap = new Map(savedOrder.map((id, idx) => [String(id), idx]));
+            return [...sanitized].sort((a, b) => {
+              const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+              const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+              return posA - posB;
+            });
+          }
+          return sanitized;
+        });
         loadedUserIdRef.current = null;
         setIsTasksLoaded(true);
       }
@@ -705,7 +760,7 @@ function DailyPlanner({
       isRecurring: Boolean(newTask.isRecurring),
       recurringDays: newTask.isRecurring ? (newTask.recurringDays || []).map(Number).filter(n => !isNaN(n)) : []
     };
-    setTasks(prevTasks => sortTasksChronologically([...prevTasks, taskWithDate]));
+    setTasks(prevTasks => [...prevTasks, taskWithDate]);
     if (saveAsTemplate) {
       const newTemplate = {
         id: Date.now().toString(),
@@ -837,7 +892,7 @@ function DailyPlanner({
             color: item.color || null,
             date: selectedDate
           };
-          setTasks(prev => sortTasksChronologically([...prev, newTask]));
+          setTasks(prev => [...prev, newTask]);
         }
       }
     } catch (err) {
@@ -1467,6 +1522,13 @@ function DailyPlanner({
           result.push(t);
         }
       }
+
+      // Salva imediatamente no localStorage para garantir persistência mesmo antes do próximo render
+      try {
+        const orderIds = result.map(t => String(t.id));
+        localStorage.setItem('daily_tasks_order', JSON.stringify(orderIds));
+        localStorage.setItem('daily_tasks', JSON.stringify(result));
+      } catch (err) {}
 
       return result;
     });

@@ -53,17 +53,27 @@ export async function loadUserTasks(userId) {
         .from('tasks')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: true });
+        .order('order_index', { ascending: true });
 
-      // Se falhou por não ter coluna created_at, tenta busca simples
+      // Se falhou por não ter coluna order_index, tenta busca por created_at
       if (error) {
         const retry = await supabase
           .from('tasks')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true });
         if (!retry.error) {
           data = retry.data;
           error = null;
+        } else {
+          const retrySimple = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('user_id', userId);
+          if (!retrySimple.error) {
+            data = retrySimple.data;
+            error = null;
+          }
         }
       }
 
@@ -99,12 +109,38 @@ export async function loadUserTasks(userId) {
               recurringUntil: t.recurring_until || t.recurringUntil || null,
               deletedDates: Array.isArray(t.deleted_dates) ? t.deleted_dates.map(String) : (Array.isArray(t.deletedDates) ? t.deletedDates.map(String) : []),
               description: t.description || '',
+              orderIndex: (t.order_index !== undefined && t.order_index !== null) ? Number(t.order_index) : null,
               subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
             };
           });
 
+          // Restaura rigorosamente a ordem definida pelo usuário através de daily_tasks_order ou localTasks
+          let savedOrder = [];
+          try {
+            const rawOrder = localStorage.getItem('daily_tasks_order');
+            if (rawOrder) savedOrder = JSON.parse(rawOrder);
+          } catch (e) {}
+
+          const orderMap = new Map();
+          if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+            savedOrder.forEach((id, idx) => orderMap.set(String(id), idx));
+          } else if (Array.isArray(localTasks) && localTasks.length > 0) {
+            localTasks.forEach((t, idx) => orderMap.set(String(t.id), idx));
+          }
+
+          if (orderMap.size > 0) {
+            remoteTasks.sort((a, b) => {
+              const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : (a.orderIndex ?? 999999);
+              const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : (b.orderIndex ?? 999999);
+              return posA - posB;
+            });
+          } else if (remoteTasks.some(t => t.orderIndex !== null)) {
+            remoteTasks.sort((a, b) => (a.orderIndex ?? 999999) - (b.orderIndex ?? 999999));
+          }
+
           localStorage.setItem('daily_tasks', JSON.stringify(remoteTasks));
           localStorage.setItem('daily_tasks_backup', JSON.stringify(remoteTasks));
+          localStorage.setItem('daily_tasks_order', JSON.stringify(remoteTasks.map(t => String(t.id))));
           return remoteTasks;
         } else {
           // Se o banco remoto retornou vazio ([]):
@@ -129,6 +165,7 @@ export async function syncUserTasks(userId, tasks) {
 
   // 1. Salvar no localStorage sempre para cache offline
   localStorage.setItem('daily_tasks', JSON.stringify(tasks));
+  localStorage.setItem('daily_tasks_order', JSON.stringify(tasks.map(t => String(t.id))));
   if (tasks.length > 0) {
     localStorage.setItem('daily_tasks_backup', JSON.stringify(tasks));
   }
@@ -144,9 +181,9 @@ export async function syncUserTasks(userId, tasks) {
       const currentIds = tasks.map(t => String(t.id));
 
       // Payload base com colunas padrão confirmadas da tabela tasks
-      const buildPayload = (numRecurrence = false) => tasks.map(t => {
+      const buildPayload = (includeOrder = true, numRecurrence = false) => tasks.map((t, idx) => {
         const isRec = Boolean(t.isRecurring);
-        return {
+        const item = {
           id: String(t.id),
           user_id: userId,
           text: t.text || '',
@@ -167,16 +204,26 @@ export async function syncUserTasks(userId, tasks) {
           completed_dates: (t.completedDates || []).map(String),
           subtasks: t.subtasks || []
         };
+        if (includeOrder) {
+          item.order_index = idx;
+        }
+        return item;
       });
 
-      // Tentativa 1: upsert seguro com recurring_days como string[]
-      let { error: syncError } = await supabase.from('tasks').upsert(buildPayload(false), { onConflict: 'id' });
+      // Tentativa 1: upsert com order_index
+      let { error: syncError } = await supabase.from('tasks').upsert(buildPayload(true, false), { onConflict: 'id' });
 
-      // Tentativa 2: se falhou por tipo de array, tenta com recurring_days numérico
+      // Fallback 1: se order_index não existir no banco, tenta sem ele
+      if (syncError && syncError.message && syncError.message.includes('order_index')) {
+        const retryNoOrder = await supabase.from('tasks').upsert(buildPayload(false, false), { onConflict: 'id' });
+        syncError = retryNoOrder.error;
+      }
+
+      // Fallback 2: se falhou por tipo de array em recurring_days
       if (syncError) {
-        console.warn('Tentando upsert com recurring_days numérico:', syncError);
-        const retry = await supabase.from('tasks').upsert(buildPayload(true), { onConflict: 'id' });
-        syncError = retry.error;
+        console.warn('Tentando upsert alternativo para recurring_days:', syncError);
+        const retryNum = await supabase.from('tasks').upsert(buildPayload(false, true), { onConflict: 'id' });
+        syncError = retryNum.error;
       }
 
       // Se o upsert foi bem-sucedido, remove do Supabase apenas as tarefas que realmente deixaram de existir
