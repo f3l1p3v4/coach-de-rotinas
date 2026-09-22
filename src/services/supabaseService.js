@@ -181,13 +181,57 @@ export async function syncUserTasks(userId, tasks) {
 
       // Se o upsert foi bem-sucedido, remove do Supabase apenas as tarefas que realmente deixaram de existir
       if (!syncError && currentIds.length > 0) {
-        const inClause = `(${currentIds.map(id => `"${id}"`).join(',')})`;
-        await supabase.from('tasks').delete().eq('user_id', userId).not('id', 'in', inClause);
+        try {
+          const { data: remoteRows } = await supabase
+            .from('tasks')
+            .select('id')
+            .eq('user_id', userId);
+
+          if (Array.isArray(remoteRows) && remoteRows.length > 0) {
+            const currentSet = new Set(currentIds);
+            const toDelete = remoteRows
+              .filter(r => !currentSet.has(String(r.id)))
+              .map(r => String(r.id));
+
+            if (toDelete.length > 0) {
+              await supabase.from('tasks').delete().eq('user_id', userId).in('id', toDelete);
+            }
+          }
+        } catch (delErr) {
+          console.warn('Erro ao remover tarefas excluídas no Supabase:', delErr);
+        }
       } else if (syncError) {
         console.warn('Erro ao sincronizar tarefas no Supabase:', syncError);
       }
     } catch (err) {
       console.error('Erro geral ao sincronizar tarefas no Supabase:', err);
+    }
+  }
+}
+
+export async function deleteUserTask(userId, taskId) {
+  if (!taskId) return;
+  const strId = String(taskId);
+
+  // 1. Remove do localStorage de imediato
+  try {
+    const raw = localStorage.getItem('daily_tasks');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const next = parsed.filter(t => String(t.id) !== strId);
+        localStorage.setItem('daily_tasks', JSON.stringify(next));
+        localStorage.setItem('daily_tasks_backup', JSON.stringify(next));
+      }
+    }
+  } catch (e) {}
+
+  // 2. Remove do Supabase
+  if (isSupabaseConfigured && supabase && userId) {
+    try {
+      await supabase.from('tasks').delete().eq('user_id', userId).eq('id', strId);
+    } catch (err) {
+      console.warn('Erro ao deletar tarefa no Supabase:', err);
     }
   }
 }

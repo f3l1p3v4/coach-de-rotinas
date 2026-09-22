@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { 
   loadUserTasks, 
   syncUserTasks, 
+  deleteUserTask,
   loadUserTaskHistory, 
   syncUserTaskHistory 
 } from '../../services/supabaseService';
@@ -301,18 +302,9 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
     cleanedList.push(t);
   }
 
-  // Se alguma das tarefas de Trabalho padrão não existia no array, adiciona
-  const missingWork = DEFAULT_WORK_TASKS.filter(def => {
-    const defNorm = def.text.toLowerCase().trim();
-    if (defNorm.includes('organização') && seenRoutines.has('organizacao')) return false;
-    if (defNorm.includes('conferência') && seenRoutines.has('conferencia')) return false;
-    if (defNorm === 'suporte' && seenRoutines.has('suporte')) return false;
-    if (defNorm.includes('desenvolvimento') && seenRoutines.has('desenvolvimento')) return false;
-    if (defNorm.includes('estudo no trabalho') && seenRoutines.has('estudotrabalho')) return false;
-    return true;
-  });
-
-  return sortTasksChronologically([...cleanedList, ...missingWork]);
+  // IMPORTANTE: NÃO insere missingWork automaticamente!
+  // Se uma tarefa não está na lista, significa que o usuário a apagou voluntariamente.
+  return sortTasksChronologically(cleanedList);
 };
 
 const taskTemplates = [
@@ -1315,6 +1307,7 @@ function DailyPlanner({
     // Tarefa simples (não recorrente): apaga diretamente
     if (activeTimer.taskId === id) handleCancelTimer();
     setTasks(prev => prev.filter(t => t.id !== id));
+    deleteUserTask(user?.id, id);
     toast.success('Tarefa removida.');
   };
 
@@ -1377,13 +1370,19 @@ function DailyPlanner({
     if (activeTimer.taskId === taskId) handleCancelTimer();
 
     setTasks(prev => prev.filter(t => t.id !== taskId));
+    deleteUserTask(user?.id, taskId);
     setTaskToDelete(null);
     toast.success('Todas as repetições da tarefa foram removidas.');
   };
 
   const handleRestoreWorkTasks = () => {
     setTasks(prev => {
-      const restored = ensureWorkAndRoutineTasks(prev);
+      const sanitized = ensureWorkAndRoutineTasks(prev);
+      const existingTexts = new Set(sanitized.map(t => (t.text || '').toLowerCase().trim()));
+      const missingWork = DEFAULT_WORK_TASKS.filter(
+        def => !existingTexts.has(def.text.toLowerCase().trim())
+      );
+      const restored = sortTasksChronologically([...sanitized, ...missingWork]);
       toast.success('Rotinas de Trabalho (Segunda a Sexta) restauradas com sucesso! 💼');
       return restored;
     });
