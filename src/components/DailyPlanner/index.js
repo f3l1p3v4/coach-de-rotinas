@@ -60,14 +60,6 @@ export const getWeekdayLabel = (dateStr) => {
   return weekday.charAt(0).toUpperCase() + weekday.slice(1);
 };
 
-const sortTasksChronologically = (taskList) => {
-  return [...taskList].sort((a, b) => {
-    const timeA = a.time || '00:00';
-    const timeB = b.time || '00:00';
-    return timeA.localeCompare(timeB);
-  });
-};
-
 export const DEFAULT_WORK_TASKS = [
   { 
     id: '6', 
@@ -158,7 +150,6 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
   }
 
   const seenIds = new Set();
-  const seenRoutines = new Set();
   const cleanedList = [];
 
   for (const t of taskList) {
@@ -167,90 +158,16 @@ export const ensureWorkAndRoutineTasks = (taskList) => {
     if (seenIds.has(taskId)) continue;
     seenIds.add(taskId);
 
-    const textNorm = (t.text || '').toLowerCase().trim();
-
-    // 1. Suporte: desduplica e preserva 100% das personalizações do usuário (data, período, recorrência, etc.)
-    if (textNorm === 'suporte') {
-      if (seenRoutines.has('suporte')) {
-        continue;
-      }
-      seenRoutines.add('suporte');
-      const def = DEFAULT_WORK_TASKS.find(w => w.id === '9') || {};
+    // Se for uma das tarefas padrão pré-definidas (por ID) e faltar subtasks, complementa
+    const def = DEFAULT_WORK_TASKS.find(w => String(w.id) === taskId);
+    if (def && (!Array.isArray(t.subtasks) || t.subtasks.length === 0)) {
       cleanedList.push({
-        ...def,
         ...t,
-        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : (def.subtasks || [])
+        subtasks: def.subtasks || []
       });
-      continue;
-    }
-
-    // 2. Organização do Dia
-    if (textNorm.includes('organização') || textNorm.includes('organizacao')) {
-      if (seenRoutines.has('organizacao')) {
-        continue;
-      }
-      seenRoutines.add('organizacao');
-      const def = DEFAULT_WORK_TASKS.find(w => w.id === '6') || {};
-      cleanedList.push({
-        ...def,
-        ...t,
-        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : (def.subtasks || [])
-      });
-      continue;
-    }
-
-    // 3. Conferência de Serviços
-    if (textNorm.includes('conferência') || textNorm.includes('conferencia')) {
-      if (seenRoutines.has('conferencia')) {
-        continue;
-      }
-      seenRoutines.add('conferencia');
+    } else {
       cleanedList.push(t);
-      continue;
     }
-
-    // 4. Desenvolvimento de Software
-    if (textNorm.includes('desenvolvimento de software') || textNorm === 'desenvolvimento') {
-      if (seenRoutines.has('desenvolvimento')) {
-        continue;
-      }
-      seenRoutines.add('desenvolvimento');
-      const def = DEFAULT_WORK_TASKS.find(w => w.id === '10') || {};
-      cleanedList.push({
-        ...def,
-        ...t,
-        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : (def.subtasks || [])
-      });
-      continue;
-    }
-
-    // 5. Estudo no Trabalho
-    if (textNorm.includes('estudo no trabalho')) {
-      if (seenRoutines.has('estudotrabalho')) {
-        continue;
-      }
-      seenRoutines.add('estudotrabalho');
-      const def = DEFAULT_WORK_TASKS.find(w => w.id === '8') || {};
-      cleanedList.push({
-        ...def,
-        ...t,
-        subtasks: (Array.isArray(t.subtasks) && t.subtasks.length > 0) ? t.subtasks : (def.subtasks || [])
-      });
-      continue;
-    }
-
-    // 6. Faculdade / Concursos
-    if (textNorm.includes('faculdade') || textNorm.includes('concursos')) {
-      if (seenRoutines.has('faculdade')) {
-        continue;
-      }
-      seenRoutines.add('faculdade');
-      cleanedList.push(t);
-      continue;
-    }
-
-    // Tarefas pessoais ou outras tarefas (ex: Pilha Geralda, Alterar plano claro vó, etc.)
-    cleanedList.push(t);
   }
 
   // IMPORTANTE: NÃO insere missingWork automaticamente!
@@ -1388,7 +1305,7 @@ function DailyPlanner({
       const missingWork = DEFAULT_WORK_TASKS.filter(
         def => !existingTexts.has(def.text.toLowerCase().trim())
       );
-      const restored = sortTasksChronologically([...sanitized, ...missingWork]);
+      const restored = [...sanitized, ...missingWork];
       toast.success('Rotinas de Trabalho (Segunda a Sexta) restauradas com sucesso! 💼');
       return restored;
     });
