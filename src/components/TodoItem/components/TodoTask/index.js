@@ -1,4 +1,5 @@
 import React from 'react';
+import { renderTextWithLinks } from '../../../../utils/textUtils';
 import './styles.css';
 
 const formatTimeStr = (isoDate) => {
@@ -41,7 +42,7 @@ function TodoTask({ task, onOpenDetails }) {
           onClick={onOpenDetails}
         >
           {task.emoji && <span className="task-emoji">{task.emoji}</span>}
-          <span className="task-text-content">{task.text}</span>
+          <span className="task-text-content">{renderTextWithLinks(task.text)}</span>
           {hasObservation && (
             <span 
               className="task-has-observation-badge" 

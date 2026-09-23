@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, ChatText, CheckCircle, XCircle, PencilSimple } from '@phosphor-icons/react';
+import { renderTextWithLinks } from '../../utils/textUtils';
 import './styles.css';
 
 function TaskObservationModal({ task, onClose, onEditObservation }) {
@@ -40,7 +41,7 @@ function TaskObservationModal({ task, onClose, onEditObservation }) {
             <h3 id="observation-modal-title">Observação da Tarefa</h3>
             <p className="task-reference-title">
               {task.emoji && <span className="task-emoji">{task.emoji}</span>}
-              <span className="task-name-text">{task.text}</span>
+              <span className="task-name-text">{renderTextWithLinks(task.text)}</span>
             </p>
           </div>
           <button 
@@ -78,7 +79,7 @@ function TaskObservationModal({ task, onClose, onEditObservation }) {
               </div>
 
               <div className="observation-text-card">
-                <p className="observation-text">{task.observation}</p>
+                <p className="observation-text">{renderTextWithLinks(task.observation)}</p>
               </div>
             </div>
           ) : (

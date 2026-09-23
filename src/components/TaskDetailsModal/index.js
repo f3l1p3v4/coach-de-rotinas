@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
+import { renderTextWithLinks } from '../../utils/textUtils';
 
 import './styles.css';
 
@@ -307,7 +308,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
                       <Circle size={22} className="subtask-icon" />
                     )}
                   </button>
-                  <span className="subtask-text-view">{sub.text}</span>
+                  <span className="subtask-text-view">{renderTextWithLinks(sub.text)}</span>
                   <button 
                     type="button" 
                     className="subtask-delete-btn"

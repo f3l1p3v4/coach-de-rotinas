@@ -3,6 +3,7 @@ import { XCircle, Trash, PlusCircle } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
+import { renderTextWithLinks } from '../../utils/textUtils';
 
 import './styles.css';
 
@@ -220,7 +221,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
             <div className="subtask-editor">
               {subtasks.map(sub => (
                 <div key={sub.id} className="subtask-edit-item">
-                  <span>{sub.text}</span>
+                  <span>{renderTextWithLinks(sub.text)}</span>
                   <button type="button" onClick={() => handleRemoveSubtask(sub.id)}><Trash size={16}/></button>
                 </div>
               ))}
