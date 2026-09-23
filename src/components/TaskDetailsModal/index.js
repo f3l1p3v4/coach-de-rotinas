@@ -89,7 +89,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
         text: text.trim(),
         emoji,
         period,
-        date: isRecurring ? (task.date || date) : (date || getTodayString()),
+        date: date || task?.date || null,
         category: category || null,
         color: color || '#10b981',
 
