@@ -1,70 +1,65 @@
-# Getting Started with Create React App
+Guia de Desenvolvimento e Deploy
+Instruções para configuração local, gerenciamento via Docker e deploy manual no servidor.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+🛠️ Ambiente Local
+Primeira Execução
+Instale as dependências do projeto:
 
-## Available Scripts
+Bash
+npm install
+Rodar em Desenvolvimento
+Inicie a aplicação localmente:
 
-In the project directory, you can run:
+Bash
+npm run dev
+Atualizar Repositório
+Puxe as alterações mais recentes da branch remota:
 
-### `npm start`
+Bash
+git pull
+🐳 Gerenciamento via Docker
+Subir Containers
+Reconstrói as imagens (web e api) e inicia os serviços em segundo plano:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Bash
+sudo docker compose up -d --build
+Parar Containers
+Para e remove os containers (api, web, db) mantendo o volume do banco (pgdata) intacto:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Bash
+sudo docker compose down
+Migrations e Banco de Dados
+Aplica as migrations pendentes do Prisma:
 
-### `npm test`
+Bash
+sudo docker compose exec api npx prisma migrate deploy
+Executa os seeds para popular ou atualizar permissões e dados iniciais:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Bash
+sudo docker compose exec api npm run db:seed
+🚀 Deploy em Produção (Sem Git)
+1. Sincronizar Arquivos com o Servidor
+Copia a base de código ignorando dependências, repositório local e artefatos de build:
 
-### `npm run build`
+Bash
+rsync -avz \
+  --exclude 'node_modules' \
+  --exclude '.git' \
+  --exclude 'build' \
+  --exclude 'dist' \
+  --exclude 'apps/api/uploads/*' \
+  ./ validasic@192.168.0.52:~/sistema-garagem
+2. Acessar o Servidor Remoto
+Conecte via SSH e navegue até a pasta do projeto:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Bash
+ssh validasic@192.168.0.52
+cd ~/sistema-garagem
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+----- Ativar o PWA nas configuracoes do chrome ------
 
-### `npm run eject`
+chrome://flags/#unsafely-treat-insecure-origin-as-secure
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+http://192.168.0.52:5173
