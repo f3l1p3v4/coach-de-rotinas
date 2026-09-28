@@ -55,7 +55,7 @@ function CategoryFilterBar({
             >
               {/* Bolinha branca apenas quando selecionado! */}
               {isSelected && (
-                <span className="filter-dot active-white-dot" />
+                <span className="filter-dot active-dot" />
               )}
               <span className="filter-name">{cat.name}</span>
               <span className="filter-count">({count})</span>
@@ -74,7 +74,7 @@ function CategoryFilterBar({
             title="Filtrar tarefas sem categoria"
           >
             {currentSelected === '__none__' && (
-              <span className="filter-dot active-white-dot" />
+              <span className="filter-dot active-dot" />
             )}
             <span className="filter-name">Sem Categoria</span>
             <span className="filter-count">({uncategorizedCount})</span>
