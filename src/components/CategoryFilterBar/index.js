@@ -6,24 +6,27 @@ function CategoryFilterBar({
   categoryCounts = {},
   totalCount = 0,
   uncategorizedCount = 0,
+  selectedCategory = '',
   selectedCategories = [],
+  onSelectCategory,
   onToggleCategory,
-  onSelectAll,
   weekday
 }) {
-  const isAllSelected = selectedCategories.length === 0;
+  // Suporte a selectedCategory ou retrocompatibilidade com selectedCategories
+  const currentSelected = selectedCategory || (selectedCategories.length > 0 ? selectedCategories[0] : '');
+  const handleSelect = onSelectCategory || onToggleCategory;
 
   // Filtrar categorias cadastradas que possuem tarefas no dia ou estão selecionadas
   const categoriesToShow = categories.filter(cat => {
     const count = categoryCounts[cat.name] || 0;
-    const isSelected = selectedCategories.includes(cat.name);
+    const isSelected = currentSelected?.toLowerCase().trim() === cat.name.toLowerCase().trim();
     return count > 0 || isSelected;
   });
 
   // Categorias que existem nas tarefas mas não estavam na lista cadastrada
-  const registeredNames = new Set(categories.map(c => c.name.toLowerCase()));
+  const registeredNames = new Set(categories.map(c => c.name.toLowerCase().trim()));
   const extraCategories = Object.keys(categoryCounts)
-    .filter(name => !registeredNames.has(name.toLowerCase()) && categoryCounts[name] > 0)
+    .filter(name => !registeredNames.has(name.toLowerCase().trim()) && categoryCounts[name] > 0)
     .map(name => ({
       name,
       color: '#3b82f6',
@@ -35,24 +38,10 @@ function CategoryFilterBar({
   return (
     <div className="category-filter-bar-container">
       <div className="category-filter-bar" role="tablist">
-        {/* Botão Todos */}
-        <button
-          type="button"
-          role="tab"
-          aria-selected={isAllSelected}
-          className={`filter-pill-btn filter-pill-all ${isAllSelected ? 'active' : ''}`}
-          onClick={onSelectAll}
-          title="Exibir todas as tarefas"
-        >
-          <span className="filter-name">Todos</span>
-          <span className="filter-count">({totalCount})</span>
-        </button>
-
-        {/* Categorias */}
+        {/* Categorias: seleção exclusiva (ou uma, ou outra) */}
         {allDisplayCategories.map(cat => {
-          const isSelected = selectedCategories.includes(cat.name);
+          const isSelected = currentSelected?.toLowerCase().trim() === cat.name.toLowerCase().trim();
           const count = categoryCounts[cat.name] || 0;
-          const catColor = cat.color || '#3b82f6';
 
           return (
             <button
@@ -61,21 +50,13 @@ function CategoryFilterBar({
               role="tab"
               aria-selected={isSelected}
               className={`filter-pill-btn filter-pill-category ${isSelected ? 'active' : ''}`}
-              onClick={() => onToggleCategory(cat.name)}
-              title={`Filtrar por ${cat.name} (seleção múltipla permitida)`}
-              style={
-                isSelected
-                  ? {
-                      borderColor: catColor,
-                      backgroundColor: 'transparent',
-                    }
-                  : undefined
-              }
+              onClick={() => handleSelect && handleSelect(cat.name)}
+              title={`Filtrar por ${cat.name}`}
             >
-              <span
-                className="filter-dot"
-                style={{ backgroundColor: catColor }}
-              />
+              {/* Bolinha branca apenas quando selecionado! */}
+              {isSelected && (
+                <span className="filter-dot active-white-dot" />
+              )}
               <span className="filter-name">{cat.name}</span>
               <span className="filter-count">({count})</span>
             </button>
@@ -87,20 +68,14 @@ function CategoryFilterBar({
           <button
             type="button"
             role="tab"
-            aria-selected={selectedCategories.includes('__none__')}
-            className={`filter-pill-btn filter-pill-category ${selectedCategories.includes('__none__') ? 'active' : ''}`}
-            onClick={() => onToggleCategory('__none__')}
+            aria-selected={currentSelected === '__none__'}
+            className={`filter-pill-btn filter-pill-category ${currentSelected === '__none__' ? 'active' : ''}`}
+            onClick={() => handleSelect && handleSelect('__none__')}
             title="Filtrar tarefas sem categoria"
-            style={
-              selectedCategories.includes('__none__')
-                ? {
-                    borderColor: '#6b7280',
-                    backgroundColor: 'transparent',
-                  }
-                : undefined
-            }
           >
-            <span className="filter-dot uncategorized-dot" />
+            {currentSelected === '__none__' && (
+              <span className="filter-dot active-white-dot" />
+            )}
             <span className="filter-name">Sem Categoria</span>
             <span className="filter-count">({uncategorizedCount})</span>
           </button>

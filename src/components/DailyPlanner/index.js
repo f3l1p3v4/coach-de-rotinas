@@ -275,7 +275,10 @@ function DailyPlanner({
   const [taskForCompletion, setTaskForCompletion] = useState(null);
   const [taskForObservation, setTaskForObservation] = useState(null);
   const [taskToDelete, setTaskToDelete] = useState(null);
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const saved = localStorage.getItem('selected_planner_category');
+    return saved || 'Trabalho';
+  });
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
@@ -1311,18 +1314,11 @@ function DailyPlanner({
     });
   };
 
-  const handleToggleCategory = (catName) => {
-    setSelectedCategories(prev => {
-      if (prev.includes(catName)) {
-        return prev.filter(c => c !== catName);
-      } else {
-        return [...prev, catName];
-      }
-    });
-  };
-
-  const handleSelectAll = () => {
-    setSelectedCategories([]);
+  const handleSelectCategory = (catName) => {
+    setSelectedCategory(catName);
+    try {
+      localStorage.setItem('selected_planner_category', catName);
+    } catch (e) {}
   };
 
   const handleOnDragEnd = (event) => {
@@ -1541,9 +1537,13 @@ function DailyPlanner({
   });
 
   const filteredTasks = allTasksForSelectedDate.filter(t => {
-    if (selectedCategories.length === 0) return true;
-    if (!t.category) return selectedCategories.includes('__none__');
-    return selectedCategories.includes(t.category);
+    if (!selectedCategory) return true;
+    if (selectedCategory === '__none__') {
+      return !t.category;
+    }
+    const taskCat = (t.category || '').toLowerCase().trim();
+    const selCat = (selectedCategory || '').toLowerCase().trim();
+    return taskCat === selCat;
   });
 
   const processedTasks = filteredTasks.map(t => {
@@ -1729,9 +1729,8 @@ function DailyPlanner({
         categoryCounts={categoryCounts}
         totalCount={allTasksForSelectedDate.length}
         uncategorizedCount={uncategorizedCount}
-        selectedCategories={selectedCategories}
-        onToggleCategory={handleToggleCategory}
-        onSelectAll={handleSelectAll}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
         weekday={getWeekdayLabel(selectedDate)}
       />
 
@@ -1777,25 +1776,8 @@ function DailyPlanner({
               <div className="period-section-group">
                 <div className="period-section-box empty-box" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
                   <p className="empty-state-message" style={{ margin: 0, padding: 0 }}>
-                    Nenhuma tarefa encontrada para a(s) categoria(s) selecionada(s).
+                    Nenhuma tarefa encontrada na categoria "{selectedCategory === '__none__' ? 'Sem categoria' : selectedCategory}".
                   </p>
-                  <button 
-                    type="button" 
-                    onClick={handleSelectAll}
-                    style={{
-                      marginTop: '1rem',
-                      backgroundColor: 'var(--primary-bg)',
-                      color: 'var(--primary-text)',
-                      border: 'none',
-                      padding: '0.45rem 1.1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.95rem',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Mostrar Todas as Tarefas
-                  </button>
                 </div>
               </div>
             ) : (
