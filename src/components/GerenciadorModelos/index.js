@@ -15,7 +15,6 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
 
   // Form states
   const [text, setText] = useState('');
-  const [emoji, setEmoji] = useState('✨');
   const [category, setCategory] = useState('');
   const [color, setColor] = useState('#10b981');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -27,7 +26,6 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
   const handleOpenCreate = () => {
     setEditingTemplate(null);
     setText('');
-    setEmoji('✨');
     setCategory('');
     setColor('#10b981');
     setIsRecurring(false);
@@ -41,7 +39,6 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
   const handleOpenEdit = (template) => {
     setEditingTemplate(template);
     setText(template.text || '');
-    setEmoji(template.emoji || '✨');
     setCategory(template.category || '');
     setColor(template.color || '#10b981');
 
@@ -74,7 +71,6 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     const templateData = {
       id: editingTemplate ? editingTemplate.id : Date.now().toString(),
       text: text.trim(),
-      emoji: emoji.trim() || '✨',
       category: category || null,
       color: color || '#10b981',
       isRecurring: Boolean(isRecurring && recurringDays && recurringDays.length > 0),
@@ -129,7 +125,6 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
                 return (
                   <div key={tmpl.id} className="modelo-card-item">
                     <div className="modelo-info">
-                      <span className="modelo-emoji">{tmpl.emoji || '✨'}</span>
                       <div className="modelo-details">
                         <div className="modelo-title-row">
                           <h4>{tmpl.text}</h4>
@@ -205,15 +200,6 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
                 onChange={(e) => setText(e.target.value)} 
                 placeholder="Ex: Treino de Pernas" 
                 required 
-              />
-            </div>
-            <div className="form-group" style={{ flex: '0 0 auto', width: '80px' }}>
-              <label>Emoji</label>
-              <input 
-                type="text" 
-                value={emoji} 
-                onChange={(e) => setEmoji(e.target.value)} 
-                className="emoji-input"
               />
             </div>
           </div>

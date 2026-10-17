@@ -348,4 +348,29 @@ input:checked + .slider:before {
 
 .slider.round:before {
   border-radius: 50%;
-}
+}
+/* Task forms use the theme's monochrome accent. */
+.add-task-modal,
+.details-modal-content,
+.modelo-form {
+  --accent-color: var(--primary-bg);
+  accent-color: var(--primary-bg);
+  color-scheme: light;
+}
+[data-theme='dark'] .add-task-modal,
+[data-theme='dark'] .details-modal-content,
+[data-theme='dark'] .modelo-form { color-scheme: dark; }
+
+.App .modal-content input:focus,
+.App .modal-content textarea:focus,
+.App .modal-content select:focus {
+  border-color: var(--primary-bg);
+  outline-color: var(--primary-bg);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-bg) 20%, transparent);
+}
+.App .task-date-btn.active {
+  background: var(--primary-bg);
+  border-color: var(--primary-bg);
+  color: var(--primary-text);
+}
+.add-task-modal .form-row-model-emoji .form-col-model { flex: 1; width: 100%; }

@@ -6,6 +6,7 @@ import AjustesModal from './components/AjustesModal';
 import BlocoDeNotas from './components/BlocoDeNotas';
 import AuthModal from './components/AuthModal';
 import GoogleCalendarCard from './components/GoogleCalendarCard';
+import { DEFAULT_CATEGORIES, saveStoredCategories } from './constants/categories';
 import { Toaster } from 'sonner';
 
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
@@ -43,7 +44,7 @@ function App() {
       const saved = localStorage.getItem('custom_task_templates');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {}
     return initialTaskTemplates;
@@ -72,17 +73,20 @@ function App() {
 
   const [isTemplatesLoaded, setIsTemplatesLoaded] = useState(false);
   const hasTemplatesLoadedRef = useRef(false);
+  const templatesUserRef = useRef(null);
 
   // Carregar modelos de tarefa ao mudar usuário
   useEffect(() => {
     let isMounted = true;
     async function initTemplates() {
       if (user?.id) {
+        hasTemplatesLoadedRef.current = false;
         const tmpls = await loadUserTemplates(user.id, initialTaskTemplates);
         if (isMounted) {
-          if (Array.isArray(tmpls) && tmpls.length > 0) {
+          if (Array.isArray(tmpls)) {
             setTemplates(tmpls);
           }
+          templatesUserRef.current = user.id;
           hasTemplatesLoadedRef.current = true;
           setIsTemplatesLoaded(true);
         }
@@ -95,9 +99,29 @@ function App() {
     return () => { isMounted = false; };
   }, [user]);
 
+  useEffect(() => {
+    const key = `coach_categories_${user?.id || 'guest'}`;
+    const previousKey = localStorage.getItem('coach_categories_owner');
+    if (previousKey && previousKey !== key) {
+      const previous = localStorage.getItem('coach_categories');
+      if (previous) localStorage.setItem(previousKey, previous);
+    }
+    let categories = DEFAULT_CATEGORIES;
+    try {
+      const existingAccount = user?.created_at && Date.now() - new Date(user.created_at).getTime() > 86400000;
+      const saved = localStorage.getItem(key) || (!previousKey && (!user?.id || existingAccount) ? localStorage.getItem('coach_categories') : null);
+      if (saved && Array.isArray(JSON.parse(saved))) categories = JSON.parse(saved);
+    } catch (e) {}
+    localStorage.setItem('coach_categories_owner', key);
+    saveStoredCategories(categories);
+    const persist = (event) => localStorage.setItem(key, JSON.stringify(event.detail));
+    window.addEventListener('coach-categories-changed', persist);
+    return () => window.removeEventListener('coach-categories-changed', persist);
+  }, [user?.id, user?.created_at]);
+
   // Sincronizar modelos ao alterar (apenas após inicialização)
   useEffect(() => {
-    if (isTemplatesLoaded && hasTemplatesLoadedRef.current) {
+    if (isTemplatesLoaded && hasTemplatesLoadedRef.current && (!user?.id || templatesUserRef.current === user.id)) {
       syncUserTemplates(user?.id, templates);
     }
   }, [templates, user, isTemplatesLoaded]);

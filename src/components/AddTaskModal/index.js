@@ -6,16 +6,20 @@ import RecurrenceSelector from '../RecurrenceSelector';
 
 import './styles.css';
 
+const getCurrentPeriod = () => {
+  const hour = new Date().getHours();
+  return hour < 12 ? 'Manhã' : hour < 18 ? 'Tarde' : 'Noite';
+};
+
 const getTodayString = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate }) {
+function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate, initialCategory = '' }) {
   const [text, setText] = useState('');
-  const [emoji, setEmoji] = useState('✨');
   const [description, setDescription] = useState('');
-  const [period, setPeriod] = useState('Manhã');
+  const [period, setPeriod] = useState(getCurrentPeriod);
   const [taskDate, setTaskDate] = useState(selectedDate || getTodayString());
   const [category, setCategory] = useState('');
   const [color, setColor] = useState('#10b981');
@@ -30,11 +34,10 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
   useEffect(() => {
     if (isOpen) {
       setText('');
-      setEmoji('✨');
       setDescription('');
-      setPeriod('Manhã');
+      setPeriod(getCurrentPeriod());
       setTaskDate(selectedDate || getTodayString());
-      setCategory('');
+      setCategory(initialCategory);
       setColor('#10b981');
       setIsRecurring(false);
       setRecurringDays([]);
@@ -42,17 +45,16 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
       setNewSubtaskText('');
       setSaveAsTemplate(false);
     }
-  }, [isOpen, selectedDate]);
+  }, [isOpen, selectedDate, initialCategory]);
 
   const handleTemplateChange = (e) => {
     const templateId = e.target.value;
     if (!templateId) {
       // Se selecionar a opção "Nova Tarefa em Branco", limpa tudo
       setText('');
-      setEmoji('✨');
       setDescription('');
-      setPeriod('Manhã');
-      setCategory('');
+      setPeriod(getCurrentPeriod());
+      setCategory(initialCategory);
       setColor('#10b981');
       setIsRecurring(false);
       setRecurringDays([]);
@@ -62,14 +64,13 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
     const template = taskTemplates.find(t => t.id === templateId);
     if (template) {
       setText(template.text);
-      setEmoji(template.emoji);
       setDescription(template.description);
       setPeriod(template.period || 'Manhã');
       setCategory(template.category || '');
       setColor(template.color || '#10b981');
       setIsRecurring(template.isRecurring || false);
       setRecurringDays(template.recurringDays || []);
-      setSubtasks(template.subtasks.map(st => ({ ...st, id: Date.now() + Math.random() }))); // Cria novos IDs
+      setSubtasks((template.subtasks || []).map(st => ({ ...st, id: Date.now() + Math.random() }))); // Cria novos IDs
     }
   };
 
@@ -94,7 +95,6 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
     const newTask = {
       id: Date.now().toString(),
       text,
-      emoji,
       description,
       period: period || 'Manhã',
       date: isRecurring ? (selectedDate || getTodayString()) : (taskDate || selectedDate || getTodayString()),
@@ -130,18 +130,9 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate 
               <select onChange={handleTemplateChange}>
                 <option value="">Selecione um modelo</option>
                 {taskTemplates.map(template => (
-                  <option key={template.id} value={template.id}>{template.emoji} {template.text}</option>
+                  <option key={template.id} value={template.id}>{template.text}</option>
                 ))}
               </select>
-            </div>
-            <div className="form-group form-col-emoji">
-              <label>Emoji</label>
-              <input 
-                type="text" 
-                value={emoji} 
-                onChange={e => setEmoji(e.target.value)} 
-                className="emoji-input" 
-              />
             </div>
           </div>
           

@@ -1,12 +1,6 @@
 export const DEFAULT_CATEGORIES = [
   { id: 'trabalho', name: 'Trabalho', color: '#3b82f6', emoji: '💼', appliesTo: 'both' },
-  { id: 'estudos', name: 'Estudos', color: '#8b5cf6', emoji: '📚', appliesTo: 'both' },
   { id: 'pessoal', name: 'Pessoal', color: '#10b981', emoji: '👤', appliesTo: 'both' },
-  { id: 'saude', name: 'Saúde / Treino', color: '#f97316', emoji: '🏃', appliesTo: 'both' },
-  { id: 'espiritual', name: 'Espiritual', color: '#eab308', emoji: '🙏', appliesTo: 'both' },
-  { id: 'financas', name: 'Finanças', color: '#059669', emoji: '💰', appliesTo: 'both' },
-  { id: 'casa', name: 'Casa', color: '#ec4899', emoji: '🧹', appliesTo: 'both' },
-  { id: 'foco', name: 'Foco Geral', color: '#ef4444', emoji: '🎯', appliesTo: 'both' },
 ];
 
 export const CATEGORY_COLORS = [
@@ -27,7 +21,7 @@ export function getStoredCategories(filterAppliesTo = null) {
     const saved = localStorage.getItem('coach_categories');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         list = parsed;
       }
     }

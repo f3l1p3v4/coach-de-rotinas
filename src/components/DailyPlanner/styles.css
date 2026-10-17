@@ -303,3 +303,10 @@
 .restore-backup-btn:hover {
   background: #1d4ed8;
 }
+@media (min-width: 1024px) {
+  .planner-periods-wrapper { flex-direction: column; align-items: stretch; }
+  .period-section-group { flex: none; }
+}
+
+.period-section-box.empty-box { min-height: 0; padding: 1.25rem; }
+.period-section-box.empty-box .empty-state-message { margin: 0; padding: 0; }

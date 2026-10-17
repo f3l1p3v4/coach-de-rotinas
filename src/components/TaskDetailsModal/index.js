@@ -29,7 +29,6 @@ const getTomorrowString = () => {
 
 function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedDate }) {
   const [text, setText] = useState(task?.text || '');
-  const [emoji, setEmoji] = useState(task?.emoji || '✨');
   const [period, setPeriod] = useState(task?.period || 'Manhã');
   const [date, setDate] = useState(task?.date || selectedDate || getTodayString());
   const [category, setCategory] = useState(task?.category || '');
@@ -43,7 +42,6 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
   useEffect(() => {
     if (task) {
       setText(task.text || '');
-      setEmoji(task.emoji || '✨');
       setPeriod(task.period || 'Manhã');
       setDate(task.date || selectedDate || getTodayString());
       setCategory(task.category || '');
@@ -87,7 +85,6 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
       onUpdateTask({
         ...task,
         text: text.trim(),
-        emoji,
         period,
         date: isRecurring ? (task.date || date) : (date || getTodayString()),
         category: category || null,
@@ -130,14 +127,6 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
                 <div className="form-group form-col-name">
                   <label>Nome da Tarefa</label>
                   <div className="title-with-emoji-container">
-                    <input 
-                      type="text" 
-                      value={emoji} 
-                      onChange={e => setEmoji(e.target.value)} 
-                      className="emoji-input"
-                      maxLength={4}
-                      title="Alterar emoji"
-                    />
                     <input 
                       type="text" 
                       value={text} 
@@ -211,14 +200,6 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
               {/* Tarefa baseada em modelo (recorrente) */}
               <div className="details-modal-header">
                 <div className="title-edit-group">
-                  <input 
-                    type="text" 
-                    value={emoji} 
-                    onChange={e => setEmoji(e.target.value)} 
-                    className="emoji-input"
-                    maxLength={4}
-                    title="Alterar emoji"
-                  />
                   <input 
                     type="text" 
                     value={text} 

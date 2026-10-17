@@ -40,7 +40,6 @@ function TodoTask({ task, onOpenDetails }) {
           className={`todo-paragraph ${paragraphStateClass}`}
           onClick={onOpenDetails}
         >
-          {task.emoji && <span className="task-emoji">{task.emoji}</span>}
           <span className="task-text-content">{task.text}</span>
           {hasObservation && (
             <span 
@@ -53,7 +52,7 @@ function TodoTask({ task, onOpenDetails }) {
         </p>
       </div>
       {executionTimeText && (
-        <span className={`task-execution-time ${task.emoji ? 'with-emoji' : ''}`}>
+        <span className="task-execution-time">
           {executionTimeText}
         </span>
       )}

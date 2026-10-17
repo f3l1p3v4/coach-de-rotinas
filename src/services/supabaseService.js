@@ -81,7 +81,7 @@ export async function loadUserTasks(userId) {
             return {
               id: String(t.id),
               text: t.text || '',
-              emoji: t.emoji || '✨',
+              emoji: '',
               time: t.time || '',
               period: t.period || 'Manhã',
               category: t.category || null,
@@ -142,7 +142,7 @@ export async function syncUserTasks(userId, tasks) {
         id: String(t.id),
         user_id: userId,
         text: t.text || '',
-        emoji: t.emoji || '📝',
+        emoji: '',
         description: t.description || '',
         time: t.time || '',
         period: t.period || 'Manhã',
@@ -170,7 +170,7 @@ export async function syncUserTasks(userId, tasks) {
           id: String(t.id),
           user_id: userId,
           text: t.text || '',
-          emoji: t.emoji || '📝',
+          emoji: '',
           description: t.description || '',
           time: t.time || '',
           period: t.period || 'Manhã',
@@ -195,7 +195,7 @@ export async function syncUserTasks(userId, tasks) {
             id: String(t.id),
             user_id: userId,
             text: t.text || '',
-            emoji: t.emoji || '📝',
+            emoji: '',
             description: t.description || '',
             time: t.time || '',
             period: t.period || 'Manhã',
@@ -212,7 +212,7 @@ export async function syncUserTasks(userId, tasks) {
               id: String(t.id),
               user_id: userId,
               text: t.text || '',
-              emoji: t.emoji || '📝',
+              emoji: '',
               time: t.time || '',
               period: t.period || 'Manhã',
               status: t.completed ? 'completed' : (t.status || 'pending')
@@ -236,7 +236,7 @@ export async function loadUserTemplates(userId, initialTemplates) {
     const savedTemplates = localStorage.getItem('custom_task_templates');
     if (savedTemplates) {
       const parsed = JSON.parse(savedTemplates);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         localTemplates = parsed;
       }
     }
@@ -254,7 +254,7 @@ export async function loadUserTemplates(userId, initialTemplates) {
           const remoteTemplates = data.map(t => ({
             id: String(t.id),
             text: t.text || '',
-            emoji: t.emoji || '📋',
+            emoji: '',
             category: t.category || null,
             color: t.color || null,
             isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
@@ -268,12 +268,8 @@ export async function loadUserTemplates(userId, initialTemplates) {
           localStorage.setItem('custom_task_templates', JSON.stringify(remoteTemplates));
           return remoteTemplates;
         } else {
-          // Se o banco remoto retornou vazio ([]):
-          // Se temos modelos locais, salva-os no banco do usuário e mantém!
-          if (localTemplates && localTemplates.length > 0) {
-            syncUserTemplates(userId, localTemplates).catch(() => {});
-            return localTemplates;
-          }
+          localStorage.setItem('custom_task_templates', '[]');
+          return [];
         }
       }
     } catch (err) {
@@ -281,11 +277,12 @@ export async function loadUserTemplates(userId, initialTemplates) {
     }
   }
 
-  return localTemplates;
+  return localTemplates.map(({ emoji, ...template }) => template);
 }
 
 export async function syncUserTemplates(userId, templates) {
   if (!Array.isArray(templates)) return;
+  templates = templates.map(({ emoji, ...template }) => template);
   localStorage.setItem('custom_task_templates', JSON.stringify(templates));
 
   if (isSupabaseConfigured && supabase && userId) {
@@ -304,7 +301,7 @@ export async function syncUserTemplates(userId, templates) {
           id: String(t.id),
           user_id: userId,
           text: t.text || '',
-          emoji: t.emoji || '📋',
+          emoji: '',
           category: t.category || null,
           color: t.color || null,
           is_recurring: Boolean(t.isRecurring),
@@ -320,7 +317,7 @@ export async function syncUserTemplates(userId, templates) {
             id: String(t.id),
             user_id: userId,
             text: t.text || '',
-            emoji: t.emoji || '📋',
+            emoji: '',
             description: t.description || '',
             subtasks: t.subtasks || []
           }));
@@ -345,7 +342,7 @@ export async function loadUserNotes(userId) {
     const saved = localStorage.getItem('coach_anotacoes');
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         localNotes = parsed;
       }
     }
