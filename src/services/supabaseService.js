@@ -53,17 +53,27 @@ export async function loadUserTasks(userId) {
         .from('tasks')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: true });
+        .order('order_index', { ascending: true });
 
-      // Se falhou por não ter coluna created_at, tenta busca simples
+      // Se falhou por não ter coluna order_index, tenta busca por created_at
       if (error) {
         const retry = await supabase
           .from('tasks')
           .select('*')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true });
         if (!retry.error) {
           data = retry.data;
           error = null;
+        } else {
+          const retrySimple = await supabase
+            .from('tasks')
+            .select('*')
+            .eq('user_id', userId);
+          if (!retrySimple.error) {
+            data = retrySimple.data;
+            error = null;
+          }
         }
       }
 
@@ -78,6 +88,8 @@ export async function loadUserTasks(userId) {
               ? t.completed_dates.map(String)
               : (Array.isArray(t.completedDates) ? t.completedDates.map(String) : []);
 
+            const isRecurring = Boolean(t.is_recurring ?? t.isRecurring ?? false);
+
             return {
               id: String(t.id),
               text: t.text || '',
@@ -88,19 +100,47 @@ export async function loadUserTasks(userId) {
               color: t.color || null,
               status: t.status || (t.completed ? 'completed' : 'pending'),
               completed: t.completed !== undefined ? Boolean(t.completed) : t.status === 'completed',
-              completedAt: t.completed_at || t.completedAt || null,
-              startedAt: t.started_at || t.startedAt || null,
+              completedAt: isRecurring ? null : (t.completed_at || t.completedAt || null),
+              startedAt: isRecurring ? null : (t.started_at || t.startedAt || null),
               date: t.date || null,
-              isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
+              isRecurring,
               recurringDays,
               completedDates,
+              recurringUntil: t.recurring_until || t.recurringUntil || null,
+              deletedDates: Array.isArray(t.deleted_dates) ? t.deleted_dates.map(String) : (Array.isArray(t.deletedDates) ? t.deletedDates.map(String) : []),
               description: t.description || '',
+              orderIndex: (t.order_index !== undefined && t.order_index !== null) ? Number(t.order_index) : null,
               subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
             };
           });
 
+          // Restaura rigorosamente a ordem definida pelo usuário através de daily_tasks_order ou localTasks
+          let savedOrder = [];
+          try {
+            const rawOrder = localStorage.getItem('daily_tasks_order');
+            if (rawOrder) savedOrder = JSON.parse(rawOrder);
+          } catch (e) {}
+
+          const orderMap = new Map();
+          if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+            savedOrder.forEach((id, idx) => orderMap.set(String(id), idx));
+          } else if (Array.isArray(localTasks) && localTasks.length > 0) {
+            localTasks.forEach((t, idx) => orderMap.set(String(t.id), idx));
+          }
+
+          if (orderMap.size > 0) {
+            remoteTasks.sort((a, b) => {
+              const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : (a.orderIndex ?? 999999);
+              const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : (b.orderIndex ?? 999999);
+              return posA - posB;
+            });
+          } else if (remoteTasks.some(t => t.orderIndex !== null)) {
+            remoteTasks.sort((a, b) => (a.orderIndex ?? 999999) - (b.orderIndex ?? 999999));
+          }
+
           localStorage.setItem('daily_tasks', JSON.stringify(remoteTasks));
           localStorage.setItem('daily_tasks_backup', JSON.stringify(remoteTasks));
+          localStorage.setItem('daily_tasks_order', JSON.stringify(remoteTasks.map(t => String(t.id))));
           return remoteTasks;
         } else {
           // Se o banco remoto retornou vazio ([]):
@@ -125,6 +165,7 @@ export async function syncUserTasks(userId, tasks) {
 
   // 1. Salvar no localStorage sempre para cache offline
   localStorage.setItem('daily_tasks', JSON.stringify(tasks));
+  localStorage.setItem('daily_tasks_order', JSON.stringify(tasks.map(t => String(t.id))));
   if (tasks.length > 0) {
     localStorage.setItem('daily_tasks_backup', JSON.stringify(tasks));
   }
@@ -137,36 +178,12 @@ export async function syncUserTasks(userId, tasks) {
         return;
       }
 
-      // Tentativa 1: recurring_days como array de strings (compatível com colunas text[] e varchar[])
-      const payloadStringRecurrence = tasks.map(t => ({
-        id: String(t.id),
-        user_id: userId,
-        text: t.text || '',
-        emoji: '',
-        description: t.description || '',
-        time: t.time || '',
-        period: t.period || 'Manhã',
-        category: t.category || null,
-        color: t.color || null,
-        date: t.date || null,
-        status: t.completed ? 'completed' : (t.status || 'pending'),
-        completed_at: t.completedAt || null,
-        started_at: t.startedAt || null,
-        is_recurring: Boolean(t.isRecurring),
-        recurring_days: (t.recurringDays || []).map(String),
-        completed_dates: (t.completedDates || []).map(String),
-        subtasks: t.subtasks || []
-      }));
+      const currentIds = tasks.map(t => String(t.id));
 
-      // Limpa antes de gravar
-      await supabase.from('tasks').delete().eq('user_id', userId);
-
-      const { error: insertError1 } = await supabase.from('tasks').insert(payloadStringRecurrence);
-
-      if (insertError1) {
-        console.warn('Tentando payload com recurring_days numérico:', insertError1);
-        // Tentativa 2: recurring_days como array de números (caso a coluna seja int[] ou jsonb)
-        const payloadNumericRecurrence = tasks.map(t => ({
+      // Payload base com colunas padrão confirmadas da tabela tasks
+      const buildPayload = (includeOrder = true, numRecurrence = false) => tasks.map((t, idx) => {
+        const isRec = Boolean(t.isRecurring);
+        const item = {
           id: String(t.id),
           user_id: userId,
           text: t.text || '',
@@ -178,51 +195,90 @@ export async function syncUserTasks(userId, tasks) {
           color: t.color || null,
           date: t.date || null,
           status: t.completed ? 'completed' : (t.status || 'pending'),
-          completed_at: t.completedAt || null,
-          started_at: t.startedAt || null,
-          is_recurring: Boolean(t.isRecurring),
-          recurring_days: (t.recurringDays || []).map(Number),
+          completed_at: isRec ? null : (t.completedAt || null),
+          started_at: isRec ? null : (t.startedAt || null),
+          is_recurring: isRec,
+          recurring_days: numRecurrence
+            ? (t.recurringDays || []).map(Number).filter(n => !isNaN(n))
+            : (t.recurringDays || []).map(String),
           completed_dates: (t.completedDates || []).map(String),
           subtasks: t.subtasks || []
-        }));
-
-        const { error: insertError2 } = await supabase.from('tasks').insert(payloadNumericRecurrence);
-
-        if (insertError2) {
-          console.warn('Tentando payload intermediário sem colunas de array:', insertError2);
-          // Tentativa 3: payload intermediário seguro (caso colunas de array não existam no schema)
-          const fallbackPayload = tasks.map(t => ({
-            id: String(t.id),
-            user_id: userId,
-            text: t.text || '',
-            emoji: '',
-            description: t.description || '',
-            time: t.time || '',
-            period: t.period || 'Manhã',
-            category: t.category || null,
-            color: t.color || null,
-            date: t.date || null,
-            status: t.completed ? 'completed' : (t.status || 'pending'),
-            completed_at: t.completedAt || null
-          }));
-          const { error: fallbackError } = await supabase.from('tasks').insert(fallbackPayload);
-          if (fallbackError) {
-            console.warn('Tentando payload mínimo de tarefas:', fallbackError);
-            const basicPayload = tasks.map(t => ({
-              id: String(t.id),
-              user_id: userId,
-              text: t.text || '',
-              emoji: '',
-              time: t.time || '',
-              period: t.period || 'Manhã',
-              status: t.completed ? 'completed' : (t.status || 'pending')
-            }));
-            await supabase.from('tasks').insert(basicPayload);
-          }
+        };
+        if (includeOrder) {
+          item.order_index = idx;
         }
+        return item;
+      });
+
+      // Tentativa 1: upsert com order_index
+      let { error: syncError } = await supabase.from('tasks').upsert(buildPayload(true, false), { onConflict: 'id' });
+
+      // Fallback 1: se order_index não existir no banco, tenta sem ele
+      if (syncError && syncError.message && syncError.message.includes('order_index')) {
+        const retryNoOrder = await supabase.from('tasks').upsert(buildPayload(false, false), { onConflict: 'id' });
+        syncError = retryNoOrder.error;
+      }
+
+      // Fallback 2: se falhou por tipo de array em recurring_days
+      if (syncError) {
+        console.warn('Tentando upsert alternativo para recurring_days:', syncError);
+        const retryNum = await supabase.from('tasks').upsert(buildPayload(false, true), { onConflict: 'id' });
+        syncError = retryNum.error;
+      }
+
+      // Se o upsert foi bem-sucedido, remove do Supabase apenas as tarefas que realmente deixaram de existir
+      if (!syncError && currentIds.length > 0) {
+        try {
+          const { data: remoteRows } = await supabase
+            .from('tasks')
+            .select('id')
+            .eq('user_id', userId);
+
+          if (Array.isArray(remoteRows) && remoteRows.length > 0) {
+            const currentSet = new Set(currentIds);
+            const toDelete = remoteRows
+              .filter(r => !currentSet.has(String(r.id)))
+              .map(r => String(r.id));
+
+            if (toDelete.length > 0) {
+              await supabase.from('tasks').delete().eq('user_id', userId).in('id', toDelete);
+            }
+          }
+        } catch (delErr) {
+          console.warn('Erro ao remover tarefas excluídas no Supabase:', delErr);
+        }
+      } else if (syncError) {
+        console.warn('Erro ao sincronizar tarefas no Supabase:', syncError);
       }
     } catch (err) {
-      console.error('Erro ao sincronizar tarefas no Supabase:', err);
+      console.error('Erro geral ao sincronizar tarefas no Supabase:', err);
+    }
+  }
+}
+
+export async function deleteUserTask(userId, taskId) {
+  if (!taskId) return;
+  const strId = String(taskId);
+
+  // 1. Remove do localStorage de imediato
+  try {
+    const raw = localStorage.getItem('daily_tasks');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const next = parsed.filter(t => String(t.id) !== strId);
+        localStorage.setItem('daily_tasks', JSON.stringify(next));
+        localStorage.setItem('daily_tasks_backup', JSON.stringify(next));
+      }
+    }
+  } catch (e) {}
+
+  // 2. Remove do Supabase
+  if (isSupabaseConfigured && supabase && userId) {
+    try {
+      await supabase.from('tasks').delete().eq('user_id', userId).eq('id', strId);
+    } catch (err) {
+      console.warn('Erro ao deletar tarefa no Supabase:', err);
     }
   }
 }
@@ -607,4 +663,3 @@ export async function syncUserTaskHistory(userId, historyMap) {
     }
   }
 }
-

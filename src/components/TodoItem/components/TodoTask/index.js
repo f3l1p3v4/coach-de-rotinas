@@ -1,4 +1,5 @@
 import React from 'react';
+import { renderTextWithLinks } from '../../../../utils/textUtils';
 import './styles.css';
 
 const formatTimeStr = (isoDate) => {
@@ -40,7 +41,7 @@ function TodoTask({ task, onOpenDetails }) {
           className={`todo-paragraph ${paragraphStateClass}`}
           onClick={onOpenDetails}
         >
-          <span className="task-text-content">{task.text}</span>
+          <span className="task-text-content">{renderTextWithLinks(task.text)}</span>
           {hasObservation && (
             <span 
               className="task-has-observation-badge" 

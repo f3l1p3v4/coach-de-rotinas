@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
+import { renderTextWithLinks } from '../../utils/textUtils';
 
 import './styles.css';
 
@@ -86,7 +87,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
         ...task,
         text: text.trim(),
         period,
-        date: isRecurring ? (task.date || date) : (date || getTodayString()),
+        date: date || task?.date || null,
         category: category || null,
         color: color || '#10b981',
 
@@ -101,10 +102,17 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
   };
 
   const handleDelete = () => {
+    if (task.isRecurring) {
+      if (onRemoveTask) {
+        onRemoveTask(task.id);
+      }
+      onClose();
+      return;
+    }
+
     if (window.confirm('Tem certeza que deseja excluir esta tarefa?')) {
       if (onRemoveTask) {
         onRemoveTask(task.id);
-        toast.success('Tarefa excluída.');
       }
       onClose();
     }
@@ -281,7 +289,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
                       <Circle size={22} className="subtask-icon" />
                     )}
                   </button>
-                  <span className="subtask-text-view">{sub.text}</span>
+                  <span className="subtask-text-view">{renderTextWithLinks(sub.text)}</span>
                   <button 
                     type="button" 
                     className="subtask-delete-btn"

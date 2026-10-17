@@ -300,7 +300,7 @@ h1 {
   height: 28px;
 }
 
-.switch input { 
+.switch input {
   opacity: 0;
   width: 0;
   height: 0;
@@ -374,3 +374,24 @@ input:checked + .slider:before {
   color: var(--primary-text);
 }
 .add-task-modal .form-row-model-emoji .form-col-model { flex: 1; width: 100%; }
+
+/* --- Links Clicáveis Automáticos em Tarefas e Subtarefas --- */
+.auto-link {
+  color: #38bdf8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-all;
+  transition: color 0.2s, opacity 0.2s;
+  cursor: pointer;
+}
+
+.auto-link:hover {
+  color: #7dd3fc;
+  text-decoration-color: #7dd3fc;
+}
+
+li.completed .auto-link,
+.paragraph-checked .auto-link {
+  color: inherit;
+  opacity: 0.7;
+}

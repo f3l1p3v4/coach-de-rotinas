@@ -66,38 +66,18 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Botão Todos Ativo */
-.filter-pill-btn.filter-pill-all.active {
-  background: #1a1a1a;
-  color: #ffffff;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  border-color: #1a1a1a;
-}
-
-.filter-pill-btn.filter-pill-all.active .filter-name,
-.filter-pill-btn.filter-pill-all.active .filter-count {
-  color: #ffffff;
-}
-
-[data-theme='dark'] .filter-pill-btn.filter-pill-all.active {
-  background: #ffffff;
-  color: #111111;
-  border-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
-}
-
-[data-theme='dark'] .filter-pill-btn.filter-pill-all.active .filter-name,
-[data-theme='dark'] .filter-pill-btn.filter-pill-all.active .filter-count {
-  color: #111111;
-}
-
-/* Categorias Individuais Ativas */
+/* Categorias Individuais Ativas: Background branco, borda branca, texto/quantidade/bolinha escuros */
 .filter-pill-btn.filter-pill-category.active {
-  background: transparent;
-  color: #111827;
+  background: #ffffff !important;
+  color: #111827 !important;
   font-weight: 700;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 1.5px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+.filter-pill-btn.filter-pill-category.active:hover {
+  background: #ffffff !important;
+  color: #111827 !important;
 }
 
 .filter-pill-btn.filter-pill-category.active .filter-name {
@@ -105,36 +85,49 @@
 }
 
 .filter-pill-btn.filter-pill-category.active .filter-count {
-  color: #374151 !important;
-  opacity: 0.95;
-  font-weight: 600;
+  color: #111827 !important;
+  opacity: 0.9;
+  font-weight: 700;
 }
 
 [data-theme='dark'] .filter-pill-btn.filter-pill-category.active {
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: #ffffff !important;
+  color: #111827 !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+[data-theme='dark'] .filter-pill-btn.filter-pill-category.active:hover {
+  background: #ffffff !important;
+  color: #111827 !important;
 }
 
 [data-theme='dark'] .filter-pill-btn.filter-pill-category.active .filter-name {
-  color: #ffffff !important;
+  color: #111827 !important;
 }
 
 [data-theme='dark'] .filter-pill-btn.filter-pill-category.active .filter-count {
-  color: rgba(255, 255, 255, 0.85) !important;
-  opacity: 0.95;
-  font-weight: 600;
+  color: #111827 !important;
+  opacity: 0.9;
+  font-weight: 700;
 }
 
-.filter-dot {
-  width: 8px;
-  height: 8px;
+/* Bolinha escura apenas quando ativa */
+.filter-dot.active-white-dot,
+.filter-dot.active-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
+  background-color: #111827 !important;
   display: inline-block;
   flex-shrink: 0;
+  box-shadow: none !important;
 }
 
-.uncategorized-dot {
-  background-color: #94a3b8;
+[data-theme='dark'] .filter-dot.active-white-dot,
+[data-theme='dark'] .filter-dot.active-dot {
+  background-color: #111827 !important;
+  box-shadow: none !important;
 }
 
 .filter-name {

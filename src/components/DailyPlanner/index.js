@@ -3,11 +3,12 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { PlusCircle, User, CaretLeft, CaretRight, CalendarBlank } from '@phosphor-icons/react';
 import { toast } from 'sonner';
-import { 
-  loadUserTasks, 
-  syncUserTasks, 
-  loadUserTaskHistory, 
-  syncUserTaskHistory 
+import {
+  loadUserTasks,
+  syncUserTasks,
+  deleteUserTask,
+  loadUserTaskHistory,
+  syncUserTaskHistory
 } from '../../services/supabaseService';
 
 import TodoItem from '../TodoItem';
@@ -15,12 +16,13 @@ import TaskDetailsModal from '../TaskDetailsModal';
 import AddTaskModal from '../AddTaskModal';
 import TaskCompletionModal from '../TaskCompletionModal';
 import TaskObservationModal from '../TaskObservationModal';
+import DeleteTaskModal from '../DeleteTaskModal';
 import CategoryFilterBar from '../CategoryFilterBar';
 import { getStoredCategories } from '../../constants/categories';
-import { 
-  getGoogleAccessToken, 
-  fetchGoogleEvents, 
-  isBirthdayEvent 
+import {
+  getGoogleAccessToken,
+  fetchGoogleEvents,
+  isBirthdayEvent
 } from '../../services/googleCalendarService';
 
 import './styles.css';
@@ -35,10 +37,19 @@ const getTodayString = () => {
 };
 
 const getFormattedDateLabel = (dateStr) => {
+  if (!dateStr) return '';
   const today = getTodayString();
   if (dateStr === today) return 'Hoje';
-  const [y, m, d] = dateStr.split('-');
-  return `${d}/${m}/${y}`;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    const currentYear = String(new Date().getFullYear());
+    if (y === currentYear) {
+      return `${d}/${m}`;
+    }
+    return `${d}/${m}/${y}`;
+  }
+  return dateStr;
 };
 
 export const getWeekdayLabel = (dateStr) => {
@@ -50,25 +61,50 @@ export const getWeekdayLabel = (dateStr) => {
   return weekday.charAt(0).toUpperCase() + weekday.slice(1);
 };
 
-const sortTasksChronologically = (taskList) => {
-  return [...taskList].sort((a, b) => {
-    const timeA = a.time || '00:00';
-    const timeB = b.time || '00:00';
-    return timeA.localeCompare(timeB);
-  });
+export const DEFAULT_WORK_TASKS = [];
+
+export const ensureWorkAndRoutineTasks = (taskList) => {
+  if (!Array.isArray(taskList) || taskList.length === 0) {
+    return DEFAULT_WORK_TASKS;
+  }
+
+  const seenIds = new Set();
+  const cleanedList = [];
+
+  for (const t of taskList) {
+    if (!t) continue;
+    const taskId = String(t.id);
+    if (seenIds.has(taskId)) continue;
+    seenIds.add(taskId);
+
+    // Se for uma das tarefas padrão pré-definidas (por ID) e faltar subtasks, complementa
+    const def = DEFAULT_WORK_TASKS.find(w => String(w.id) === taskId);
+    if (def && (!Array.isArray(t.subtasks) || t.subtasks.length === 0)) {
+      cleanedList.push({
+        ...t,
+        subtasks: def.subtasks || []
+      });
+    } else {
+      cleanedList.push(t);
+    }
+  }
+
+  // IMPORTANTE: NÃO insere missingWork automaticamente!
+  // Preserva estritamente a ordem definida pelo usuário (não reordena por horário).
+  return cleanedList;
 };
 
 export const initialTaskTemplates = [];
 
 export const POMODORO_CONFIG = { Focus: 25, ShortBreak: 5, LongBreak: 15, cycles: 4 };
 
-function DailyPlanner({ 
-  onPomodoroComplete, 
-  isDarkMode, 
-  toggleDarkMode, 
-  templates: propTemplates, 
-  setTemplates: propSetTemplates, 
-  user, 
+function DailyPlanner({
+  onPomodoroComplete,
+  isDarkMode,
+  toggleDarkMode,
+  templates: propTemplates,
+  setTemplates: propSetTemplates,
+  user,
   onOpenAuthModal,
   calendarTaskToAdd,
   onClearCalendarTaskToAdd,
@@ -91,21 +127,52 @@ function DailyPlanner({
   }, [selectedDate]);
 
   const [tasks, setTasks] = useState(() => {
+    const sanitizeLoadedTasks = (list) => {
+      if (!Array.isArray(list)) return [];
+      return list.map(t => {
+        if (t.isRecurring) {
+          const { startedAt, completedAt, ...clean } = t;
+          return clean;
+        }
+        return t;
+      });
+    };
+
+    const restoreOrder = (list) => {
+      let savedOrder = [];
+      try {
+        const raw = localStorage.getItem('daily_tasks_order');
+        if (raw) savedOrder = JSON.parse(raw);
+      } catch (e) {}
+
+      if (!Array.isArray(savedOrder) || savedOrder.length === 0) return list;
+      const orderMap = new Map(savedOrder.map((id, idx) => [String(id), idx]));
+      return [...list].sort((a, b) => {
+        const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+        const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+        return posA - posB;
+      });
+    };
+
     const savedTasks = localStorage.getItem('daily_tasks');
     if (savedTasks) {
       try {
         const parsed = JSON.parse(savedTasks);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsed)));
+        }
       } catch (e) {}
     }
     const backup = localStorage.getItem('daily_tasks_backup');
     if (backup) {
       try {
         const parsedBackup = JSON.parse(backup);
-        if (Array.isArray(parsedBackup)) return parsedBackup;
+        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
+          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsedBackup)));
+        }
       } catch (e) {}
     }
-    return [];
+    return DEFAULT_WORK_TASKS;
   });
 
   const [isTasksLoaded, setIsTasksLoaded] = useState(false);
@@ -114,7 +181,11 @@ function DailyPlanner({
   const [selectedTask, setSelectedTask] = useState(null);
   const [taskForCompletion, setTaskForCompletion] = useState(null);
   const [taskForObservation, setTaskForObservation] = useState(null);
-  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const saved = localStorage.getItem('selected_planner_category');
+    return saved || 'Trabalho';
+  });
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
@@ -251,7 +322,7 @@ function DailyPlanner({
         color: calendarTaskToAdd.color || null,
         date: taskDate
       };
-      setTasks(prev => sortTasksChronologically([...prev, newTask]));
+      setTasks(prev => [...prev, newTask]);
       if (onClearCalendarTaskToAdd) onClearCalendarTaskToAdd();
     }
   }, [calendarTaskToAdd, selectedDate, onClearCalendarTaskToAdd]);
@@ -265,15 +336,62 @@ function DailyPlanner({
         const initialTasks = await loadUserTasks(user.id);
         if (isMounted) {
           setTasks(prev => {
-            if (Array.isArray(initialTasks) && initialTasks.length > 0) {
-              return initialTasks;
+            const raw = (Array.isArray(initialTasks) && initialTasks.length > 0)
+              ? initialTasks
+              : ((prev && prev.length > 0) ? prev : (initialTasks || []));
+            const cleaned = raw.map(t => {
+              if (t.isRecurring) {
+                const { startedAt, completedAt, ...clean } = t;
+                return clean;
+              }
+              return t;
+            });
+            const sanitized = ensureWorkAndRoutineTasks(cleaned);
+
+            let savedOrder = [];
+            try {
+              const rawOrder = localStorage.getItem('daily_tasks_order');
+              if (rawOrder) savedOrder = JSON.parse(rawOrder);
+            } catch (e) {}
+
+            const orderMap = new Map();
+            if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+              savedOrder.forEach((id, idx) => orderMap.set(String(id), idx));
+            } else if (Array.isArray(prev) && prev.length > 0) {
+              prev.forEach((t, idx) => orderMap.set(String(t.id), idx));
             }
-            return (prev && prev.length > 0) ? prev : (initialTasks || []);
+
+            if (orderMap.size > 0) {
+              return [...sanitized].sort((a, b) => {
+                const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+                const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+                return posA - posB;
+              });
+            }
+
+            return sanitized;
           });
           loadedUserIdRef.current = user.id;
           setIsTasksLoaded(true);
         }
       } else {
+        setTasks(prev => {
+          const sanitized = ensureWorkAndRoutineTasks(prev);
+          let savedOrder = [];
+          try {
+            const rawOrder = localStorage.getItem('daily_tasks_order');
+            if (rawOrder) savedOrder = JSON.parse(rawOrder);
+          } catch (e) {}
+          if (Array.isArray(savedOrder) && savedOrder.length > 0) {
+            const orderMap = new Map(savedOrder.map((id, idx) => [String(id), idx]));
+            return [...sanitized].sort((a, b) => {
+              const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
+              const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
+              return posA - posB;
+            });
+          }
+          return sanitized;
+        });
         loadedUserIdRef.current = null;
         setIsTasksLoaded(true);
       }
@@ -326,6 +444,71 @@ function DailyPlanner({
     };
   }, [isTasksLoaded, taskHistory, historyLoadedFor, user?.id]);
 
+  // Migra status locais antigos de compromissos da Google Agenda para o taskHistory para sincronização na nuvem
+  useEffect(() => {
+    try {
+      const savedStatus = localStorage.getItem('calendar_status_map');
+      const savedCompleted = localStorage.getItem('calendar_completed_map');
+      let statusObj = savedStatus ? JSON.parse(savedStatus) : {};
+      let completedObj = savedCompleted ? JSON.parse(savedCompleted) : {};
+
+      const migratedEntries = {};
+      let hasMigration = false;
+
+      Object.entries(statusObj).forEach(([k, val]) => {
+        const parts = k.split('_');
+        if (parts.length >= 2) {
+          const date = parts[0];
+          const eventId = parts.slice(1).join('_');
+          const historyKey = `calendar-${eventId}_${date}`;
+          if (!taskHistory[historyKey]) {
+            migratedEntries[historyKey] = {
+              id: historyKey,
+              taskId: `calendar-${eventId}`,
+              date: date,
+              status: (typeof val === 'object' && val?.status) ? val.status : 'completed',
+              observation: (typeof val === 'object' && val?.observation) ? val.observation : '',
+              completedAt: new Date().toISOString(),
+              startedAt: null,
+              subtasks: []
+            };
+            hasMigration = true;
+          }
+        }
+      });
+
+      Object.entries(completedObj).forEach(([k, isDone]) => {
+        if (!isDone) return;
+        const parts = k.split('_');
+        if (parts.length >= 2) {
+          const date = parts[0];
+          const eventId = parts.slice(1).join('_');
+          const historyKey = `calendar-${eventId}_${date}`;
+          if (!taskHistory[historyKey] && !migratedEntries[historyKey]) {
+            migratedEntries[historyKey] = {
+              id: historyKey,
+              taskId: `calendar-${eventId}`,
+              date: date,
+              status: 'completed',
+              observation: '',
+              completedAt: new Date().toISOString(),
+              startedAt: null,
+              subtasks: []
+            };
+            hasMigration = true;
+          }
+        }
+      });
+
+      if (hasMigration) {
+        setTaskHistory(prev => ({ ...prev, ...migratedEntries }));
+      }
+    } catch (e) {
+      console.warn('Erro ao migrar status de compromissos para taskHistory:', e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleMoveToToday = (taskId) => {
     setTasks(prev => prev.map(t => {
       if (t.id === taskId) {
@@ -369,7 +552,7 @@ function DailyPlanner({
       isRecurring: Boolean(newTask.isRecurring),
       recurringDays: newTask.isRecurring ? (newTask.recurringDays || []).map(Number).filter(n => !isNaN(n)) : []
     };
-    setTasks(prevTasks => sortTasksChronologically([...prevTasks, taskWithDate]));
+    setTasks(prevTasks => [...prevTasks, taskWithDate]);
     if (saveAsTemplate) {
       const newTemplate = {
         id: Date.now().toString(),
@@ -475,7 +658,7 @@ function DailyPlanner({
           subtasks: baseSubtasksModel
         };
       });
-      return sortTasksChronologically(updatedList);
+      return updatedList;
     });
     setSelectedTask(null);
   };
@@ -498,7 +681,7 @@ function DailyPlanner({
             color: item.color || null,
             date: selectedDate
           };
-          setTasks(prev => sortTasksChronologically([...prev, newTask]));
+          setTasks(prev => [...prev, newTask]);
         }
       }
     } catch (err) {
@@ -604,15 +787,38 @@ function DailyPlanner({
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
     }
-    const currentTask = tasks.find(t => t.id === taskId);
-    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${currentTask?.text}.`);
-    
-    // Registrar startedAt na tarefa se ainda não tiver sido iniciado
+    const currentTask = tasks.find(t => t.id === taskId) || calendarTasksForSelectedDate.find(t => t.id === taskId);
+    speak(`Iniciando ${config.ShortBreak ? 'ciclo' : 'timer'} de ${config.Focus} minutos para a tarefa ${currentTask?.text || 'selecionada'}.`);
+
+    const nowIso = new Date().toISOString();
+    const historyKey = `${taskId}_${selectedDate}`;
+
+    // 1. Grava o horário de início única e exclusivamente no histórico da data selecionada
+    setTaskHistory(prev => {
+      const existing = prev[historyKey] || {};
+      if (existing.startedAt) return prev;
+      return {
+        ...prev,
+        [historyKey]: {
+          ...existing,
+          id: historyKey,
+          taskId: String(taskId),
+          date: selectedDate,
+          status: existing.status || 'pending',
+          observation: existing.observation || '',
+          completedAt: existing.completedAt || null,
+          startedAt: nowIso,
+          subtasks: existing.subtasks || (currentTask?.subtasks ? currentTask.subtasks.map(st => ({ ...st, completed: false })) : [])
+        }
+      };
+    });
+
+    // 2. Se for tarefa comum e NÃO for recorrente, atualiza em tasks apenas para a data correspondente
     setTasks(prev => prev.map(t => {
-      if (t.id === taskId) {
+      if (t.id === taskId && !t.isRecurring && (t.date === selectedDate || (!t.date && selectedDate === todayStr))) {
         return {
           ...t,
-          startedAt: t.startedAt || new Date().toISOString()
+          startedAt: t.startedAt || nowIso
         };
       }
       return t;
@@ -641,6 +847,13 @@ function DailyPlanner({
 
   const isTaskForSelectedDate = (t, dateStr) => {
     if (!t || !dateStr) return false;
+
+    // Se estiver marcado como deleted no taskHistory para esta data
+    const historyKey = `${t.id}_${dateStr}`;
+    if (taskHistory && taskHistory[historyKey]?.status === 'deleted') {
+      return false;
+    }
+
     const dayOfWeek = getDayOfWeek(dateStr);
 
     if (Boolean(t.isRecurring)) {
@@ -651,6 +864,14 @@ function DailyPlanner({
       if (!days.includes(dayOfWeek)) return false;
       // Se tiver data de início/criação, não exibe em dias anteriores
       if (t.date && /^\d{4}-\d{2}-\d{2}$/.test(t.date) && dateStr < t.date) {
+        return false;
+      }
+      // Se tiver data de término (recurringUntil), não exibe a partir desta data nem após ela
+      if (t.recurringUntil && /^\d{4}-\d{2}-\d{2}$/.test(t.recurringUntil) && dateStr >= t.recurringUntil) {
+        return false;
+      }
+      // Se esta data específica foi excluída da recorrência
+      if (Array.isArray(t.deletedDates) && t.deletedDates.includes(dateStr)) {
         return false;
       }
       return true;
@@ -684,6 +905,8 @@ function DailyPlanner({
       if (!calTask) return;
       const key = `${selectedDate}_${calTask.calendarOriginalId}`;
       const isCompleted = status === 'completed';
+      const historyKey = `${taskId}_${selectedDate}`;
+      const nowIso = new Date().toISOString();
 
       setCalendarStatusMap(prev => {
         const next = { ...prev, [key]: { status, observation } };
@@ -700,6 +923,20 @@ function DailyPlanner({
         } catch (e) {}
         return next;
       });
+
+      setTaskHistory(prev => ({
+        ...prev,
+        [historyKey]: {
+          id: historyKey,
+          taskId: String(taskId),
+          date: selectedDate,
+          status,
+          observation: observation || '',
+          completedAt: (status === 'completed' || status === 'failed') ? nowIso : null,
+          startedAt: null,
+          subtasks: []
+        }
+      }));
 
       setTaskForCompletion(null);
       toast.success(status === 'completed' ? 'Compromisso concluído! ✅' : 'Compromisso marcado como não concluído. ❌');
@@ -758,15 +995,14 @@ function DailyPlanner({
         }
 
         const isTodayDone = selectedDate === todayStr ? (status === 'completed') : (updatedDates.includes(todayStr));
-
+        const { startedAt, completedAt, ...cleanRecurring } = t;
         return {
-          ...t,
+          ...cleanRecurring,
           completedDates: updatedDates,
           failedDates: updatedFailedDates,
           dateObservations: currentObs,
           completed: isTodayDone,
-          status: selectedDate === todayStr ? status : t.status,
-          completedAt: (status === 'completed' || status === 'failed') ? nowIso : null
+          status: selectedDate === todayStr ? status : t.status
         };
       }
 
@@ -792,6 +1028,7 @@ function DailyPlanner({
       const calTask = calendarTasksForSelectedDate.find(t => t.id === taskId);
       if (!calTask) return;
       const key = `${selectedDate}_${calTask.calendarOriginalId}`;
+      const historyKey = `${taskId}_${selectedDate}`;
 
       setCalendarStatusMap(prev => {
         const next = { ...prev };
@@ -808,6 +1045,19 @@ function DailyPlanner({
         try {
           localStorage.setItem('calendar_completed_map', JSON.stringify(next));
         } catch (e) {}
+        return next;
+      });
+
+      setTaskHistory(prev => {
+        const next = { ...prev };
+        if (next[historyKey]) {
+          next[historyKey] = {
+            ...next[historyKey],
+            status: 'pending',
+            observation: '',
+            completedAt: null
+          };
+        }
         return next;
       });
 
@@ -845,14 +1095,14 @@ function DailyPlanner({
 
         const isTodayDone = selectedDate === todayStr ? false : (updatedDates.includes(todayStr));
 
+        const { startedAt, completedAt, ...cleanRecurring } = t;
         return {
-          ...t,
+          ...cleanRecurring,
           completedDates: updatedDates,
           failedDates: updatedFailedDates,
           dateObservations: currentObs,
           completed: isTodayDone,
-          status: selectedDate === todayStr ? 'pending' : t.status,
-          completedAt: null
+          status: selectedDate === todayStr ? 'pending' : t.status
         };
       }
 
@@ -889,44 +1139,168 @@ function DailyPlanner({
       return;
     }
 
+    const targetTask = tasks.find(t => t.id === id) || processedTasks.find(t => t.id === id);
+    if (!targetTask) return;
+
+    // Se for uma tarefa recorrente, abre o modal de opções de exclusão
+    if (targetTask.isRecurring) {
+      setTaskToDelete(targetTask);
+      return;
+    }
+
+    // Tarefa simples (não recorrente): apaga diretamente
     if (activeTimer.taskId === id) handleCancelTimer();
-    setTasks(tasks.filter(t => t.id !== id));
+    setTasks(prev => prev.filter(t => t.id !== id));
+    deleteUserTask(user?.id, id);
     toast.success('Tarefa removida.');
   };
 
-  const handleToggleCategory = (catName) => {
-    setSelectedCategories(prev => {
-      if (prev.includes(catName)) {
-        return prev.filter(c => c !== catName);
-      } else {
-        return [...prev, catName];
+  const handleDeleteSingleDay = () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.id;
+    if (activeTimer.taskId === taskId) handleCancelTimer();
+
+    const historyKey = `${taskId}_${selectedDate}`;
+
+    // 1. Marca no taskHistory como deleted para sincronização em nuvem
+    setTaskHistory(prev => ({
+      ...prev,
+      [historyKey]: {
+        ...(prev[historyKey] || {}),
+        id: historyKey,
+        taskId: String(taskId),
+        date: selectedDate,
+        status: 'deleted',
+        completedAt: null
       }
-    });
+    }));
+
+    // 2. Adiciona a data no array deletedDates da tarefa
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      const currentDeleted = Array.isArray(t.deletedDates) ? t.deletedDates : [];
+      if (currentDeleted.includes(selectedDate)) return t;
+      return {
+        ...t,
+        deletedDates: [...currentDeleted, selectedDate]
+      };
+    }));
+
+    setTaskToDelete(null);
+    toast.success('Tarefa removida apenas deste dia.');
   };
 
-  const handleSelectAll = () => {
-    setSelectedCategories([]);
+  const handleDeleteFromDayForward = () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.id;
+    if (activeTimer.taskId === taskId) handleCancelTimer();
+
+    // Define recurringUntil como a data selecionada (interrompe repetições a partir desta data)
+    setTasks(prev => prev.map(t => {
+      if (t.id !== taskId) return t;
+      return {
+        ...t,
+        recurringUntil: selectedDate
+      };
+    }));
+
+    setTaskToDelete(null);
+    toast.success('Tarefa cancelada a partir deste dia.');
+  };
+
+  const handleDeleteAll = () => {
+    if (!taskToDelete) return;
+    const taskId = taskToDelete.id;
+    if (activeTimer.taskId === taskId) handleCancelTimer();
+
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+    deleteUserTask(user?.id, taskId);
+    setTaskToDelete(null);
+    toast.success('Todas as repetições da tarefa foram removidas.');
+  };
+
+  const handleSelectCategory = (catName) => {
+    setSelectedCategory(catName);
+    try {
+      localStorage.setItem('selected_planner_category', catName);
+    } catch (e) {}
   };
 
   const handleOnDragEnd = (event) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      if (!String(active.id).startsWith('calendar-') && !String(over.id).startsWith('calendar-')) {
-        setTasks((allTasks) => {
-          const currentDayTasks = allTasks.filter(t => isTaskForSelectedDate(t, selectedDate));
-          const otherDayTasks = allTasks.filter(t => !isTaskForSelectedDate(t, selectedDate));
+    if (!over || active.id === over.id) return;
 
-          const oldIndex = currentDayTasks.findIndex((item) => item.id === active.id);
-          const newIndex = currentDayTasks.findIndex((item) => item.id === over.id);
-
-          if (oldIndex !== -1 && newIndex !== -1) {
-            const reordered = arrayMove(currentDayTasks, oldIndex, newIndex);
-            return [...otherDayTasks, ...reordered];
-          }
-          return allTasks;
-        });
-      }
+    if (String(active.id).startsWith('calendar-') || String(over.id).startsWith('calendar-')) {
+      return;
     }
+
+    setTasks((allTasks) => {
+      const activeTask = allTasks.find(t => t.id === active.id);
+      const overTask = allTasks.find(t => t.id === over.id);
+
+      if (!activeTask || !overTask) return allTasks;
+
+      const activePeriod = getPeriod(activeTask);
+      const overPeriod = getPeriod(overTask);
+
+      // Restringe o drag and drop estritamente ao mesmo período!
+      if (activePeriod !== overPeriod) {
+        return allTasks;
+      }
+
+      // Tarefas deste dia pertencentes a este período
+      const periodTasks = allTasks.filter(t =>
+        isTaskForSelectedDate(t, selectedDate) && getPeriod(t) === activePeriod
+      );
+
+      const oldIndex = periodTasks.findIndex(t => t.id === active.id);
+      const newIndex = periodTasks.findIndex(t => t.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) {
+        return allTasks;
+      }
+
+      // Reordena apenas as tarefas daquele período
+      const reorderedPeriodTasks = arrayMove(periodTasks, oldIndex, newIndex);
+
+      // Se todas as tarefas do período têm horários definidos, ajusta os horários
+      // para acompanhar a nova ordem, para que fiquem cronologicamente consistentes
+      const existingTimes = periodTasks.map(t => t.time).filter(Boolean);
+      let adjustedTasks = reorderedPeriodTasks;
+
+      if (existingTimes.length === periodTasks.length) {
+        const sortedTimes = [...existingTimes].sort((a, b) => a.localeCompare(b));
+        adjustedTasks = reorderedPeriodTasks.map((t, idx) => ({
+          ...t,
+          time: sortedTimes[idx] || t.time
+        }));
+      }
+
+      // Atualiza allTasks mantendo as tarefas de outros períodos e outros dias nos seus lugares
+      const periodTaskIds = new Set(periodTasks.map(t => t.id));
+      const result = [];
+      let periodInserted = false;
+
+      for (const t of allTasks) {
+        if (periodTaskIds.has(t.id)) {
+          if (!periodInserted) {
+            result.push(...adjustedTasks);
+            periodInserted = true;
+          }
+        } else {
+          result.push(t);
+        }
+      }
+
+      // Salva imediatamente no localStorage para garantir persistência mesmo antes do próximo render
+      try {
+        const orderIds = result.map(t => String(t.id));
+        localStorage.setItem('daily_tasks_order', JSON.stringify(orderIds));
+        localStorage.setItem('daily_tasks', JSON.stringify(result));
+      } catch (err) {}
+
+      return result;
+    });
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -999,15 +1373,25 @@ function DailyPlanner({
   const calendarTasksForSelectedDate = Array.from(uniqueCalendarMap.values()).map(evt => {
     const isBirthday = isBirthdayEvent(evt);
     const key = `${selectedDate}_${evt.id}`;
+    const historyKey = `calendar-${evt.id}_${selectedDate}`;
+    const historyEntry = taskHistory ? taskHistory[historyKey] : null;
     const calStatusObj = calendarStatusMap[key];
     const legacyCompleted = Boolean(calendarCompletedMap[key]);
 
     let isCompleted = false;
     let status = 'pending';
     let observation = '';
+    let startedAt = null;
+    let completedAt = null;
 
     if (!isBirthday) {
-      if (calStatusObj) {
+      if (historyEntry && historyEntry.status) {
+        status = historyEntry.status;
+        isCompleted = status === 'completed';
+        observation = historyEntry.observation || '';
+        startedAt = historyEntry.startedAt || null;
+        completedAt = historyEntry.completedAt || null;
+      } else if (calStatusObj) {
         status = calStatusObj.status || 'pending';
         isCompleted = status === 'completed';
         observation = calStatusObj.observation || '';
@@ -1035,6 +1419,8 @@ function DailyPlanner({
       completed: isCompleted,
       status,
       observation,
+      startedAt,
+      completedAt,
       isCalendarEvent: true,
       isBirthday,
       htmlLink: evt.htmlLink || null,
@@ -1055,13 +1441,16 @@ function DailyPlanner({
   });
 
   const filteredTasks = allTasksForSelectedDate.filter(t => {
-    if (selectedCategories.length === 0) return true;
-    if (!t.category) return selectedCategories.includes('__none__');
-    return selectedCategories.includes(t.category);
+    if (!selectedCategory) return true;
+    if (selectedCategory === '__none__') {
+      return !t.category;
+    }
+    const taskCat = (t.category || '').toLowerCase().trim();
+    const selCat = (selectedCategory || '').toLowerCase().trim();
+    return taskCat === selCat;
   });
 
-  const processedTasks = sortTasksChronologically(
-    filteredTasks.map(t => {
+  const processedTasks = filteredTasks.map(t => {
       if (t.isCalendarEvent) {
         return t;
       }
@@ -1073,14 +1462,14 @@ function DailyPlanner({
       let completed = false;
       let observation = '';
       let completedAt = null;
-      let startedAt = t.startedAt || null;
+      let startedAt = null;
 
       if (historyEntry) {
         status = historyEntry.status || 'pending';
         completed = status === 'completed';
         observation = historyEntry.observation || '';
         completedAt = historyEntry.completedAt || null;
-        if (historyEntry.startedAt) startedAt = historyEntry.startedAt;
+        startedAt = historyEntry.startedAt || null;
       } else {
         // Fallback para tarefas salvas antes da migração para taskHistory
         if (t.isRecurring) {
@@ -1096,11 +1485,14 @@ function DailyPlanner({
             completed = false;
           }
           observation = dateObservations[selectedDate] || '';
+          startedAt = null;
+          completedAt = null;
         } else if (t.date === selectedDate || (!t.date && selectedDate === todayStr)) {
           status = t.status || (t.completed ? 'completed' : 'pending');
           completed = status === 'completed';
           observation = t.observation || '';
           completedAt = t.completedAt || null;
+          startedAt = t.startedAt || null;
         }
       }
 
@@ -1126,8 +1518,7 @@ function DailyPlanner({
         startedAt,
         subtasks: daySubtasks
       };
-    })
-  );
+    });
 
   const PERIOD_NAMES = ['Manhã', 'Tarde', 'Noite'];
   const groupedPeriodTasks = PERIOD_NAMES.map(pName => {
@@ -1147,7 +1538,7 @@ function DailyPlanner({
       const meta = u.user_metadata || {};
       if (meta.avatar_url) return meta.avatar_url;
       if (meta.picture) return meta.picture;
-      
+
       if (u.identities && u.identities.length > 0) {
         for (const identity of u.identities) {
           const idData = identity.identity_data || {};
@@ -1175,9 +1566,9 @@ function DailyPlanner({
           <div className="date-picker-badge" title="Clique para escolher uma data">
             <CalendarBlank size={18} weight="bold" className="calendar-icon" />
             <span className="date-display-text">{getFormattedDateLabel(selectedDate)}</span>
-            <input 
-              type="date" 
-              value={selectedDate} 
+            <input
+              type="date"
+              value={selectedDate}
               onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
               className="date-input-hidden"
             />
@@ -1204,9 +1595,9 @@ function DailyPlanner({
           </div>
 
           {userAvatarUrl ? (
-            <button 
-              className="user-auth-badge-btn user-avatar-only-btn" 
-              onClick={onOpenAuthModal} 
+            <button
+              className="user-auth-badge-btn user-avatar-only-btn"
+              onClick={onOpenAuthModal}
               title={user?.email ? `Logado como ${user.email}` : "Perfil do Usuário"}
             >
               <div className="google-avatar-ring">
@@ -1235,26 +1626,25 @@ function DailyPlanner({
         categoryCounts={categoryCounts}
         totalCount={allTasksForSelectedDate.length}
         uncategorizedCount={uncategorizedCount}
-        selectedCategories={selectedCategories}
-        onToggleCategory={handleToggleCategory}
-        onSelectAll={handleSelectAll}
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleSelectCategory}
         weekday={getWeekdayLabel(selectedDate)}
       />
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleOnDragEnd}>
-        <SortableContext items={processedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          <div 
-            className="planner-periods-wrapper"
-            onDragOver={handleDragOverFromCalendar}
-            onDrop={handleDropFromCalendar}
-          >
-            {processedTasks.length > 0 ? (
-              groupedPeriodTasks.map((group) => {
-                if (group.tasks.length === 0) return null;
+        <div
+          className="planner-periods-wrapper"
+          onDragOver={handleDragOverFromCalendar}
+          onDrop={handleDropFromCalendar}
+        >
+          {processedTasks.length > 0 ? (
+            groupedPeriodTasks.map((group) => {
+              if (group.tasks.length === 0) return null;
 
-                return (
-                  <div key={group.period} className="period-section-group">
-                    <h2 className="period-section-title">{group.period}</h2>
+              return (
+                <div key={group.period} className="period-section-group">
+                  <h2 className="period-section-title">{group.period}</h2>
+                  <SortableContext items={group.tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                     <div className="period-section-box">
                       {group.tasks.map((task) => (
                         <TodoItem
@@ -1275,9 +1665,10 @@ function DailyPlanner({
                         />
                       ))}
                     </div>
-                  </div>
-                );
-              })
+                  </SortableContext>
+                </div>
+              );
+            })
             ) : (
               <div className="period-section-group">
                 <div className="period-section-box empty-box">
@@ -1286,7 +1677,6 @@ function DailyPlanner({
               </div>
             )}
           </div>
-        </SortableContext>
       </DndContext>
       {selectedTask && (
         <TaskDetailsModal
@@ -1304,7 +1694,7 @@ function DailyPlanner({
         onAddTask={handleAddTask}
         taskTemplates={templates}
         selectedDate={selectedDate}
-        initialCategory={selectedCategories.length === 1 && selectedCategories[0] !== '__none__' ? selectedCategories[0] : ''}
+        initialCategory={selectedCategory && selectedCategory !== '__none__' ? selectedCategory : ''}
       />
       {taskForCompletion && (
         <TaskCompletionModal
@@ -1322,6 +1712,20 @@ function DailyPlanner({
             setTaskForObservation(null);
             setTaskForCompletion(t);
           }}
+        />
+      )}
+      {taskToDelete && (
+        <DeleteTaskModal
+          task={taskToDelete}
+          dateFormatted={(() => {
+            if (!selectedDate) return '';
+            const parts = selectedDate.split('-');
+            return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : selectedDate;
+          })()}
+          onClose={() => setTaskToDelete(null)}
+          onDeleteSingleDay={handleDeleteSingleDay}
+          onDeleteFromDayForward={handleDeleteFromDayForward}
+          onDeleteAll={handleDeleteAll}
         />
       )}
     </div>

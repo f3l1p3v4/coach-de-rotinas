@@ -6,6 +6,7 @@ import RecurrenceSelector from '../RecurrenceSelector';
 import { getCategoryColor } from '../../constants/categories';
 import { getRecurrenceLabel } from '../../constants/recurrence';
 import { getDifficultyByColor } from '../../constants/difficulty';
+import { renderTextWithLinks } from '../../utils/textUtils';
 
 import './styles.css';
 
@@ -232,7 +233,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
             <div className="subtask-editor">
               {subtasks.map((st) => (
                 <div key={st.id} className="subtask-edit-item">
-                  <span>{st.text}</span>
+                  <span>{renderTextWithLinks(st.text)}</span>
                   <button type="button" onClick={() => handleRemoveSubtask(st.id)}>
                     <Trash size={16} />
                   </button>
