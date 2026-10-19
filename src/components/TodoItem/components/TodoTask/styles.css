@@ -20,10 +20,6 @@
   word-break: break-word;
 }
 
-.task-emoji {
-  font-size: 1.25rem;
-}
-
 .paragraph-checked { 
   text-decoration: line-through;
   color: var(--text-light-color, #888888); 
@@ -66,8 +62,4 @@
   pointer-events: none;
   user-select: none;
   line-height: 1;
-}
-
-.task-execution-time.with-emoji {
-  left: 1.75rem;
 }

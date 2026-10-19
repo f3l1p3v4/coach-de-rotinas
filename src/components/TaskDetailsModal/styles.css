@@ -32,23 +32,6 @@
   width: 100%;
 }
 
-.emoji-input {
-  width: 48px;
-  height: 48px;
-  font-size: 1.5rem;
-  text-align: center;
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background-color: var(--sidebar-bg);
-  color: var(--title-color);
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.emoji-input:focus {
-  border-color: var(--accent-color);
-}
-
 .task-title-input {
   flex: 1;
   font-size: 1.35rem;
@@ -89,25 +72,14 @@
   gap: 0.4rem;
 }
 
-.title-with-emoji-container {
+.task-title-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   width: 100%;
 }
 
-.title-with-emoji-container .emoji-input {
-  width: 44px;
-  height: 42px;
-  min-width: 44px;
-  border-radius: 10px;
-  padding: 0;
-  text-align: center;
-  font-size: 1.4rem;
-  box-sizing: border-box;
-}
-
-.title-with-emoji-container .task-name-input {
+.task-title-container .task-name-input {
   flex: 1;
   height: 42px;
   box-sizing: border-box;

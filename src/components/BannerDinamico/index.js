@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useState, useCallback } from 'react';
 import { XCircle } from '@phosphor-icons/react';
 
@@ -6,37 +7,37 @@ import './styles.css';
 const todasAsDicas = [
   {
     tipo: 'Estratégia',
-    emoji: '🍅',
+    icon: 'timer',
     titulo: 'Técnica Pomodoro',
     descricao: 'Criada por Francesco Cirillo, esta técnica usa um cronómetro para dividir o trabalho em blocos de foco intenso (25 min) e pausas curtas (5 min), melhorando drasticamente a concentração.'
   },
   {
     tipo: 'Coaching',
-    emoji: '⚖️',
+    icon: 'scales',
     titulo: 'Princípio de Pareto (80/20)',
     descricao: 'Este princípio afirma que 80% dos resultados vêm de 20% dos esforços. Foque-se nas poucas tarefas que lhe darão o maior impacto hoje.'
   },
   {
     tipo: 'Estratégia',
-    emoji: '🗺️',
+    icon: 'map',
     titulo: 'Matriz de Eisenhower',
     descricao: 'Classifique tarefas em 4 quadrantes (Urgente/Importante) para decidir o que fazer agora, o que agendar e o que eliminar, ganhando clareza total sobre as suas prioridades.'
   },
   {
     tipo: 'Coaching',
-    emoji: '⏳',
+    icon: 'hourglass',
     titulo: 'Lei de Parkinson',
     descricao: 'Esta lei diz que "o trabalho expande-se para preencher o tempo disponível". Defina prazos mais curtos para as suas tarefas e veja o seu foco aumentar.'
   },
   {
     tipo: 'Estratégia',
-    emoji: '🐸',
+    icon: 'target',
     titulo: 'Eat That Frog (Engolir o Sapo)',
     descricao: 'Ataque a sua tarefa mais difícil ("o sapo") logo pela manhã. Depois disso, o resto do seu dia parecerá muito mais fácil.'
   },
   {
     tipo: 'Coaching',
-    emoji: '🔗',
+    icon: 'link',
     titulo: 'Habit Stacking (Empilhar Hábitos)',
     descricao: 'Ancore um novo hábito a um já existente. Ex: "Logo depois de tomar o meu café da manhã, vou meditar por 1 minuto".'
   }
@@ -53,7 +54,7 @@ function BannerDinamico() {
   }, []);
 
   const dicaAtual = todasAsDicas[indiceAtual];
-  const headerIcon = dicaAtual.tipo === 'Estratégia' ? '🚀' : '❤️';
+  const headerIcon = <AppIcon name={dicaAtual.tipo === 'Estratégia' ? 'rocket' : 'heart'} />;
   const headerText = dicaAtual.tipo === 'Estratégia' ? 'Impulso Mental' : 'Bússola Interna';
   
   const openModal = () => setIsModalOpen(true);
@@ -84,7 +85,7 @@ function BannerDinamico() {
               <XCircle size={28} />
             </button>
             <h3>{headerIcon} {headerText}</h3>
-            <h4>{dicaAtual.emoji} {dicaAtual.titulo}</h4>
+            <h4><AppIcon name={dicaAtual.icon} /> {dicaAtual.titulo}</h4>
             <p>{dicaAtual.descricao}</p>
           </div>
         </div>

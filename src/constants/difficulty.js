@@ -4,7 +4,6 @@ export const DIFFICULTY_LEVELS = [
     label: 'Baixa', 
     shortLabel: 'Baixa', 
     color: '#10b981', 
-    emoji: '🟢',
     description: 'Urgência / prioridade baixa'
   },
   { 
@@ -12,7 +11,6 @@ export const DIFFICULTY_LEVELS = [
     label: 'Média', 
     shortLabel: 'Média', 
     color: '#eab308', 
-    emoji: '🟡',
     description: 'Urgência / prioridade média'
   },
   { 
@@ -20,7 +18,6 @@ export const DIFFICULTY_LEVELS = [
     label: 'Alta', 
     shortLabel: 'Alta', 
     color: '#ef4444', 
-    emoji: '🔴',
     description: 'Urgência / prioridade alta'
   },
 ];

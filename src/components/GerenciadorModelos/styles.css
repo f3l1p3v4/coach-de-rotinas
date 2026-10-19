@@ -101,11 +101,6 @@
   overflow: hidden;
 }
 
-.modelo-emoji {
-  font-size: 1.6rem;
-  flex-shrink: 0;
-}
-
 .modelo-details h4 {
   margin: 0;
   font-size: 1.2rem;
@@ -188,11 +183,6 @@
   font-size: 1rem;
   font-family: inherit;
   box-sizing: border-box;
-}
-
-.modelo-form input.emoji-input {
-  text-align: center;
-  font-size: 1.4rem;
 }
 
 .modelo-form textarea {

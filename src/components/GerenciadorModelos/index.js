@@ -1,6 +1,8 @@
+import AppIcon from '../AppIcon';
 import React, { useState } from 'react';
 import { PlusCircle, Pencil, Trash, XCircle, CheckCircle } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import ProfilePicker from '../ProfilePicker';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
 import { getCategoryColor } from '../../constants/categories';
@@ -16,6 +18,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
 
   // Form states
   const [text, setText] = useState('');
+  const [profile, setProfile] = useState('Pessoal');
   const [category, setCategory] = useState('');
   const [color, setColor] = useState('#10b981');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -28,6 +31,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     setEditingTemplate(null);
     setText('');
     setCategory('');
+    setProfile('Pessoal');
     setColor('#10b981');
     setIsRecurring(false);
     setRecurringDays([]);
@@ -41,6 +45,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     setEditingTemplate(template);
     setText(template.text || '');
     setCategory(template.category || '');
+    setProfile(template.profile || 'Pessoal');
     setColor(template.color || '#10b981');
 
     setIsRecurring(template.isRecurring || false);
@@ -73,6 +78,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
       id: editingTemplate ? editingTemplate.id : Date.now().toString(),
       text: text.trim(),
       category: category || null,
+      profile: profile || null,
       color: color || '#10b981',
       isRecurring: Boolean(isRecurring && recurringDays && recurringDays.length > 0),
       recurringDays: isRecurring ? (recurringDays || []).map(Number).filter(n => !isNaN(n)) : [],
@@ -103,7 +109,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
     <div className={`gerenciador-modelos-container ${hideHeader ? 'no-header' : ''}`}>
       {!hideHeader && (
         <div className="gerenciador-header">
-          <h3>⚙️ Modelos de Tarefa</h3>
+          <h3><AppIcon name="gear" /> Modelos de Tarefa</h3>
           {onClose && (
             <button className="close-btn" onClick={onClose} aria-label="Fechar">
               <XCircle size={24} />
@@ -151,7 +157,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
                               }}
                               title={`Dificuldade: ${diff.label}`}
                             >
-                              {diff.emoji} {diff.shortLabel}
+                              <AppIcon name="circle" color={diff.color} size={16} /> {diff.shortLabel}
                             </span>
                           )}
                           {tmpl.isRecurring && (
@@ -159,14 +165,14 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
                               className="modelo-recurrence-badge"
                               title={`Recorrência: ${getRecurrenceLabel(tmpl.recurringDays)}`}
                             >
-                              🔁 {getRecurrenceLabel(tmpl.recurringDays)}
+                              <AppIcon name="repeat" /> {getRecurrenceLabel(tmpl.recurringDays)}
                             </span>
                           )}
                         </div>
                         {tmpl.description && <p className="modelo-desc">{tmpl.description}</p>}
                         {tmpl.subtasks && tmpl.subtasks.length > 0 && (
                           <span className="modelo-subtasks-count">
-                            📋 {tmpl.subtasks.length} passo(s)
+                            <AppIcon name="clipboard" /> {tmpl.subtasks.length} passo(s)
                           </span>
                         )}
                       </div>
@@ -190,7 +196,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
       ) : (
 
         <form onSubmit={handleSubmitForm} className="modelo-form">
-          <h4>{editingTemplate ? '✏️ Editar Modelo' : '➕ Novo Modelo'}</h4>
+          <h4><AppIcon name={editingTemplate ? "pencil" : "plus"} /> {editingTemplate ? 'Editar Modelo' : 'Novo Modelo'}</h4>
 
           <div className="form-group-inline">
             <div className="form-group">
@@ -205,6 +211,7 @@ function GerenciadorModelos({ templates, onAddTemplate, onEditTemplate, onDelete
             </div>
           </div>
 
+          <ProfilePicker profile={profile} onChange={setProfile} />
           <CategoryPicker 
             category={category}
             onChangeCategory={setCategory}

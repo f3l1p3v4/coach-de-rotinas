@@ -164,7 +164,6 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
       return {
         id: item.id,
         title: item.summary || 'Sem Título',
-        emoji: isBirthday ? '🎉' : '📅',
         date: dateStr,
         time: timeStr,
         period,
@@ -213,7 +212,7 @@ export async function createGoogleEvent(accessToken, eventData) {
   const endDateStr = `${eventData.date || getTodayStr()}T10:00:00Z`;
 
   const body = {
-    summary: `${eventData.emoji ? eventData.emoji + ' ' : ''}${eventData.title}`,
+    summary: eventData.title,
     description: eventData.description || 'Criado via Daily Planner',
     start: { dateTime: startDateStr },
     end: { dateTime: endDateStr }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { XCircle, Gear, SquaresFour, Tag } from '@phosphor-icons/react';
+import { XCircle, Gear, SquaresFour, Tag, User } from '@phosphor-icons/react';
 import GerenciadorModelos from '../GerenciadorModelos';
 import GerenciadorCategorias from '../GerenciadorCategorias';
 import './styles.css';
@@ -38,6 +38,9 @@ function AjustesModal({ templates, onAddTemplate, onEditTemplate, onDeleteTempla
           <Tag size={18} />
           <span>Categorias</span>
         </button>
+        <button type="button" className={`ajustes-tab-btn ${activeTab === 'profiles' ? 'active' : ''}`} onClick={() => setActiveTab('profiles')}>
+          <User size={18} /><span>Perfis</span>
+        </button>
       </div>
 
       <div className="ajustes-content-area">
@@ -50,8 +53,9 @@ function AjustesModal({ templates, onAddTemplate, onEditTemplate, onDeleteTempla
             hideHeader={true}
           />
         )}
+        {activeTab === 'profiles' && <GerenciadorCategorias key="profiles" entity="profile" />}
         {activeTab === 'categories' && (
-          <GerenciadorCategorias />
+          <GerenciadorCategorias key="categories" />
         )}
       </div>
     </div>

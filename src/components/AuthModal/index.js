@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabaseClient';
 import { User, EnvelopeSimple, LockKey, SignOut, XCircle, UserPlus, SignIn, WarningCircle } from '@phosphor-icons/react';
@@ -107,12 +108,12 @@ function AuthModal({ user, onClose, onAuthSuccess }) {
               <span className="user-avatar-badge">{user.email ? user.email[0].toUpperCase() : 'U'}</span>
               <div className="user-details">
                 <span className="user-email-text">{user.email}</span>
-                <span className="user-status-online">● Conectado</span>
+                <span className="user-status-online"><AppIcon name="check" size={14} /> Conectado</span>
               </div>
             </div>
 
             <p className="auth-sync-note">
-              ✨ Todas as suas tarefas, modelos e anotações estão sincronizados e salvos na sua conta na nuvem!
+              <AppIcon name="sparkle" /> Todas as suas tarefas, modelos e anotações estão sincronizados e salvos na sua conta na nuvem!
             </p>
 
             <button className="auth-logout-btn" onClick={handleLogout}>

@@ -1,3 +1,5 @@
+import IconSelect from '../IconSelect';
+import AppIcon, { ICON_OPTIONS } from '../AppIcon';
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Pencil, Trash, CheckCircle, Tag, Check } from '@phosphor-icons/react';
 import { toast } from 'sonner';
@@ -8,36 +10,39 @@ import {
   deleteStoredCategory,
   CATEGORY_COLORS 
 } from '../../constants/categories';
+import { getStoredProfiles, saveStoredProfiles } from '../../constants/profiles';
 import './styles.css';
 
-function GerenciadorCategorias() {
-  const [categories, setCategories] = useState(() => getStoredCategories());
+function GerenciadorCategorias({ entity = 'category' }) {
+  const isProfile = entity === 'profile';
+  const entityName = isProfile ? 'Perfil' : 'Categoria';
+  const [categories, setCategories] = useState(() => (isProfile ? getStoredProfiles() : getStoredCategories()));
   const [filterType, setFilterType] = useState('all'); // 'all', 'task', 'note'
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
   // Form states
   const [name, setName] = useState('');
-  const [emoji, setEmoji] = useState('🏷️');
+  const [icon, setIcon] = useState('tag');
   const [color, setColor] = useState('#3b82f6');
   const [appliesTo, setAppliesTo] = useState('both'); // 'both', 'task', 'note'
 
   const refreshList = () => {
-    setCategories(getStoredCategories());
+    setCategories((isProfile ? getStoredProfiles() : getStoredCategories()));
   };
 
   useEffect(() => {
     refreshList();
     window.addEventListener('coach-categories-changed', refreshList);
-    return () => {
-      window.removeEventListener('coach-categories-changed', refreshList);
-    };
-  }, []);
+    window.addEventListener('coach-profiles-changed', refreshList);
+    return () => { window.removeEventListener('coach-categories-changed', refreshList); window.removeEventListener('coach-profiles-changed', refreshList); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entity]);
 
   const handleOpenCreate = () => {
     setEditingCategory(null);
     setName('');
-    setEmoji('🏷️');
+    setIcon('tag');
     setColor('#3b82f6');
     setAppliesTo(filterType === 'all' ? 'both' : filterType);
     setIsFormOpen(true);
@@ -46,7 +51,7 @@ function GerenciadorCategorias() {
   const handleOpenEdit = (cat) => {
     setEditingCategory(cat);
     setName(cat.name || '');
-    setEmoji(cat.emoji || '🏷️');
+    setIcon(cat.icon || 'tag');
     setColor(cat.color || '#3b82f6');
     setAppliesTo(cat.appliesTo || 'both');
     setIsFormOpen(true);
@@ -59,16 +64,23 @@ function GerenciadorCategorias() {
       return;
     }
 
-    if (editingCategory) {
+    if (isProfile) {
+      const duplicate = categories.some(item => item.id !== editingCategory?.id && item.name.toLowerCase() === name.trim().toLowerCase());
+      if (duplicate) { toast.warning('Já existe um perfil com esse nome.'); return; }
+      const item = { id: editingCategory?.id || `profile_${Date.now()}`, name: name.trim(), icon, color };
+      saveStoredProfiles(editingCategory ? categories.map(cat => cat.id === item.id ? item : cat) : [...categories, item]);
+      if (editingCategory && editingCategory.name !== item.name) window.dispatchEvent(new CustomEvent('coach-profile-renamed', { detail: { previous: editingCategory.name, next: item.name } }));
+      toast.success('Perfil salvo com sucesso!');
+    } else if (editingCategory) {
       updateStoredCategory(editingCategory.id, {
         name: name.trim(),
-        emoji: emoji.trim() || '🏷️',
+        icon: icon || 'tag',
         color: color || '#3b82f6',
         appliesTo: appliesTo || 'both'
       });
       toast.success('Categoria atualizada com sucesso!');
     } else {
-      addStoredCategory(name.trim(), color || '#3b82f6', emoji.trim() || '🏷️', appliesTo || 'both');
+      addStoredCategory(name.trim(), color || '#3b82f6', icon || 'tag', appliesTo || 'both');
       toast.success('Categoria criada com sucesso!');
     }
 
@@ -78,9 +90,13 @@ function GerenciadorCategorias() {
   };
 
   const handleDelete = (cat) => {
-    if (window.confirm(`Deseja realmente excluir a categoria "${cat.name}"?`)) {
-      deleteStoredCategory(cat.id);
-      toast.success(`Categoria "${cat.name}" excluída.`);
+    if (window.confirm(`Deseja realmente excluir ${isProfile ? 'o perfil' : 'a categoria'} "${cat.name}"?`)) {
+      if (isProfile) {
+        saveStoredProfiles(categories.filter(item => item.id !== cat.id));
+        window.dispatchEvent(new CustomEvent('coach-profile-renamed', { detail: { previous: cat.name, next: null } }));
+      }
+      else deleteStoredCategory(cat.id);
+      toast.success(`${entityName} "${cat.name}" excluído(a).`);
       refreshList();
     }
   };
@@ -93,9 +109,9 @@ function GerenciadorCategorias() {
   });
 
   const getScopeLabel = (scope) => {
-    if (scope === 'task') return '🎯 Tarefas';
-    if (scope === 'note') return '📝 Bloco de Notas';
-    return '🔄 Ambos (Tarefas e Notas)';
+    if (scope === 'task') return 'Tarefas';
+    if (scope === 'note') return 'Bloco de Notas';
+    return 'Ambos (Tarefas e Notas)';
   };
 
   return (
@@ -103,7 +119,7 @@ function GerenciadorCategorias() {
       {!isFormOpen ? (
         <div className="categorias-list-section">
           <div className="categorias-toolbar">
-            <div className="scope-filter-chips">
+            {!isProfile && <div className="scope-filter-chips">
               <button 
                 type="button" 
                 className={`scope-chip ${filterType === 'all' ? 'active' : ''}`}
@@ -116,20 +132,20 @@ function GerenciadorCategorias() {
                 className={`scope-chip ${filterType === 'task' ? 'active' : ''}`}
                 onClick={() => setFilterType('task')}
               >
-                🎯 Tarefas
+                <AppIcon name="target" color="currentColor" /> Tarefas
               </button>
               <button 
                 type="button" 
                 className={`scope-chip ${filterType === 'note' ? 'active' : ''}`}
                 onClick={() => setFilterType('note')}
               >
-                📝 Bloco de Notas
+                <AppIcon name="note" color="currentColor" /> Bloco de Notas
               </button>
-            </div>
+            </div>}
 
             <button type="button" className="add-cat-main-btn" onClick={handleOpenCreate}>
               <PlusCircle size={18} />
-              <span>Nova Categoria</span>
+              <span>{isProfile ? 'Novo Perfil' : 'Nova Categoria'}</span>
             </button>
           </div>
 
@@ -138,16 +154,12 @@ function GerenciadorCategorias() {
               filteredCategories.map(cat => (
                 <div key={cat.id} className="categoria-card-item">
                   <div className="categoria-left">
-                    <span 
-                      className="categoria-color-indicator" 
-                      style={{ backgroundColor: cat.color || '#3b82f6' }} 
-                    />
-                    <span className="categoria-emoji">{cat.emoji || '🏷️'}</span>
+                    <AppIcon name={cat.icon} color={cat.color} size={26} />
                     <div className="categoria-info">
                       <h4 className="categoria-name">{cat.name}</h4>
-                      <span className="categoria-scope-tag">
+                      {!isProfile && <span className="categoria-scope-tag">
                         {getScopeLabel(cat.appliesTo)}
-                      </span>
+                      </span>}
                     </div>
                   </div>
 
@@ -156,7 +168,7 @@ function GerenciadorCategorias() {
                       type="button" 
                       className="cat-action-btn edit-cat-btn"
                       onClick={() => handleOpenEdit(cat)}
-                      title="Editar categoria"
+                      title={isProfile ? 'Editar perfil' : 'Editar categoria'}
                     >
                       <Pencil size={18} />
                     </button>
@@ -164,7 +176,7 @@ function GerenciadorCategorias() {
                       type="button" 
                       className="cat-action-btn delete-cat-btn"
                       onClick={() => handleDelete(cat)}
-                      title="Excluir categoria"
+                      title={isProfile ? 'Excluir perfil' : 'Excluir categoria'}
                     >
                       <Trash size={18} />
                     </button>
@@ -182,14 +194,15 @@ function GerenciadorCategorias() {
       ) : (
         <form onSubmit={handleSubmit} className="categoria-form">
           <div className="form-header-row">
-            <h4>{editingCategory ? '✏️ Editar Categoria' : '➕ Nova Categoria'}</h4>
+            <h4><AppIcon name={editingCategory ? "pencil" : "plus"} /> {editingCategory ? `Editar ${entityName}` : isProfile ? 'Novo Perfil' : 'Nova Categoria'}</h4>
           </div>
 
           <div className="form-row-duo">
             <div className="form-field field-name">
-              <label>Nome da Categoria</label>
+              <label htmlFor="category-name">Nome {isProfile ? 'do Perfil' : 'da Categoria'}</label>
               <input 
                 type="text" 
+                id="category-name"
                 value={name} 
                 onChange={e => setName(e.target.value)} 
                 placeholder="Ex: Trabalho, Estudos, Finanças..."
@@ -197,18 +210,14 @@ function GerenciadorCategorias() {
                 autoFocus
               />
             </div>
-            <div className="form-field field-emoji">
-              <label>Emoji</label>
-              <input 
-                type="text" 
-                value={emoji} 
-                onChange={e => setEmoji(e.target.value)} 
-                className="emoji-input-center"
-              />
+            <div className="form-field field-icon">
+              <label htmlFor="category-icon">Ícone</label>
+              <IconSelect id="category-icon" label="Ícone" value={icon} onChange={setIcon}
+                options={ICON_OPTIONS.map(([value, label]) => ({ value, label, icon: value, color }))} />
             </div>
           </div>
 
-          <div className="form-field">
+          {!isProfile && <div className="form-field">
             <label>Onde esta categoria será usada?</label>
             <div className="scope-radio-options">
               <label className={`scope-radio-btn ${appliesTo === 'both' ? 'selected' : ''}`}>
@@ -219,7 +228,7 @@ function GerenciadorCategorias() {
                   checked={appliesTo === 'both'} 
                   onChange={() => setAppliesTo('both')} 
                 />
-                <span>🔄 Tarefas e Bloco de Notas (Ambos)</span>
+                <span>Tarefas e Bloco de Notas (Ambos)</span>
               </label>
               <label className={`scope-radio-btn ${appliesTo === 'task' ? 'selected' : ''}`}>
                 <input 
@@ -229,7 +238,7 @@ function GerenciadorCategorias() {
                   checked={appliesTo === 'task'} 
                   onChange={() => setAppliesTo('task')} 
                 />
-                <span>🎯 Apenas Tarefas</span>
+                <span><AppIcon name="target" /> Apenas Tarefas</span>
               </label>
               <label className={`scope-radio-btn ${appliesTo === 'note' ? 'selected' : ''}`}>
                 <input 
@@ -239,13 +248,13 @@ function GerenciadorCategorias() {
                   checked={appliesTo === 'note'} 
                   onChange={() => setAppliesTo('note')} 
                 />
-                <span>📝 Apenas Bloco de Notas</span>
+                <span><AppIcon name="note" /> Apenas Bloco de Notas</span>
               </label>
             </div>
-          </div>
+          </div>}
 
           <div className="form-field">
-            <label>Cor de Identificação da Categoria</label>
+            <label>Cor de Identificação {isProfile ? 'do Perfil' : 'da Categoria'}</label>
             <div className="color-palette-picker">
               {CATEGORY_COLORS.map(c => (
                 <button
@@ -280,7 +289,7 @@ function GerenciadorCategorias() {
             </button>
             <button type="submit" className="cat-save-btn">
               <CheckCircle size={18} />
-              <span>Salvar Categoria</span>
+              <span>Salvar {entityName}</span>
             </button>
           </div>
         </form>

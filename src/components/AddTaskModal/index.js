@@ -1,6 +1,8 @@
+import AppIcon from '../AppIcon';
 import React, { useState, useEffect } from 'react';
 import { XCircle, Trash, PlusCircle } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import ProfilePicker from '../ProfilePicker';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
 import { renderTextWithLinks } from '../../utils/textUtils';
@@ -17,11 +19,12 @@ const getTodayString = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate, initialCategory = '' }) {
+function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate, initialCategory = '', initialProfile = 'Pessoal' }) {
   const [text, setText] = useState('');
   const [description, setDescription] = useState('');
   const [period, setPeriod] = useState(getCurrentPeriod);
   const [taskDate, setTaskDate] = useState(selectedDate || getTodayString());
+  const [profile, setProfile] = useState(initialProfile);
   const [category, setCategory] = useState('');
   const [color, setColor] = useState('#10b981');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -39,6 +42,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
       setPeriod(getCurrentPeriod());
       setTaskDate(selectedDate || getTodayString());
       setCategory(initialCategory);
+      setProfile(initialProfile);
       setColor('#10b981');
       setIsRecurring(false);
       setRecurringDays([]);
@@ -46,7 +50,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
       setNewSubtaskText('');
       setSaveAsTemplate(false);
     }
-  }, [isOpen, selectedDate, initialCategory]);
+  }, [isOpen, selectedDate, initialCategory, initialProfile]);
 
   const handleTemplateChange = (e) => {
     const templateId = e.target.value;
@@ -56,6 +60,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
       setDescription('');
       setPeriod(getCurrentPeriod());
       setCategory(initialCategory);
+      setProfile(initialProfile);
       setColor('#10b981');
       setIsRecurring(false);
       setRecurringDays([]);
@@ -68,6 +73,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
       setDescription(template.description);
       setPeriod(template.period || 'Manhã');
       setCategory(template.category || '');
+      setProfile(template.profile || initialProfile);
       setColor(template.color || '#10b981');
       setIsRecurring(template.isRecurring || false);
       setRecurringDays(template.recurringDays || []);
@@ -100,6 +106,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
       period: period || 'Manhã',
       date: isRecurring ? (selectedDate || getTodayString()) : (taskDate || selectedDate || getTodayString()),
       category: category || null,
+      profile: profile || null,
       color: color || '#10b981',
 
       isRecurring: Boolean(isRecurring && recurringDays && recurringDays.length > 0),
@@ -124,8 +131,8 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
         <h3>Criar Nova Tarefa</h3>
         
         <form onSubmit={handleSubmit}>
-          {/* Linha 1: Usar Modelo (3/4) e Emoji (20%) */}
-          <div className="form-row-model-emoji">
+          {/* Modelo de tarefa */}
+          <div className="form-row-model">
             <div className="form-group form-col-model">
               <label>Usar um modelo?</label>
               <select onChange={handleTemplateChange}>
@@ -160,6 +167,8 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
               />
             </div>
           </div>
+
+          <ProfilePicker profile={profile} onChange={setProfile} />
 
           {/* Linha 3: Período (2/4) e Data (2/4) */}
           <div className="form-row-period-date">
@@ -231,7 +240,7 @@ function AddTaskModal({ isOpen, onClose, onAddTask, taskTemplates, selectedDate,
               onClick={e => e.stopPropagation()}
             />
             <label htmlFor="saveAsTemplate">
-              ⭐ Salvar como modelo para usar outras vezes
+              <AppIcon name="sparkle" /> Salvar como modelo para usar outras vezes
             </label>
           </div>
           

@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useEffect } from 'react';
 import { CalendarBlank, FastForward, Trash, X } from '@phosphor-icons/react';
 import './styles.css';
@@ -50,7 +51,7 @@ function DeleteTaskModal({
         </div>
 
         <div className="delete-task-info-card">
-          {task.emoji && <span className="delete-task-emoji">{task.emoji}</span>}
+          <AppIcon name={task.isCalendarEvent ? "calendar" : "clipboard"} />
           <div className="delete-task-text-group">
             <span className="delete-task-name">{task.text}</span>
             {dateFormatted && (

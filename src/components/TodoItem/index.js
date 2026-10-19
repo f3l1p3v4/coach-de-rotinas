@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -78,7 +79,7 @@ function TodoItem({
     background: calendarBg,
     backgroundImage: 'none',
     borderColor: isLight ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.3)',
-    boxShadow: isLight ? '0 3px 10px rgba(0, 0, 0, 0.12)' : '0 3px 12px rgba(0, 0, 0, 0.35)'
+    boxShadow: 'none'
   } : undefined;
 
   return (
@@ -103,12 +104,12 @@ function TodoItem({
             <div className="task-floating-badges">
               {showCalendarBadge && (
                 <span className="calendar-badge-tag">
-                  📅 Google Agenda
+                  <AppIcon name="calendar" /> Google Agenda
                 </span>
               )}
               {showTimeBadge && (
                 <span className="calendar-time-tag">
-                  ⏰ {task.time}
+                  <AppIcon name="timer" size={16} /> {task.time}
                 </span>
               )}
               {showRecurrenceBadge && (

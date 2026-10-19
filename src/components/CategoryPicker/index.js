@@ -1,3 +1,5 @@
+import AppIcon from '../AppIcon';
+import IconSelect from '../IconSelect';
 import React, { useState, useEffect } from 'react';
 import { 
   getStoredCategories, 
@@ -35,7 +37,7 @@ function CategoryPicker({
   }, [appliesTo]);
 
   const handleSelectChange = (e) => {
-    const val = e.target.value;
+    const val = e;
     if (val === '__NEW__') {
       setIsCreatingNew(true);
       setNewCatName('');
@@ -49,7 +51,7 @@ function CategoryPicker({
     if (e) e.preventDefault();
     if (!newCatName.trim()) return;
     const name = newCatName.trim();
-    const updated = addStoredCategory(name, '#3b82f6', '🏷️', appliesTo);
+    const updated = addStoredCategory(name, '#3b82f6', 'tag', appliesTo);
     if (updated) {
       setCategories(getStoredCategories(appliesTo));
     }
@@ -74,19 +76,10 @@ function CategoryPicker({
         <div className="category-field-group">
         <label className="picker-label">Categoria</label>
         {!isCreatingNew ? (
-          <select 
-            value={category || ''} 
-            onChange={handleSelectChange}
-            className="category-dropdown"
-          >
-            <option value="">📝 Sem Categoria</option>
-            {categories.map(cat => (
-              <option key={cat.id || cat.name} value={cat.name}>
-                {cat.emoji || '🏷️'} {cat.name}
-              </option>
-            ))}
-            <option value="__NEW__">➕ Criar nova categoria...</option>
-          </select>
+          <IconSelect label="Categoria" value={category || ''} onChange={handleSelectChange}
+            options={[{ value: '', label: 'Sem Categoria', icon: 'tag' },
+              ...categories.map(cat => ({ value: cat.name, label: cat.name, icon: cat.icon, color: cat.color })),
+              { value: '__NEW__', label: 'Criar nova categoria...', icon: 'plus' }]} />
         ) : (
           <div className="new-category-inline-form">
             <input 
@@ -109,8 +102,9 @@ function CategoryPicker({
               type="button" 
               onClick={() => setIsCreatingNew(false)} 
               className="new-cat-cancel-btn"
+              aria-label="Cancelar nova categoria"
             >
-              ✕
+              <AppIcon name="close" />
             </button>
           </div>
         )}
@@ -132,7 +126,6 @@ function CategoryPicker({
                     borderColor: isSelected ? level.color : undefined,
                     color: isSelected ? 'var(--title-color, #111827)' : 'var(--secondary-text, #4b5563)',
                     fontWeight: isSelected ? 700 : 500,
-                    boxShadow: isSelected ? `0 0 0 1px ${level.color}` : undefined
                   }}
                   onClick={() => handleSelectDifficulty(level)}
                   title={level.description}

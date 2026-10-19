@@ -1,0 +1,14 @@
+.app-icon {
+  display: inline-block;
+  vertical-align: -0.18em;
+  flex-shrink: 0;
+}
+.icon-select-field { position: relative; }
+.icon-select-field > .app-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.icon-select-field > select { padding-left: 2.5rem !important; width: 100%; }

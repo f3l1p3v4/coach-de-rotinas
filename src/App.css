@@ -373,7 +373,7 @@ input:checked + .slider:before {
   border-color: var(--primary-bg);
   color: var(--primary-text);
 }
-.add-task-modal .form-row-model-emoji .form-col-model { flex: 1; width: 100%; }
+.add-task-modal .form-row-model .form-col-model { flex: 1; width: 100%; }
 
 /* --- Links Clicáveis Automáticos em Tarefas e Subtarefas --- */
 .auto-link {
@@ -394,4 +394,32 @@ li.completed .auto-link,
 .paragraph-checked .auto-link {
   color: inherit;
   opacity: 0.7;
+}
+
+/* Flat surfaces: no glow or shadows, including completion indicators. */
+*, *::before, *::after { box-shadow: none !important; text-shadow: none !important; }
+:focus-visible { outline: 2px solid var(--primary-bg); outline-offset: 2px; }
+.scope-chip { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; text-align: center; color: var(--primary-bg); }
+.scope-chip .app-icon { color: currentColor; }
+.ajustes-tabs-bar { flex-wrap: wrap; }
+.ajustes-tab-btn { flex: 1 1 110px; justify-content: center; }
+.planner-header h1 { display: flex; align-items: center; gap: .65rem; }
+.planner-header .brand-icon { display: block; }
+.profile-field > label { display: block; margin-bottom: .4rem; font-size: .8rem; text-transform: uppercase; color: var(--text-light-color); }
+.profile-field { margin-bottom: 1rem; }
+.task-title-line .todo-paragraph { margin: 0; }
+.task-title-line .task-execution-time { position: static; font-size: .8rem; white-space: normal; line-height: 1.3; }
+.task-category-label { display: inline-flex; align-items: center; gap: .35rem; margin-top: .4rem; font-size: .9rem; color: var(--secondary-text); }
+.todo-item.calendar-event-item .task-category-label { color: inherit; }
+.gerenciador-categorias-wrapper .scope-chip { color: var(--primary-bg); }
+.gerenciador-categorias-wrapper .scope-chip.active { color: var(--primary-bg); background: var(--card-bg); border-color: var(--primary-bg); }
+@media (max-width: 480px) {
+  .planner-header { gap: .65rem; }
+  .planner-header h1 { font-size: 1.65rem; white-space: nowrap; gap: .4rem; }
+  .planner-header .brand-icon { width: 30px; height: 30px; }
+  .planner-header > .add-task-button { flex-shrink: 0; font-size: 1rem; padding: .5rem .65rem; gap: .4rem; white-space: nowrap; }
+  .planner-header > .add-task-button svg { width: 22px; height: 22px; }
+  .category-filter-bar-container { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .category-filter-bar { align-self: flex-start; max-width: 100%; box-sizing: border-box; }
+  .planner-weekday-display { align-self: flex-end; }
 }

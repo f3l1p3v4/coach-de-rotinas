@@ -1,3 +1,4 @@
+import { migrateTaskProfile } from '../constants/profiles';
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
 /**
@@ -31,7 +32,9 @@ const parseRecurringDaysList = (val) => {
 };
 
 export async function loadUserTasks(userId) {
-  let localTasks = parseLocalTasks();
+  let localTasks = parseLocalTasks().map(migrateTaskProfile);
+  let cachedProfiles = {};
+  try { cachedProfiles = JSON.parse(localStorage.getItem(`task_profiles_${userId || 'guest'}`)) || {}; } catch (error) {}
 
   // Se daily_tasks estiver vazio, verificar backup de emergência
   if (localTasks.length === 0) {
@@ -40,7 +43,7 @@ export async function loadUserTasks(userId) {
       if (backup) {
         const parsedBackup = JSON.parse(backup);
         if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
-          localTasks = parsedBackup;
+          localTasks = parsedBackup.map(migrateTaskProfile);
           localStorage.setItem('daily_tasks', JSON.stringify(localTasks));
         }
       }
@@ -90,7 +93,8 @@ export async function loadUserTasks(userId) {
 
             const isRecurring = Boolean(t.is_recurring ?? t.isRecurring ?? false);
 
-            return {
+            return migrateTaskProfile({
+              ...(t.profile !== undefined ? { profile: t.profile } : Object.prototype.hasOwnProperty.call(cachedProfiles, String(t.id)) ? { profile: cachedProfiles[String(t.id)] } : {}),
               id: String(t.id),
               text: t.text || '',
               emoji: '',
@@ -111,7 +115,7 @@ export async function loadUserTasks(userId) {
               description: t.description || '',
               orderIndex: (t.order_index !== undefined && t.order_index !== null) ? Number(t.order_index) : null,
               subtasks: typeof t.subtasks === 'string' ? JSON.parse(t.subtasks) : (t.subtasks || [])
-            };
+            });
           });
 
           // Restaura rigorosamente a ordem definida pelo usuário através de daily_tasks_order ou localTasks
@@ -163,6 +167,8 @@ export async function loadUserTasks(userId) {
 export async function syncUserTasks(userId, tasks) {
   if (!Array.isArray(tasks)) return;
 
+  localStorage.setItem(`task_profiles_${userId || 'guest'}`, JSON.stringify(Object.fromEntries(tasks.map(task => [String(task.id), task.profile || null]))));
+
   // 1. Salvar no localStorage sempre para cache offline
   localStorage.setItem('daily_tasks', JSON.stringify(tasks));
   localStorage.setItem('daily_tasks_order', JSON.stringify(tasks.map(t => String(t.id))));
@@ -192,6 +198,7 @@ export async function syncUserTasks(userId, tasks) {
           time: t.time || '',
           period: t.period || 'Manhã',
           category: t.category || null,
+          profile: t.profile || null,
           color: t.color || null,
           date: t.date || null,
           status: t.completed ? 'completed' : (t.status || 'pending'),
@@ -210,19 +217,27 @@ export async function syncUserTasks(userId, tasks) {
         return item;
       });
 
+      const upsertTasks = async payload => {
+        let result = await supabase.from('tasks').upsert(payload, { onConflict: 'id' });
+        if (result.error?.message?.includes('profile')) {
+          result = await supabase.from('tasks').upsert(payload.map(({ profile, ...item }) => item), { onConflict: 'id' });
+        }
+        return result;
+      };
+
       // Tentativa 1: upsert com order_index
-      let { error: syncError } = await supabase.from('tasks').upsert(buildPayload(true, false), { onConflict: 'id' });
+      let { error: syncError } = await upsertTasks(buildPayload(true, false));
 
       // Fallback 1: se order_index não existir no banco, tenta sem ele
       if (syncError && syncError.message && syncError.message.includes('order_index')) {
-        const retryNoOrder = await supabase.from('tasks').upsert(buildPayload(false, false), { onConflict: 'id' });
+        const retryNoOrder = await upsertTasks(buildPayload(false, false));
         syncError = retryNoOrder.error;
       }
 
       // Fallback 2: se falhou por tipo de array em recurring_days
       if (syncError) {
         console.warn('Tentando upsert alternativo para recurring_days:', syncError);
-        const retryNum = await supabase.from('tasks').upsert(buildPayload(false, true), { onConflict: 'id' });
+        const retryNum = await upsertTasks(buildPayload(false, true));
         syncError = retryNum.error;
       }
 
@@ -307,10 +322,11 @@ export async function loadUserTemplates(userId, initialTemplates) {
 
       if (!error && Array.isArray(data)) {
         if (data.length > 0) {
-          const remoteTemplates = data.map(t => ({
+          const remoteTemplates = data.map(t => migrateTaskProfile({
             id: String(t.id),
             text: t.text || '',
             emoji: '',
+            ...(t.profile !== undefined ? { profile: t.profile } : localTemplates.find(item => String(item.id) === String(t.id) && Object.prototype.hasOwnProperty.call(item, 'profile')) ? { profile: localTemplates.find(item => String(item.id) === String(t.id)).profile } : {}),
             category: t.category || null,
             color: t.color || null,
             isRecurring: Boolean(t.is_recurring ?? t.isRecurring ?? false),
@@ -333,7 +349,7 @@ export async function loadUserTemplates(userId, initialTemplates) {
     }
   }
 
-  return localTemplates.map(({ emoji, ...template }) => template);
+  return localTemplates.map(({ emoji, ...template }) => migrateTaskProfile(template));
 }
 
 export async function syncUserTemplates(userId, templates) {
@@ -359,6 +375,7 @@ export async function syncUserTemplates(userId, templates) {
           text: t.text || '',
           emoji: '',
           category: t.category || null,
+          profile: t.profile || null,
           color: t.color || null,
           is_recurring: Boolean(t.isRecurring),
           recurring_days: t.recurringDays || [],
@@ -366,7 +383,11 @@ export async function syncUserTemplates(userId, templates) {
           subtasks: t.subtasks || []
         }));
 
-        const { error: insertError } = await supabase.from('task_templates').insert(fullPayload);
+        let { error: insertError } = await supabase.from('task_templates').insert(fullPayload);
+        if (insertError?.message?.includes('profile')) {
+          const retry = await supabase.from('task_templates').insert(fullPayload.map(({ profile, ...item }) => item));
+          insertError = retry.error;
+        }
         if (insertError) {
           console.warn('Falha ao inserir modelos com category/color/is_recurring, tentando payload básico:', insertError);
           const basicPayload = templates.map(t => ({

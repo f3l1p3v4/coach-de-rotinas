@@ -11,6 +11,8 @@ import {
   CalendarBlank
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import { getTaskProfile } from '../../constants/profiles';
+import ProfilePicker from '../ProfilePicker';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';
 import { renderTextWithLinks } from '../../utils/textUtils';
@@ -33,6 +35,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
   const [text, setText] = useState(task?.text || '');
   const [period, setPeriod] = useState(task?.period || 'Manhã');
   const [date, setDate] = useState(task?.date || selectedDate || getTodayString());
+  const [profile, setProfile] = useState(getTaskProfile(task || {}));
   const [category, setCategory] = useState(task?.category || '');
   const [color, setColor] = useState(task?.color || '#10b981');
   const [isRecurring, setIsRecurring] = useState(task?.isRecurring || false);
@@ -47,6 +50,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
       setPeriod(task.period || 'Manhã');
       setDate(task.date || selectedDate || getTodayString());
       setCategory(task.category || '');
+      setProfile(getTaskProfile(task));
       setColor(task.color || '#10b981');
       setIsRecurring(task.isRecurring || false);
       setRecurringDays(task.recurringDays || []);
@@ -93,6 +97,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
           period,
           date: date || task?.date || null,
           category: category || null,
+          profile: profile || null,
           color: color || '#10b981',
 
           isRecurring: Boolean(isRecurring && recurringDays && recurringDays.length > 0),
@@ -143,7 +148,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
               <div className="form-row-name-category">
                 <div className="form-group form-col-name">
                   <label>Nome da Tarefa</label>
-                  <div className="title-with-emoji-container">
+                  <div className="task-title-container">
                     <input 
                       type="text" 
                       value={text} 
@@ -255,6 +260,8 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
               </div>
             </>
           )}
+
+          <ProfilePicker profile={profile} onChange={setProfile} />
 
           <CategoryPicker 
             color={color}

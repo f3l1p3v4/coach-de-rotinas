@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
@@ -18,7 +19,7 @@ import TaskCompletionModal from '../TaskCompletionModal';
 import TaskObservationModal from '../TaskObservationModal';
 import DeleteTaskModal from '../DeleteTaskModal';
 import CategoryFilterBar from '../CategoryFilterBar';
-import { getStoredCategories } from '../../constants/categories';
+import { getStoredProfiles, getTaskProfile, migrateTaskProfile } from '../../constants/profiles';
 import {
   getGoogleAccessToken,
   fetchGoogleEvents,
@@ -160,7 +161,7 @@ function DailyPlanner({
       try {
         const parsed = JSON.parse(savedTasks);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsed)));
+          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsed.map(migrateTaskProfile))));
         }
       } catch (e) {}
     }
@@ -169,7 +170,7 @@ function DailyPlanner({
       try {
         const parsedBackup = JSON.parse(backup);
         if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
-          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsedBackup)));
+          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsedBackup.map(migrateTaskProfile))));
         }
       } catch (e) {}
     }
@@ -183,10 +184,13 @@ function DailyPlanner({
   const [taskForCompletion, setTaskForCompletion] = useState(null);
   const [taskForObservation, setTaskForObservation] = useState(null);
   const [taskToDelete, setTaskToDelete] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(() => {
-    const saved = localStorage.getItem('selected_planner_category');
+  const [selectedProfile, setSelectedProfile] = useState(() => {
+    const saved = localStorage.getItem('selected_planner_profile');
     return saved || 'Trabalho';
   });
+  useEffect(() => {
+    localStorage.setItem('selected_planner_profile', selectedProfile);
+  }, [selectedProfile]);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
   const audioContextRef = useRef(null);
@@ -196,7 +200,7 @@ function DailyPlanner({
     const savedTemplates = localStorage.getItem('custom_task_templates');
     if (savedTemplates) {
       try {
-        return JSON.parse(savedTemplates);
+        return JSON.parse(savedTemplates).map(migrateTaskProfile);
       } catch (e) {
         return initialTaskTemplates;
       }
@@ -207,7 +211,7 @@ function DailyPlanner({
   const templates = propTemplates || internalTemplates;
   const setTemplates = propSetTemplates || setInternalTemplates;
 
-  const [plannerCategories, setPlannerCategories] = useState(() => getStoredCategories('task'));
+  const [plannerProfiles, setPlannerProfiles] = useState(() => getStoredProfiles());
 
   const [calendarEvents, setCalendarEvents] = useState(() => {
     try {
@@ -303,9 +307,9 @@ function DailyPlanner({
   }, []);
 
   useEffect(() => {
-    const handleCatsChanged = () => setPlannerCategories(getStoredCategories('task'));
-    window.addEventListener('coach-categories-changed', handleCatsChanged);
-    return () => window.removeEventListener('coach-categories-changed', handleCatsChanged);
+    const handleCatsChanged = () => setPlannerProfiles(getStoredProfiles());
+    window.addEventListener('coach-profiles-changed', handleCatsChanged);
+    return () => window.removeEventListener('coach-profiles-changed', handleCatsChanged);
   }, []);
 
   // Efeito para adicionar tarefas vindas da Agenda
@@ -315,6 +319,7 @@ function DailyPlanner({
       const newTask = {
         id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         text: calendarTaskToAdd.text,
+        profile: calendarTaskToAdd.profile || 'Pessoal',
         description: calendarTaskToAdd.description || '',
         time: calendarTaskToAdd.time || '09:00',
         period: calendarTaskToAdd.period || 'Manhã',
@@ -510,6 +515,24 @@ function DailyPlanner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const renameProfile = ({ detail: { previous, next } }) => {
+      setTasks(items => items.map(task => getTaskProfile(task) === previous ? { ...task, profile: next } : task));
+      setSelectedProfile(current => current === previous ? (next || '__none__') : current);
+      setCalendarPriorityMap(items => {
+        const updated = { ...items };
+        calendarEvents.forEach(event => {
+          const settings = items[event.id] || {};
+          if ((settings.profile === undefined ? 'Pessoal' : settings.profile) === previous) updated[event.id] = { ...settings, profile: next };
+        });
+        localStorage.setItem('calendar_priority_map', JSON.stringify(updated));
+        return updated;
+      });
+    };
+    window.addEventListener('coach-profile-renamed', renameProfile);
+    return () => window.removeEventListener('coach-profile-renamed', renameProfile);
+  }, [calendarEvents]);
+
   const handleMoveToToday = (taskId) => {
     setTasks(prev => prev.map(t => {
       if (t.id === taskId) {
@@ -559,6 +582,7 @@ function DailyPlanner({
         id: Date.now().toString(),
         text: newTask.text,
         category: newTask.category || '',
+        profile: newTask.profile || null,
         color: newTask.color || '',
         description: newTask.description || '',
         subtasks: newTask.subtasks || [],
@@ -580,6 +604,8 @@ function DailyPlanner({
             ...prev,
             [origId]: {
               color: updatedTask.color || '#10b981',
+              category: updatedTask.category || null,
+              profile: updatedTask.profile || null,
               difficulty: updatedTask.difficulty || 'low',
               period: updatedTask.period,
               description: updatedTask.description
@@ -653,6 +679,7 @@ function DailyPlanner({
           text: sanitizedTask.text,
           period: sanitizedTask.period,
           category: sanitizedTask.category,
+          profile: sanitizedTask.profile,
           color: sanitizedTask.color,
           date: sanitizedTask.date,
           isRecurring: sanitizedTask.isRecurring,
@@ -676,6 +703,7 @@ function DailyPlanner({
           const newTask = {
             id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
             text: item.text,
+            profile: item.profile || 'Pessoal',
             description: item.description || '',
             time: item.time || '09:00',
             period: item.period || 'Manhã',
@@ -779,7 +807,7 @@ function DailyPlanner({
         const completedTask = tasks.find(t => t.id === activeTimer.taskId);
         const endMessage = `Tempo para ${completedTask?.text || 'a tarefa'} concluído!`;
         speak(endMessage);
-        toast.success(endMessage, { icon: '🎉' });
+        toast.success(endMessage, { icon: <AppIcon name="trophy" /> });
         handleCancelTimer();
       }
     }
@@ -891,7 +919,7 @@ function DailyPlanner({
     if (task.isBirthday) return;
 
     if (activeTimer.taskId === id) {
-      const userConfirmed = window.confirm("⏱️ A atividade está em andamento. Deseja realmente parar o timer e definir a conclusão?");
+      const userConfirmed = window.confirm("A atividade está em andamento. Deseja realmente parar o timer e definir a conclusão?");
       if (userConfirmed) {
         handleCancelTimer();
       } else {
@@ -942,7 +970,7 @@ function DailyPlanner({
       }));
 
       setTaskForCompletion(null);
-      toast.success(status === 'completed' ? 'Compromisso concluído! ✅' : 'Compromisso marcado como não concluído. ❌');
+      toast.success(status === 'completed' ? 'Compromisso concluído!' : 'Compromisso marcado como não concluído.');
       return;
     }
 
@@ -1023,7 +1051,7 @@ function DailyPlanner({
     }));
 
     setTaskForCompletion(null);
-    toast.success(status === 'completed' ? 'Tarefa concluída! ✅' : 'Tarefa marcada como não concluída. ❌');
+    toast.success(status === 'completed' ? 'Tarefa concluída!' : 'Tarefa marcada como não concluída.');
   };
 
   const handleResetPending = (taskId) => {
@@ -1223,9 +1251,9 @@ function DailyPlanner({
   };
 
   const handleSelectCategory = (catName) => {
-    setSelectedCategory(catName);
+    setSelectedProfile(catName);
     try {
-      localStorage.setItem('selected_planner_category', catName);
+      localStorage.setItem('selected_planner_profile', catName);
     } catch (e) {}
   };
 
@@ -1415,7 +1443,8 @@ function DailyPlanner({
       description: customPrio.description || evt.description || '',
       time: evt.time || '09:00',
       period: customPrio.period || evt.period || 'Manhã',
-      category: 'Pessoal',
+      category: customPrio.category || null,
+      profile: customPrio.profile === undefined ? 'Pessoal' : customPrio.profile,
       calendarColor: calendarBgColor,
       color: priorityColor,
       difficulty: customPrio.difficulty || 'low',
@@ -1433,23 +1462,23 @@ function DailyPlanner({
 
   const allTasksForSelectedDate = [...tasksForSelectedDate, ...calendarTasksForSelectedDate];
 
-  const categoryCounts = {};
+  const profileCounts = {};
   let uncategorizedCount = 0;
   allTasksForSelectedDate.forEach(t => {
-    if (t.category) {
-      categoryCounts[t.category] = (categoryCounts[t.category] || 0) + 1;
+    if (getTaskProfile(t)) {
+      profileCounts[getTaskProfile(t)] = (profileCounts[getTaskProfile(t)] || 0) + 1;
     } else {
       uncategorizedCount += 1;
     }
   });
 
   const filteredTasks = allTasksForSelectedDate.filter(t => {
-    if (!selectedCategory) return true;
-    if (selectedCategory === '__none__') {
-      return !t.category;
+    if (!selectedProfile) return true;
+    if (selectedProfile === '__none__') {
+      return !getTaskProfile(t);
     }
-    const taskCat = (t.category || '').toLowerCase().trim();
-    const selCat = (selectedCategory || '').toLowerCase().trim();
+    const taskCat = (getTaskProfile(t) || '').toLowerCase().trim();
+    const selCat = (selectedProfile || '').toLowerCase().trim();
     return taskCat === selCat;
   });
 
@@ -1590,7 +1619,7 @@ function DailyPlanner({
 
         <div className="top-actions-right">
           <div className="theme-toggle-container" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.2rem' }}>{isDarkMode ? '🌙' : '☀️'}</span>
+            <span style={{ fontSize: '1.2rem' }}><AppIcon name={isDarkMode ? "moon" : "sun"} color="var(--primary-bg)" size={24} /></span>
             <label className="switch">
               <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} />
               <span className="slider round"></span>
@@ -1617,7 +1646,7 @@ function DailyPlanner({
       </div>
 
       <div className="planner-header">
-        <h1>Focus Task 🎯</h1>
+        <h1>Focus Task <AppIcon name="target" size={36} className="brand-icon" /></h1>
         <button className="add-task-button" onClick={() => setIsAddTaskModalOpen(true)}>
           <PlusCircle size={28} />
           <span>Nova Tarefa</span>
@@ -1625,12 +1654,12 @@ function DailyPlanner({
       </div>
 
       <CategoryFilterBar
-        categories={plannerCategories}
-        categoryCounts={categoryCounts}
+        profiles={plannerProfiles}
+        profileCounts={profileCounts}
         totalCount={allTasksForSelectedDate.length}
         uncategorizedCount={uncategorizedCount}
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleSelectCategory}
+        selectedProfile={selectedProfile}
+        onSelectProfile={handleSelectCategory}
         weekday={getWeekdayLabel(selectedDate)}
       />
 
@@ -1697,7 +1726,7 @@ function DailyPlanner({
         onAddTask={handleAddTask}
         taskTemplates={templates}
         selectedDate={selectedDate}
-        initialCategory={selectedCategory && selectedCategory !== '__none__' ? selectedCategory : ''}
+        initialProfile={selectedProfile && selectedProfile !== '__none__' ? selectedProfile : ''}
       />
       {taskForCompletion && (
         <TaskCompletionModal

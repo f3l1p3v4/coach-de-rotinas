@@ -1,6 +1,6 @@
 export const DEFAULT_CATEGORIES = [
-  { id: 'trabalho', name: 'Trabalho', color: '#3b82f6', emoji: '💼', appliesTo: 'both' },
-  { id: 'pessoal', name: 'Pessoal', color: '#10b981', emoji: '👤', appliesTo: 'both' },
+  { id: 'musica', name: 'Música', color: '#8b5cf6', icon: 'music', appliesTo: 'both' },
+  { id: 'casa', name: 'Casa', color: '#10b981', icon: 'house', appliesTo: 'both' },
 ];
 
 export const CATEGORY_COLORS = [
@@ -15,6 +15,12 @@ export const CATEGORY_COLORS = [
   '#64748b', // Cinza
 ];
 
+const normalizeCategory = ({ emoji, ...category }) => {
+  if (category.id === 'trabalho' && category.name === 'Trabalho') return { ...category, ...DEFAULT_CATEGORIES[0] };
+  if (category.id === 'pessoal' && category.name === 'Pessoal') return { ...category, ...DEFAULT_CATEGORIES[1] };
+  return { ...category, icon: category.icon || 'tag' };
+};
+
 export function getStoredCategories(filterAppliesTo = null) {
   let list = DEFAULT_CATEGORIES;
   try {
@@ -27,6 +33,7 @@ export function getStoredCategories(filterAppliesTo = null) {
     }
   } catch (e) {}
 
+  list = list.map(normalizeCategory);
   if (!filterAppliesTo) return list;
 
   return list.filter(cat => {
@@ -44,6 +51,7 @@ export function notifyCategoriesChanged(updated) {
 
 export function saveStoredCategories(categories) {
   try {
+    categories = categories.map(normalizeCategory);
     localStorage.setItem('coach_categories', JSON.stringify(categories));
     notifyCategoriesChanged(categories);
   } catch (e) {}
@@ -56,7 +64,7 @@ export function getCategoryColor(categoryName, defaultColor = '#3b82f6') {
   return match ? match.color : defaultColor;
 }
 
-export function addStoredCategory(name, color = '#3b82f6', emoji = '🏷️', appliesTo = 'both') {
+export function addStoredCategory(name, color = '#3b82f6', icon = 'tag', appliesTo = 'both') {
   if (!name || !name.trim()) return;
   const categories = getStoredCategories();
   const exists = categories.some(c => c.name.toLowerCase() === name.trim().toLowerCase());
@@ -65,7 +73,7 @@ export function addStoredCategory(name, color = '#3b82f6', emoji = '🏷️', ap
       id: `cat_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       name: name.trim(),
       color: color || '#3b82f6',
-      emoji: emoji || '🏷️',
+      icon: icon || 'tag',
       appliesTo: appliesTo || 'both'
     }];
     saveStoredCategories(updated);

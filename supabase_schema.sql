@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     id TEXT PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
-    emoji TEXT DEFAULT '📝',
+    emoji TEXT DEFAULT '',
     description TEXT DEFAULT '',
     time TEXT DEFAULT '',
     period TEXT DEFAULT 'Manhã',
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS public.task_templates (
     id TEXT PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
-    emoji TEXT DEFAULT '📋',
+    emoji TEXT DEFAULT '',
     category TEXT,
     color TEXT,
     is_recurring BOOLEAN DEFAULT FALSE,
@@ -150,4 +150,22 @@ DO $$ BEGIN
         CREATE POLICY "Users can manage their own focus score" ON public.focus_score
         FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
     END IF;
+END $$;
+
+-- Executar no SQL Editor do Supabase. Cada tabela só é migrada uma vez.
+-- Perfis são independentes das categorias; nenhuma tarefa é apagada.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'tasks' AND column_name = 'profile') THEN
+    ALTER TABLE public.tasks ADD COLUMN profile TEXT;
+    UPDATE public.tasks
+    SET profile = CASE WHEN category IN ('Pessoal', 'Trabalho') THEN category ELSE 'Pessoal' END,
+        category = CASE WHEN category IN ('Pessoal', 'Trabalho') THEN NULL ELSE category END;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'task_templates' AND column_name = 'profile') THEN
+    ALTER TABLE public.task_templates ADD COLUMN profile TEXT;
+    UPDATE public.task_templates
+    SET profile = CASE WHEN category IN ('Pessoal', 'Trabalho') THEN category ELSE 'Pessoal' END,
+        category = CASE WHEN category IN ('Pessoal', 'Trabalho') THEN NULL ELSE category END;
+  END IF;
 END $$;

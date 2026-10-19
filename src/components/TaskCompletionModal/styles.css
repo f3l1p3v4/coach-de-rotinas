@@ -75,10 +75,6 @@
   white-space: nowrap;
 }
 
-.task-reference-title .task-emoji {
-  font-size: 1rem;
-}
-
 .task-reference-title .task-name-text {
   font-weight: 500;
   color: var(--text-color, #e4e4e7);

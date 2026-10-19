@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React from 'react';
 import { DAYS_OF_WEEK } from '../../constants/recurrence';
 import './styles.css';
@@ -52,7 +53,7 @@ function RecurrenceSelector({ isRecurring, onChangeIsRecurring, recurringDays = 
 
   return (
     <div className="recurrence-selector-container">
-      <label className="recurrence-label">🔁 Repetir Tarefa / Tarefa Fixa</label>
+      <label className="recurrence-label"><AppIcon name="repeat" /> Repetir Tarefa / Tarefa Fixa</label>
       
       <div className="recurrence-mode-wrapper">
         <select 

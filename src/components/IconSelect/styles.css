@@ -1,0 +1,19 @@
+.icon-select { position: relative; min-width: 0; width: 100%; }
+.icon-select-trigger {
+  display: flex; align-items: center; gap: .6rem; width: 100%; min-height: 44px;
+  padding: .65rem .85rem; border: 1px solid var(--primary-bg); border-radius: 8px;
+  color: var(--text-color); background: var(--card-bg); cursor: pointer; font-size: .95rem;
+  text-align: left;
+}
+.icon-select-trigger > span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.icon-select-trigger:focus-visible { outline: 2px solid var(--primary-bg); outline-offset: 2px; }
+.icon-select-menu {
+  position: absolute; z-index: 1100; inset: calc(100% + 5px) 0 auto; margin: 0;
+  padding: .3rem; list-style: none; max-height: 230px; overflow-y: auto;
+  border: 1px solid var(--primary-bg); border-radius: 8px; background: var(--card-bg); color: var(--text-color);
+  min-width: min(220px, 100%);
+}
+.icon-select-menu [role='option'] { display: flex; align-items: center; gap: .6rem; padding: .65rem .55rem; border-radius: 5px; cursor: pointer; font-size: 1rem; }
+.icon-select-menu [role='option'] > span { flex: 1; }
+.icon-select-menu .highlighted { background: var(--sidebar-bg); outline: 1px solid var(--border-color); }
+.icon-select-menu { left: auto; right: 0; width: max-content; min-width: 100%; max-width: min(300px, calc(100vw - 3rem)); box-sizing: border-box; }

@@ -7,6 +7,7 @@ import BlocoDeNotas from './components/BlocoDeNotas';
 import AuthModal from './components/AuthModal';
 import GoogleCalendarCard from './components/GoogleCalendarCard';
 import { DEFAULT_CATEGORIES, saveStoredCategories } from './constants/categories';
+import { DEFAULT_PROFILES, saveStoredProfiles, migrateTaskProfile, getTaskProfile } from './constants/profiles';
 import { Toaster } from 'sonner';
 
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
@@ -44,7 +45,7 @@ function App() {
       const saved = localStorage.getItem('custom_task_templates');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.map(migrateTaskProfile);
       }
     } catch (e) {}
     return initialTaskTemplates;
@@ -118,6 +119,31 @@ function App() {
     window.addEventListener('coach-categories-changed', persist);
     return () => window.removeEventListener('coach-categories-changed', persist);
   }, [user?.id, user?.created_at]);
+
+  useEffect(() => {
+    const key = `coach_profiles_${user?.id || 'guest'}`;
+    const previousKey = localStorage.getItem('coach_profiles_owner');
+    if (previousKey && previousKey !== key) {
+      const previous = localStorage.getItem('coach_profiles');
+      if (previous) localStorage.setItem(previousKey, previous);
+    }
+    let profiles = DEFAULT_PROFILES;
+    try {
+      const saved = localStorage.getItem(key) || (!previousKey ? localStorage.getItem('coach_profiles') : null);
+      if (saved && Array.isArray(JSON.parse(saved))) profiles = JSON.parse(saved);
+    } catch (error) {}
+    localStorage.setItem('coach_profiles_owner', key);
+    saveStoredProfiles(profiles);
+    const persist = event => localStorage.setItem(key, JSON.stringify(event.detail));
+    window.addEventListener('coach-profiles-changed', persist);
+    return () => window.removeEventListener('coach-profiles-changed', persist);
+  }, [user?.id]);
+
+  useEffect(() => {
+    const rename = ({ detail: { previous, next } }) => setTemplates(items => items.map(item => getTaskProfile(item) === previous ? { ...item, profile: next } : item));
+    window.addEventListener('coach-profile-renamed', rename);
+    return () => window.removeEventListener('coach-profile-renamed', rename);
+  }, []);
 
   // Sincronizar modelos ao alterar (apenas após inicialização)
   useEffect(() => {

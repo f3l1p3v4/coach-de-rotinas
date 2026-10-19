@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React from 'react';
 
 import './styles.css';
@@ -5,7 +6,7 @@ import './styles.css';
 const PomodoroDots = ({ count }) => {
   const dots = [];
   for (let i = 0; i < count; i++) {
-    dots.push(<span key={i}>🍅</span>);
+    dots.push(<span key={i}><AppIcon name="timer" /></span>);
   }
   return <div className="pomodoro-dots">{dots}</div>;
 };
@@ -13,7 +14,7 @@ const PomodoroDots = ({ count }) => {
 function PlacarFoco({ count }) {
   return (
     <div className="content-section placar-foco-container">
-      <h3>🏆 Placar de Foco do Dia</h3>
+      <h3><AppIcon name="trophy" /> Placar de Foco do Dia</h3>
       <div className="placar-display">
         <span className="placar-count">{count}</span>
         <span className="placar-label">Ciclo(s) de Foco Concluído(s)</span>

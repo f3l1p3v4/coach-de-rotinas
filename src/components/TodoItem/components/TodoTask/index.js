@@ -1,3 +1,5 @@
+import { getStoredCategories } from '../../../../constants/categories';
+import AppIcon from '../../../AppIcon';
 import React from 'react';
 import { renderTextWithLinks } from '../../../../utils/textUtils';
 import './styles.css';
@@ -14,6 +16,7 @@ const formatTimeStr = (isoDate) => {
 };
 
 function TodoTask({ task, onOpenDetails }) {
+  const category = getStoredCategories().find(item => item.name === task.category);
   const startTime = formatTimeStr(task.startedAt);
   const endTime = formatTimeStr(task.completedAt);
 
@@ -47,16 +50,17 @@ function TodoTask({ task, onOpenDetails }) {
               className="task-has-observation-badge" 
               title={`Observação: ${task.observation}`}
             >
-              💬
+              <AppIcon name="chat" />
             </span>
           )}
         </p>
+        {executionTimeText && (
+          <span className="task-execution-time">
+            {executionTimeText}
+          </span>
+        )}
       </div>
-      {executionTimeText && (
-        <span className="task-execution-time">
-          {executionTimeText}
-        </span>
-      )}
+      {task.category && <span className="task-category-label"><AppIcon name={category?.icon || 'tag'} color={category?.color || 'currentColor'} size={16} /> {task.category}</span>}
     </div>
   );
 }

@@ -310,12 +310,6 @@
   box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.18);
 }
 
-.add-event-form input.emoji-input {
-  width: 50px;
-  text-align: center;
-  font-size: 1.2rem;
-}
-
 .add-event-form input.title-input {
   flex: 1;
 }
@@ -527,7 +521,7 @@
   gap: 0.6rem;
 }
 
-.event-detail-emoji {
+.event-detail-icon {
   font-size: 1.5rem;
 }
 

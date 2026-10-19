@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useState, useEffect } from 'react';
 import { 
   Pencil, Trash, XCircle, CheckCircle, ArrowLeft, Funnel, 
@@ -91,7 +92,7 @@ function BlocoDeNotas({ onClose, user }) {
     return [
       {
         id: '1',
-        title: 'Bem-vindo ao seu Bloco de Notas! 📝',
+        title: 'Bem-vindo ao seu Bloco de Notas!',
         content: 'Use este espaço para anotações rápidas, ideias do dia, lembretes de rotina ou pensamentos importantes.',
         date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
         color: '#fff9c4',
@@ -339,7 +340,7 @@ function BlocoDeNotas({ onClose, user }) {
                 <ArrowLeft size={20} />
               </button>
             )}
-            <h3>📌 Bloco de Notas</h3>
+            <h3><AppIcon name="note" /> Bloco de Notas</h3>
           </div>
           {onClose && (
             <button className="close-btn" onClick={onClose} aria-label="Fechar">
@@ -367,20 +368,23 @@ function BlocoDeNotas({ onClose, user }) {
                 <Funnel size={14} weight="bold" />
                 <span>Filtrar por:</span>
               </label>
+              <div className="icon-select-field">
+              <AppIcon name={noteCategories.find(cat => cat.name === selectedCategory)?.icon || 'folder'} color={noteCategories.find(cat => cat.name === selectedCategory)?.color} />
               <select
                 id="notepad-category-filter"
                 className="notepad-category-select"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
-                <option value="all">📁 Todas as Categorias ({notes.length})</option>
+                <option value="all">Todas as Categorias ({notes.length})</option>
                 {noteCategories.map(cat => (
                   <option key={cat.id || cat.name} value={cat.name}>
-                    {cat.emoji || '🏷️'} {cat.name} ({categoryCounts[cat.name] || 0})
+                    {cat.name} ({categoryCounts[cat.name] || 0})
                   </option>
                 ))}
-                <option value="__none__">📝 Sem Categoria ({uncategorizedCount})</option>
+                <option value="__none__">Sem Categoria ({uncategorizedCount})</option>
               </select>
+              </div>
             </div>
 
             <div className="notes-list">
@@ -414,7 +418,7 @@ function BlocoDeNotas({ onClose, user }) {
                                 borderColor: `${getCategoryColor(note.category)}55`
                               }}
                             >
-                              {note.category}
+                              <AppIcon name={noteCategories.find(cat => cat.name === note.category)?.icon} color={getCategoryColor(note.category)} size={14} /> {note.category}
                             </span>
                           )}
                         </div>
@@ -443,7 +447,7 @@ function BlocoDeNotas({ onClose, user }) {
                                   title={item.completed ? 'Clique para desmarcar' : 'Clique para marcar como feito'}
                                 >
                                   <span className="note-item-check-indicator">
-                                    {item.completed ? '✓' : '–'}
+                                    <AppIcon name={item.completed ? "check" : "circle"} size={16} />
                                   </span>
                                   <span className="note-item-text">{item.text}</span>
                                 </div>
@@ -505,8 +509,7 @@ function BlocoDeNotas({ onClose, user }) {
                   onClick={handleSwitchToText}
                   title="Anotação simples de texto livre (como antes)"
                 >
-                  <Article size={16} weight={editMode === 'text' ? 'fill' : 'regular'} />
-                  <span>📝 Anotação de Texto</span>
+                  <span><AppIcon name="note" /> Anotação de Texto</span>
                 </button>
                 <button
                   type="button"
@@ -514,26 +517,28 @@ function BlocoDeNotas({ onClose, user }) {
                   onClick={handleSwitchToList}
                   title="Lista com itens e risco ao marcar como feito"
                 >
-                  <ListChecks size={16} weight={editMode === 'list' ? 'fill' : 'regular'} />
-                  <span>📋 Lista com Risco</span>
+                  <span><AppIcon name="clipboard" /> Lista com Risco</span>
                 </button>
               </div>
             </div>
 
             <div className="note-category-row">
               <span className="color-label">Categoria:</span>
-              <select 
+              <div className="icon-select-field">
+              <AppIcon name={noteCategories.find(cat => cat.name === category)?.icon || 'tag'} color={noteCategories.find(cat => cat.name === category)?.color} />
+              <select
                 value={category} 
                 onChange={e => setCategory(e.target.value)}
                 className="note-category-select"
               >
-                <option value="">📝 Sem Categoria</option>
+                <option value="">Sem Categoria</option>
                 {noteCategories.map(cat => (
                   <option key={cat.id || cat.name} value={cat.name}>
-                    {cat.emoji || '🏷️'} {cat.name}
+                    {cat.name}
                   </option>
                 ))}
               </select>
+              </div>
             </div>
 
             <div className="color-selector">

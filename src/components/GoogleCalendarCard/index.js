@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   CalendarBlank, 
@@ -36,6 +37,7 @@ const EVENT_COLORS = [
 
 function getEventColor(evt) {
   if (!evt) return EVENT_COLORS[0];
+  if (evt.calendarColor) return evt.calendarColor;
   if (evt.color) return evt.color;
   let hash = 0;
   const str = evt.id || evt.title || '';
@@ -72,37 +74,8 @@ function getTodayStr() {
   return `${year}-${month}-${day}`;
 }
 
-function GoogleCalendarLogo({ size = 26 }) {
-  return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 48 48" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ verticalAlign: 'middle', flexShrink: 0 }}
-      aria-label="Google Calendar"
-    >
-      <rect width="48" height="48" rx="10" fill="#FFFFFF" />
-      <path d="M35 7H13C9.686 7 7 9.686 7 13V18H41V13C41 9.686 38.314 7 35 7Z" fill="#1A73E8" />
-      <path d="M41 18H33V30H41V18Z" fill="#FBBC04" />
-      <path d="M41 30H33V41H35C38.314 41 41 38.314 41 35V30Z" fill="#34A853" />
-      <path d="M15 33H7V35C7 38.314 9.686 41 13 41H15V33Z" fill="#EA4335" />
-      <path d="M15 18H7V33H15V18Z" fill="#1A73E8" />
-      <rect x="13" y="18" width="22" height="23" fill="#FFFFFF" />
-      <text 
-        x="24" 
-        y="34.5" 
-        textAnchor="middle" 
-        fontSize="17" 
-        fontWeight="bold" 
-        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" 
-        fill="#1A73E8"
-      >
-        31
-      </text>
-    </svg>
-  );
+function GoogleCalendarLogo({ size = 28 }) {
+  return <CalendarBlank size={size} color="var(--primary-bg)" weight="duotone" aria-label="Google Agenda" />;
 }
 
 function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
@@ -128,7 +101,6 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
 
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [newTitle, setNewTitle] = useState('');
-  const [newEmoji, setNewEmoji] = useState('📅');
   const [newDate, setNewDate] = useState(getTodayStr());
   const [newTime, setNewTime] = useState('09:00 - 10:00');
   const [newPeriod, setNewPeriod] = useState('Manhã');
@@ -247,7 +219,6 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
     const newEvt = {
       id: 'evt-' + Date.now(),
       title: newTitle.trim(),
-      emoji: newEmoji || '📅',
       date: newDate,
       time: newTime,
       period: newPeriod,
@@ -317,10 +288,9 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   const handleAddEventToTasks = (evt, e) => {
     if (e) e.stopPropagation();
     if (onAddTaskFromCalendar && evt) {
-      const eventColor = evt.color || getEventColor(evt);
+      const eventColor = getEventColor(evt);
       onAddTaskFromCalendar({
         text: evt.title,
-        emoji: evt.emoji || '📅',
         description: evt.description || `Agendado do Google Agenda`,
         time: detailTime,
         period: detailPeriod,
@@ -333,10 +303,9 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
 
   const handleDragStart = (evt, e) => {
     const { time, period } = parseTimeAndPeriod(evt.time, evt.period);
-    const eventColor = evt.color || getEventColor(evt);
+    const eventColor = getEventColor(evt);
     const payload = JSON.stringify({
       text: evt.title,
-      emoji: evt.emoji || '📅',
       description: evt.description ? `${evt.description} (Horário: ${evt.time || ''})` : `Agendado: ${evt.time || 'Dia inteiro'}`,
       time: time,
       period: period,
@@ -475,7 +444,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
       <div className="google-sync-status-bar">
         {googleToken ? (
           <div className="status-connected">
-            <span className="dot online">●</span>
+            <AppIcon name="check" size={14} />
             <span>{syncStatusMsg || 'Sincronizado com Google Calendar'}</span>
             <button 
               className="sync-reload-btn" 
@@ -527,13 +496,6 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
           <div className="form-row">
             <input 
               type="text" 
-              className="emoji-input" 
-              value={newEmoji} 
-              onChange={e => setNewEmoji(e.target.value)}
-              placeholder="Emoji"
-            />
-            <input 
-              type="text" 
               className="title-input" 
               placeholder="Título do evento..." 
               value={newTitle} 
@@ -576,7 +538,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
       )}
 
       <div className="calendar-drag-hint">
-        💡 <span><strong>Dica:</strong> Arraste o evento para a lista de tarefas ou clique sobre ele para ver detalhes!</span>
+        <AppIcon name="lightbulb" /> <span><strong>Dica:</strong> Arraste o evento para a lista de tarefas ou clique sobre ele para ver detalhes!</span>
       </div>
 
       {viewMode === 'month' ? (
@@ -681,7 +643,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
               style={{ backgroundColor: getEventColor(selectedEventDetail) }}
             >
               <div className="event-detail-title-group">
-                <span className="event-detail-emoji">{selectedEventDetail.emoji || '📅'}</span>
+                <span className="event-detail-icon"><AppIcon name={selectedEventDetail.isBirthday ? "trophy" : "calendar"} size={28} /></span>
                 <h4>{selectedEventDetail.title}</h4>
               </div>
               <button 

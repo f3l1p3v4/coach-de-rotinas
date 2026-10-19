@@ -1,3 +1,4 @@
+import AppIcon from '../AppIcon';
 import React, { useState, useEffect } from 'react';
 import { Check, X, ArrowCounterClockwise } from '@phosphor-icons/react';
 import { renderTextWithLinks } from '../../utils/textUtils';
@@ -57,7 +58,7 @@ function TaskCompletionModal({ task, onClose, onConfirm, onResetPending }) {
           <div className="header-title-wrapper">
             <h3 id="completion-modal-title">Conclusão da Tarefa</h3>
             <p className="task-reference-title">
-              {task.emoji && <span className="task-emoji">{task.emoji}</span>}
+              <AppIcon name={task.isCalendarEvent ? "calendar" : "clipboard"} />
               <span className="task-name-text">{renderTextWithLinks(task.text)}</span>
             </p>
           </div>
