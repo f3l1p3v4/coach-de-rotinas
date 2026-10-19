@@ -22,6 +22,7 @@ import { getStoredCategories } from '../../constants/categories';
 import {
   getGoogleAccessToken,
   fetchGoogleEvents,
+  updateGoogleEvent,
   isBirthdayEvent
 } from '../../services/googleCalendarService';
 
@@ -568,9 +569,11 @@ function DailyPlanner({
     }
   };
 
-  const handleUpdateTask = (updatedTask) => {
+  const handleUpdateTask = async (updatedTask) => {
     if (String(updatedTask.id).startsWith('calendar-')) {
       const origId = updatedTask.calendarOriginalId;
+      const token = await getGoogleAccessToken();
+      await updateGoogleEvent(token, origId, updatedTask);
       if (origId) {
         setCalendarPriorityMap(prev => {
           const next = {
@@ -594,6 +597,7 @@ function DailyPlanner({
             return {
               ...evt,
               title: updatedTask.text,
+              date: updatedTask.date,
               description: updatedTask.description,
               period: updatedTask.period,
               time: updatedTask.time || evt.time,
@@ -607,7 +611,6 @@ function DailyPlanner({
         return next;
       });
       setSelectedTask(null);
-      toast.success('Compromisso atualizado.');
       return;
     }
 

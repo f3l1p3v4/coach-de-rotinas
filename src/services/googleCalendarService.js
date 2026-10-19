@@ -243,3 +243,37 @@ function getTodayStr() {
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
+
+/** Updates the selected event instance while preserving its time and duration. */
+export async function updateGoogleEvent(accessToken, eventId, task) {
+  if (!accessToken) throw new Error('Reconecte sua Google Agenda para salvar as alterações.');
+  if (!eventId) throw new Error('Compromisso da Google Agenda não encontrado.');
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`;
+  const headers = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+  const readResponse = async (response) => {
+    const data = await response.json();
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('google_access_token');
+        throw new Error('Reconecte sua Google Agenda para salvar as alterações.');
+      }
+      throw new Error(data.error?.message || 'Não foi possível atualizar o compromisso no Google Agenda.');
+    }
+    return data;
+  };
+  const original = await readResponse(await fetch(url, { headers }));
+  const body = { summary: task.text, description: task.description || '' };
+  if (task.date && original.start?.date) {
+    const duration = new Date(`${original.end.date}T00:00:00Z`) - new Date(`${original.start.date}T00:00:00Z`);
+    body.start = { date: task.date };
+    body.end = { date: new Date(new Date(`${task.date}T00:00:00Z`).getTime() + duration).toISOString().slice(0, 10) };
+  } else if (task.date && original.start?.dateTime) {
+    const start = new Date(original.start.dateTime);
+    const duration = new Date(original.end.dateTime) - start;
+    const [year, month, day] = task.date.split('-').map(Number);
+    start.setFullYear(year, month - 1, day);
+    body.start = { ...original.start, dateTime: start.toISOString() };
+    body.end = { ...original.end, dateTime: new Date(start.getTime() + duration).toISOString() };
+  }
+  return readResponse(await fetch(url, { method: 'PATCH', headers, body: JSON.stringify(body) }));
+}

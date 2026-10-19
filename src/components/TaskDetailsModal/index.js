@@ -29,6 +29,7 @@ const getTomorrowString = () => {
 };
 
 function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedDate }) {
+  const [isSaving, setIsSaving] = useState(false);
   const [text, setText] = useState(task?.text || '');
   const [period, setPeriod] = useState(task?.period || 'Manhã');
   const [date, setDate] = useState(task?.date || selectedDate || getTodayString());
@@ -76,29 +77,37 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
     setSubtasks(prev => prev.filter(sub => sub.id !== subId));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!text.trim()) {
       toast.warning('Por favor, informe um título para a tarefa.');
       return;
     }
-    if (onUpdateTask) {
-      onUpdateTask({
-        ...task,
-        text: text.trim(),
-        period,
-        date: date || task?.date || null,
-        category: category || null,
-        color: color || '#10b981',
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      if (onUpdateTask) {
+        await onUpdateTask({
+          ...task,
+          text: text.trim(),
+          period,
+          date: date || task?.date || null,
+          category: category || null,
+          color: color || '#10b981',
 
-        isRecurring: Boolean(isRecurring && recurringDays && recurringDays.length > 0),
-        recurringDays: isRecurring ? (recurringDays || []).map(Number).filter(n => !isNaN(n)) : [],
-        description: description.trim(),
-        subtasks
-      });
-      toast.success('Tarefa atualizada com sucesso!');
+          isRecurring: Boolean(isRecurring && recurringDays && recurringDays.length > 0),
+          recurringDays: isRecurring ? (recurringDays || []).map(Number).filter(n => !isNaN(n)) : [],
+          description: description.trim(),
+          subtasks
+        });
+        toast.success('Tarefa atualizada com sucesso!');
+      }
+      onClose();
+    } catch (error) {
+      toast.error(error.message || 'Não foi possível salvar a tarefa.');
+    } finally {
+      setIsSaving(false);
     }
-    onClose();
   };
 
   const handleDelete = () => {
@@ -332,7 +341,7 @@ function TaskDetailsModal({ task, onClose, onUpdateTask, onRemoveTask, selectedD
               <Trash size={18} />
               <span>Excluir</span>
             </button>
-            <button type="submit" className="details-save-btn">
+            <button type="submit" disabled={isSaving} className="details-save-btn">
               <FloppyDisk size={18} />
               <span>Salvar Alterações</span>
             </button>
