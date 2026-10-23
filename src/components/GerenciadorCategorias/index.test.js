@@ -1,9 +1,19 @@
+import { workspaceStore } from '../../services/workspaceStore';
+import { supabase } from '../../lib/supabaseClient';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import GerenciadorCategorias from '.';
 import { getStoredCategories } from '../../constants/categories';
 
-beforeEach(() => localStorage.clear());
+jest.mock('../../lib/supabaseClient', () => ({ supabase: { rpc: jest.fn() } }));
+beforeEach(async () => {
+  workspaceStore.reset();
+  Object.defineProperty(global.crypto, 'randomUUID', { configurable: true, value: () => '00000000-0000-4000-8000-000000000001' });
+  supabase.rpc.mockResolvedValue({ data: { user_id: 'account', version: 0, data: {} }, error: null });
+  await workspaceStore.load('account');
+  supabase.rpc.mockResolvedValue({ data: { user_id: 'account', version: 1 }, error: null });
+});
+afterEach(async () => { await workspaceStore.flush(); });
 
 test('lets the user choose an icon, persists it and shows it again while editing', () => {
   render(<GerenciadorCategorias />);

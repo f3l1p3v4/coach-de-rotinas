@@ -1,14 +1,13 @@
+import { appData } from '../../services/workspaceStore';
 import AppIcon from '../AppIcon';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { PlusCircle, User, CaretLeft, CaretRight, CalendarBlank } from '@phosphor-icons/react';
-import { toast } from 'sonner';
+import { toast } from '../../services/notifications';
 import {
-  loadUserTasks,
   syncUserTasks,
   deleteUserTask,
-  loadUserTaskHistory,
   syncUserTaskHistory
 } from '../../services/supabaseService';
 
@@ -114,7 +113,7 @@ function DailyPlanner({
   setSelectedDate: propSetSelectedDate
 }) {
   const [internalSelectedDate, setInternalSelectedDate] = useState(() => {
-    const saved = localStorage.getItem('selected_planner_date');
+    const saved = appData.getItem('selected_planner_date');
     if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
       return saved;
     }
@@ -125,57 +124,10 @@ function DailyPlanner({
   const setSelectedDate = propSetSelectedDate || setInternalSelectedDate;
 
   useEffect(() => {
-    localStorage.setItem('selected_planner_date', selectedDate);
+    appData.setItem('selected_planner_date', selectedDate);
   }, [selectedDate]);
 
-  const [tasks, setTasks] = useState(() => {
-    const sanitizeLoadedTasks = (list) => {
-      if (!Array.isArray(list)) return [];
-      return list.map(t => {
-        if (t.isRecurring) {
-          const { startedAt, completedAt, ...clean } = t;
-          return clean;
-        }
-        return t;
-      });
-    };
-
-    const restoreOrder = (list) => {
-      let savedOrder = [];
-      try {
-        const raw = localStorage.getItem('daily_tasks_order');
-        if (raw) savedOrder = JSON.parse(raw);
-      } catch (e) {}
-
-      if (!Array.isArray(savedOrder) || savedOrder.length === 0) return list;
-      const orderMap = new Map(savedOrder.map((id, idx) => [String(id), idx]));
-      return [...list].sort((a, b) => {
-        const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
-        const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
-        return posA - posB;
-      });
-    };
-
-    const savedTasks = localStorage.getItem('daily_tasks');
-    if (savedTasks) {
-      try {
-        const parsed = JSON.parse(savedTasks);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsed.map(migrateTaskProfile))));
-        }
-      } catch (e) {}
-    }
-    const backup = localStorage.getItem('daily_tasks_backup');
-    if (backup) {
-      try {
-        const parsedBackup = JSON.parse(backup);
-        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
-          return restoreOrder(ensureWorkAndRoutineTasks(sanitizeLoadedTasks(parsedBackup.map(migrateTaskProfile))));
-        }
-      } catch (e) {}
-    }
-    return DEFAULT_WORK_TASKS;
-  });
+  const [tasks, setTasks] = useState(() => JSON.parse(appData.getItem('daily_tasks') || '[]').map(migrateTaskProfile));
 
   const [isTasksLoaded, setIsTasksLoaded] = useState(false);
   const [historyLoadedFor, setHistoryLoadedFor] = useState(undefined);
@@ -185,11 +137,11 @@ function DailyPlanner({
   const [taskForObservation, setTaskForObservation] = useState(null);
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [selectedProfile, setSelectedProfile] = useState(() => {
-    const saved = localStorage.getItem('selected_planner_profile');
+    const saved = appData.getItem('selected_planner_profile');
     return saved || 'Trabalho';
   });
   useEffect(() => {
-    localStorage.setItem('selected_planner_profile', selectedProfile);
+    appData.setItem('selected_planner_profile', selectedProfile);
   }, [selectedProfile]);
   const [activeTimer, setActiveTimer] = useState({ taskId: null, totalSeconds: 0, phase: 'Focus', isRunning: false, pomodoroCycle: 0, type: null, config: null });
   const [currentTimeDisplay, setCurrentTimeDisplay] = useState('00:00');
@@ -197,7 +149,7 @@ function DailyPlanner({
   const loadedUserIdRef = useRef(null);
 
   const [internalTemplates, setInternalTemplates] = useState(() => {
-    const savedTemplates = localStorage.getItem('custom_task_templates');
+    const savedTemplates = appData.getItem('custom_task_templates');
     if (savedTemplates) {
       try {
         return JSON.parse(savedTemplates).map(migrateTaskProfile);
@@ -215,7 +167,7 @@ function DailyPlanner({
 
   const [calendarEvents, setCalendarEvents] = useState(() => {
     try {
-      const saved = localStorage.getItem('google_calendar_events');
+      const saved = appData.getItem('google_calendar_events');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return [];
@@ -223,7 +175,7 @@ function DailyPlanner({
 
   const [calendarCompletedMap, setCalendarCompletedMap] = useState(() => {
     try {
-      const saved = localStorage.getItem('calendar_completed_map');
+      const saved = appData.getItem('calendar_completed_map');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -231,7 +183,7 @@ function DailyPlanner({
 
   const [calendarStatusMap, setCalendarStatusMap] = useState(() => {
     try {
-      const saved = localStorage.getItem('calendar_status_map');
+      const saved = appData.getItem('calendar_status_map');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -239,7 +191,7 @@ function DailyPlanner({
 
   const [taskHistory, setTaskHistory] = useState(() => {
     try {
-      const saved = localStorage.getItem('daily_task_history');
+      const saved = appData.getItem('daily_task_history');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -247,7 +199,7 @@ function DailyPlanner({
 
   const [hiddenCalendarEventIds, setHiddenCalendarEventIds] = useState(() => {
     try {
-      const saved = localStorage.getItem('calendar_hidden_ids');
+      const saved = appData.getItem('calendar_hidden_ids');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -255,7 +207,7 @@ function DailyPlanner({
 
   const [calendarPriorityMap, setCalendarPriorityMap] = useState(() => {
     try {
-      const saved = localStorage.getItem('calendar_priority_map');
+      const saved = appData.getItem('calendar_priority_map');
       if (saved) return JSON.parse(saved);
     } catch (e) {}
     return {};
@@ -267,31 +219,23 @@ function DailyPlanner({
         setCalendarEvents(e.detail);
       } else {
         try {
-          const saved = localStorage.getItem('google_calendar_events');
+          const saved = appData.getItem('google_calendar_events');
           if (saved) setCalendarEvents(JSON.parse(saved));
         } catch (err) {}
       }
     };
 
-    const handleStorageChange = (e) => {
-      if (e.key === 'google_calendar_events') {
-        try {
-          if (e.newValue) setCalendarEvents(JSON.parse(e.newValue));
-        } catch (err) {}
-      }
-    };
-
     window.addEventListener('google-calendar-events-updated', handleEventsUpdated);
-    window.addEventListener('storage', handleStorageChange);
 
     async function syncCalendarSilently() {
       try {
         const token = await getGoogleAccessToken();
         if (token) {
           const res = await fetchGoogleEvents(token);
-          if (res?.events && res.events.length > 0) {
-            setCalendarEvents(res.events);
-            localStorage.setItem('google_calendar_events', JSON.stringify(res.events));
+          if (!res.error && !res.isUnauthorized && Array.isArray(res.events)) {
+            const merged = [...new Map([...JSON.parse(appData.getItem('google_calendar_events') || '[]'), ...res.events].map(event => [event.id, event])).values()];
+            setCalendarEvents(merged);
+            appData.setItem('google_calendar_events', JSON.stringify(merged));
           }
         }
       } catch (err) {
@@ -302,7 +246,6 @@ function DailyPlanner({
 
     return () => {
       window.removeEventListener('google-calendar-events-updated', handleEventsUpdated);
-      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
@@ -334,127 +277,33 @@ function DailyPlanner({
   }, [calendarTaskToAdd, selectedDate, onClearCalendarTaskToAdd]);
 
   useEffect(() => {
-    let isMounted = true;
-    async function initTasks() {
-      if (user?.id) {
-        // Bloqueia sincronização enquanto carrega
-        setIsTasksLoaded(false);
-        const initialTasks = await loadUserTasks(user.id);
-        if (isMounted) {
-          setTasks(prev => {
-            const raw = (Array.isArray(initialTasks) && initialTasks.length > 0)
-              ? initialTasks
-              : ((prev && prev.length > 0) ? prev : (initialTasks || []));
-            const cleaned = raw.map(t => {
-              if (t.isRecurring) {
-                const { startedAt, completedAt, ...clean } = t;
-                return clean;
-              }
-              return t;
-            });
-            const sanitized = ensureWorkAndRoutineTasks(cleaned);
-
-            let savedOrder = [];
-            try {
-              const rawOrder = localStorage.getItem('daily_tasks_order');
-              if (rawOrder) savedOrder = JSON.parse(rawOrder);
-            } catch (e) {}
-
-            const orderMap = new Map();
-            if (Array.isArray(savedOrder) && savedOrder.length > 0) {
-              savedOrder.forEach((id, idx) => orderMap.set(String(id), idx));
-            } else if (Array.isArray(prev) && prev.length > 0) {
-              prev.forEach((t, idx) => orderMap.set(String(t.id), idx));
-            }
-
-            if (orderMap.size > 0) {
-              return [...sanitized].sort((a, b) => {
-                const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
-                const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
-                return posA - posB;
-              });
-            }
-
-            return sanitized;
-          });
-          loadedUserIdRef.current = user.id;
-          setIsTasksLoaded(true);
-        }
-      } else {
-        setTasks(prev => {
-          const sanitized = ensureWorkAndRoutineTasks(prev);
-          let savedOrder = [];
-          try {
-            const rawOrder = localStorage.getItem('daily_tasks_order');
-            if (rawOrder) savedOrder = JSON.parse(rawOrder);
-          } catch (e) {}
-          if (Array.isArray(savedOrder) && savedOrder.length > 0) {
-            const orderMap = new Map(savedOrder.map((id, idx) => [String(id), idx]));
-            return [...sanitized].sort((a, b) => {
-              const posA = orderMap.has(String(a.id)) ? orderMap.get(String(a.id)) : 999999;
-              const posB = orderMap.has(String(b.id)) ? orderMap.get(String(b.id)) : 999999;
-              return posA - posB;
-            });
-          }
-          return sanitized;
-        });
-        loadedUserIdRef.current = null;
-        setIsTasksLoaded(true);
-      }
-    }
-    initTasks();
-    return () => { isMounted = false; };
-  }, [user?.id]);
+    loadedUserIdRef.current = user.id;
+    setIsTasksLoaded(true);
+    setHistoryLoadedFor(user.id);
+  }, [user.id]);
 
   useEffect(() => {
-    // SÓ sincroniza se a carga inicial deste usuário já foi totalmente concluída
-    if (!isTasksLoaded) return;
-    if (user?.id && loadedUserIdRef.current !== user.id) return;
-
-    syncUserTasks(user?.id, tasks);
-  }, [tasks, user?.id, isTasksLoaded]);
+    if (isTasksLoaded && loadedUserIdRef.current === user.id) syncUserTasks(user.id, tasks).catch(() => {});
+  }, [tasks, user.id, isTasksLoaded]);
 
   useEffect(() => {
-    let isMounted = true;
-    async function initHistory() {
-      setHistoryLoadedFor(undefined);
-      if (user?.id) {
-        const remoteHistory = await loadUserTaskHistory(user.id);
-        if (isMounted && remoteHistory && Object.keys(remoteHistory).length > 0) {
-          setTaskHistory(prev => ({ ...prev, ...remoteHistory }));
-        }
-      }
-      if (isMounted) setHistoryLoadedFor(user?.id || null);
-    }
-    initHistory();
-    return () => { isMounted = false; };
-  }, [user?.id]);
+    if (isTasksLoaded) syncUserTaskHistory(user.id, taskHistory).catch(() => {});
+  }, [taskHistory, user.id, isTasksLoaded]);
 
   useEffect(() => {
-    if (!isTasksLoaded) return;
-    if (user?.id && loadedUserIdRef.current !== user.id) return;
-
-    syncUserTaskHistory(user?.id, taskHistory);
-  }, [taskHistory, user?.id, isTasksLoaded]);
-
-  useEffect(() => {
-    if (!isTasksLoaded) return;
-    if (historyLoadedFor !== (user?.id || null)) return;
+    if (!isTasksLoaded || historyLoadedFor !== user.id) return;
     const rollOver = () => setTasks(prev => rollOverPendingTasks(prev, taskHistory));
     rollOver();
     const interval = setInterval(rollOver, 30000);
     window.addEventListener('focus', rollOver);
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', rollOver);
-    };
-  }, [isTasksLoaded, taskHistory, historyLoadedFor, user?.id]);
+    return () => { clearInterval(interval); window.removeEventListener('focus', rollOver); };
+  }, [isTasksLoaded, historyLoadedFor, user.id, taskHistory]);
 
   // Migra status locais antigos de compromissos da Google Agenda para o taskHistory para sincronização na nuvem
   useEffect(() => {
     try {
-      const savedStatus = localStorage.getItem('calendar_status_map');
-      const savedCompleted = localStorage.getItem('calendar_completed_map');
+      const savedStatus = appData.getItem('calendar_status_map');
+      const savedCompleted = appData.getItem('calendar_completed_map');
       let statusObj = savedStatus ? JSON.parse(savedStatus) : {};
       let completedObj = savedCompleted ? JSON.parse(savedCompleted) : {};
 
@@ -525,7 +374,7 @@ function DailyPlanner({
           const settings = items[event.id] || {};
           if ((settings.profile === undefined ? 'Pessoal' : settings.profile) === previous) updated[event.id] = { ...settings, profile: next };
         });
-        localStorage.setItem('calendar_priority_map', JSON.stringify(updated));
+        appData.setItem('calendar_priority_map', JSON.stringify(updated));
         return updated;
       });
     };
@@ -612,7 +461,7 @@ function DailyPlanner({
             }
           };
           try {
-            localStorage.setItem('calendar_priority_map', JSON.stringify(next));
+            appData.setItem('calendar_priority_map', JSON.stringify(next));
           } catch (e) {}
           return next;
         });
@@ -632,7 +481,7 @@ function DailyPlanner({
           return evt;
         });
         try {
-          localStorage.setItem('google_calendar_events', JSON.stringify(next));
+          appData.setItem('google_calendar_events', JSON.stringify(next));
         } catch (e) {}
         return next;
       });
@@ -942,7 +791,7 @@ function DailyPlanner({
       setCalendarStatusMap(prev => {
         const next = { ...prev, [key]: { status, observation } };
         try {
-          localStorage.setItem('calendar_status_map', JSON.stringify(next));
+          appData.setItem('calendar_status_map', JSON.stringify(next));
         } catch (e) {}
         return next;
       });
@@ -950,7 +799,7 @@ function DailyPlanner({
       setCalendarCompletedMap(prev => {
         const next = { ...prev, [key]: isCompleted };
         try {
-          localStorage.setItem('calendar_completed_map', JSON.stringify(next));
+          appData.setItem('calendar_completed_map', JSON.stringify(next));
         } catch (e) {}
         return next;
       });
@@ -1065,7 +914,7 @@ function DailyPlanner({
         const next = { ...prev };
         delete next[key];
         try {
-          localStorage.setItem('calendar_status_map', JSON.stringify(next));
+          appData.setItem('calendar_status_map', JSON.stringify(next));
         } catch (e) {}
         return next;
       });
@@ -1074,7 +923,7 @@ function DailyPlanner({
         const next = { ...prev };
         delete next[key];
         try {
-          localStorage.setItem('calendar_completed_map', JSON.stringify(next));
+          appData.setItem('calendar_completed_map', JSON.stringify(next));
         } catch (e) {}
         return next;
       });
@@ -1162,7 +1011,7 @@ function DailyPlanner({
       setHiddenCalendarEventIds(prev => {
         const next = { ...prev, [key]: true };
         try {
-          localStorage.setItem('calendar_hidden_ids', JSON.stringify(next));
+          appData.setItem('calendar_hidden_ids', JSON.stringify(next));
         } catch (e) {}
         return next;
       });
@@ -1182,7 +1031,7 @@ function DailyPlanner({
     // Tarefa simples (não recorrente): apaga diretamente
     if (activeTimer.taskId === id) handleCancelTimer();
     setTasks(prev => prev.filter(t => t.id !== id));
-    deleteUserTask(user?.id, id);
+    deleteUserTask(user.id, id).catch(() => {});
     toast.success('Tarefa removida.');
   };
 
@@ -1245,7 +1094,7 @@ function DailyPlanner({
     if (activeTimer.taskId === taskId) handleCancelTimer();
 
     setTasks(prev => prev.filter(t => t.id !== taskId));
-    deleteUserTask(user?.id, taskId);
+    deleteUserTask(user.id, taskId).catch(() => {});
     setTaskToDelete(null);
     toast.success('Todas as repetições da tarefa foram removidas.');
   };
@@ -1253,7 +1102,7 @@ function DailyPlanner({
   const handleSelectCategory = (catName) => {
     setSelectedProfile(catName);
     try {
-      localStorage.setItem('selected_planner_profile', catName);
+      appData.setItem('selected_planner_profile', catName);
     } catch (e) {}
   };
 
@@ -1323,11 +1172,11 @@ function DailyPlanner({
         }
       }
 
-      // Salva imediatamente no localStorage para garantir persistência mesmo antes do próximo render
+      // Envia a nova ordem ao banco pela fila de gravação da conta.
       try {
         const orderIds = result.map(t => String(t.id));
-        localStorage.setItem('daily_tasks_order', JSON.stringify(orderIds));
-        localStorage.setItem('daily_tasks', JSON.stringify(result));
+        appData.setItem('daily_tasks_order', JSON.stringify(orderIds));
+        appData.setItem('daily_tasks', JSON.stringify(result));
       } catch (err) {}
 
       return result;
@@ -1580,8 +1429,6 @@ function DailyPlanner({
       }
     }
 
-    const savedAvatar = localStorage.getItem('google_user_avatar');
-    if (savedAvatar && u) return savedAvatar;
     return null;
   };
 

@@ -21,3 +21,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Backups pessoais e SQL de importação com dados do usuário
+/focus-task-backup*.json*
+/scripts/focus-task-backup*.json*
+/.private/

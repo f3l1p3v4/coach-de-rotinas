@@ -1,10 +1,13 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabaseClient';
 
-// Ouvinte para salvar provider_token assim que o Supabase redirecionar
+let googleAccessToken = null;
+
+// OAuth credentials stay in memory; application data is stored in Supabase.
 if (supabase) {
   supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') googleAccessToken = null;
     if (session?.provider_token) {
-      localStorage.setItem('google_access_token', session.provider_token);
+      googleAccessToken = session.provider_token;
     }
   });
 }
@@ -40,16 +43,16 @@ export async function signInWithGoogleCalendar() {
  */
 export async function getGoogleAccessToken() {
   if (!isSupabaseConfigured || !supabase) {
-    return localStorage.getItem('google_access_token') || null;
+    return googleAccessToken;
   }
   
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.provider_token) {
-    localStorage.setItem('google_access_token', session.provider_token);
+    googleAccessToken = session.provider_token;
     return session.provider_token;
   }
 
-  return localStorage.getItem('google_access_token') || null;
+  return googleAccessToken;
 }
 
 /**
@@ -57,7 +60,7 @@ export async function getGoogleAccessToken() {
  */
 export function setLocalGoogleAccessToken(token) {
   if (token) {
-    localStorage.setItem('google_access_token', token);
+    googleAccessToken = token;
   }
 }
 
@@ -93,7 +96,7 @@ export async function fetchGoogleEvents(accessToken, timeMin, timeMax) {
     if (!res.ok) {
       if (res.status === 401) {
         console.warn('Token do Google Calendar expirado ou inválido.');
-        localStorage.removeItem('google_access_token');
+        googleAccessToken = null;
         return { events: [], isUnauthorized: true };
       }
       return { events: [], error: `Erro ${res.status}: ${res.statusText}` };
@@ -253,7 +256,7 @@ export async function updateGoogleEvent(accessToken, eventId, task) {
     const data = await response.json();
     if (!response.ok) {
       if (response.status === 401) {
-        localStorage.removeItem('google_access_token');
+        googleAccessToken = null;
         throw new Error('Reconecte sua Google Agenda para salvar as alterações.');
       }
       throw new Error(data.error?.message || 'Não foi possível atualizar o compromisso no Google Agenda.');

@@ -2,20 +2,23 @@
 
 ## Contexto e comandos
 
-Focus Task é um planejador em português brasileiro, feito com React 19 e Create React App. A interface usa CSS por componente, Phosphor Icons e Sonner. Supabase é opcional; o app também funciona com armazenamento local.
+Focus Task é um planejador em português brasileiro, feito com React 19 e Create React App. A interface usa CSS por componente, Phosphor Icons e Sonner. Supabase é obrigatório e o aplicativo exige login. Dados do produto são persistidos exclusivamente no banco; o navegador mantém apenas a sessão de autenticação do SDK.
 
 - `npm start`: desenvolvimento.
 - `CI=true npm test -- --watch=false --runInBand`: testes sem modo interativo.
 - `npm run build`: compilação de produção.
 - `npx eslint src --ext .js`: análise estática.
 
-Não versionar `.env.local`, tokens, `node_modules` ou arquivos gerados em `build`. Consultar `.env.example` para nomes de variáveis, sem imprimir credenciais.
+Não versionar backups pessoais, `.private`, `.env.local`, tokens, `node_modules` ou arquivos gerados em `build`. Consultar `.env.example` para nomes de variáveis, sem imprimir credenciais.
 
 ## Onde trabalhar
 
 - `src/App.js`: sessão, tema, modelos e integração dos painéis.
 - `src/components/DailyPlanner`: tarefas, filtros, recorrência, histórico diário e cronômetro.
-- `src/services/supabaseService.js`: persistência local e remota.
+- `src/services/workspaceStore.js`: hidratação da conta, fila de gravação no Supabase e controle de versão.
+- `src/services/supabaseService.js`: operações de tarefas, notas, modelos, foco e histórico sobre a conta já carregada.
+- `src/utils/workspaceData.js`: validação e normalização dos dados da conta.
+- `src/components/CloudGate`: login obrigatório, carga inicial e recuperação de falhas.
 - `src/services/googleCalendarService.js`: OAuth e eventos da Google Agenda.
 - `src/constants/categories.js`: categorias e eventos de atualização.
 - `src/components/AppIcon`: catálogo de ícones coloridos da interface.
@@ -30,6 +33,8 @@ Não versionar `.env.local`, tokens, `node_modules` ou arquivos gerados em `buil
 - Novos usuários começam sem modelos, com perfis Pessoal e Trabalho e categorias Música e Casa. Perfis filtram o planejador; categorias classificam as tarefas. Respeitar listas vazias e personalizações existentes.
 - Datas de planejamento usam o dia local do usuário. Pendências vencidas passam ao dia atual; tarefas encerradas e recorrentes preservam suas regras.
 - Eventos da Agenda exigem gravação remota confirmada antes de mostrar sucesso. Preservar horário, duração e semântica de eventos de dia inteiro.
+- Não usar localStorage/sessionStorage para dados do aplicativo. Leituras síncronas usam apenas a visão em memória de dados já carregados do banco. Não implementar fallback local.
+- Não anunciar sucesso antes da confirmação do Supabase. Erros devem permanecer visíveis e permitir tentar novamente ou baixar as alterações pendentes.
 - Carregar os dados da conta antes de sincronizar. Não misturar dados de usuários nem substituir dados válidos por defaults.
 
 ## Skills locais

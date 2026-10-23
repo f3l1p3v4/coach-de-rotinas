@@ -113,7 +113,7 @@ function AuthModal({ user, onClose, onAuthSuccess }) {
             </div>
 
             <p className="auth-sync-note">
-              <AppIcon name="sparkle" /> Todas as suas tarefas, modelos e anotações estão sincronizados e salvos na sua conta na nuvem!
+              <AppIcon name="sparkle" /> Seus dados são carregados e salvos no Supabase. O aplicativo avisa se uma gravação não for confirmada.
             </p>
 
             <button className="auth-logout-btn" onClick={handleLogout}>

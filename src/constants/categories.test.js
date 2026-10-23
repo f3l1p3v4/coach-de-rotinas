@@ -1,9 +1,19 @@
+import { workspaceStore, appData } from '../services/workspaceStore';
+import { supabase } from '../lib/supabaseClient';
 import { getStoredCategories, saveStoredCategories, addStoredCategory, updateStoredCategory, deleteStoredCategory } from './categories';
 
-beforeEach(() => localStorage.clear());
+jest.mock('../lib/supabaseClient', () => ({ supabase: { rpc: jest.fn() } }));
+beforeEach(async () => {
+  workspaceStore.reset();
+  Object.defineProperty(global.crypto, 'randomUUID', { configurable: true, value: () => '00000000-0000-4000-8000-000000000001' });
+  supabase.rpc.mockResolvedValue({ data: { user_id: 'account', version: 0, data: {} }, error: null });
+  await workspaceStore.load('account');
+  supabase.rpc.mockResolvedValue({ data: { user_id: 'account', version: 1 }, error: null });
+});
+afterEach(async () => { await workspaceStore.flush(); });
 
 test('reads legacy categories without losing their data and replaces the old decoration', () => {
-  localStorage.setItem('coach_categories', JSON.stringify([
+  appData.setItem('coach_categories', JSON.stringify([
     { id: 'custom', name: 'Leitura', color: '#123456', emoji: 'legacy', appliesTo: 'note' }
   ]));
   expect(getStoredCategories('note')).toEqual([
@@ -24,7 +34,7 @@ test('preserves the chosen icon and color through edits and reloads, including a
 });
 
 test('replaces old default categories while keeping custom categories', () => {
-  localStorage.setItem('coach_categories', JSON.stringify([
+  appData.setItem('coach_categories', JSON.stringify([
     { id: 'trabalho', name: 'Trabalho' }, { id: 'pessoal', name: 'Pessoal' },
     { id: 'custom', name: 'Leitura', icon: 'book', color: '#123456' }
   ]));

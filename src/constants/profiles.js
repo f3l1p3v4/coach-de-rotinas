@@ -1,18 +1,17 @@
-export const DEFAULT_PROFILES = [
-  { id: 'pessoal', name: 'Pessoal', icon: 'user', color: '#10b981' },
-  { id: 'trabalho', name: 'Trabalho', icon: 'briefcase', color: '#3b82f6' }
-];
+import { appData } from '../services/workspaceStore';
+import { DEFAULT_PROFILES } from '../utils/workspaceData';
+export { DEFAULT_PROFILES };
 
 export function getStoredProfiles() {
   try {
-    const saved = JSON.parse(localStorage.getItem('coach_profiles'));
+    const saved = JSON.parse(appData.getItem('coach_profiles'));
     if (Array.isArray(saved)) return saved;
   } catch (error) {}
   return DEFAULT_PROFILES;
 }
 
 export function saveStoredProfiles(profiles) {
-  localStorage.setItem('coach_profiles', JSON.stringify(profiles));
+  appData.setItem('coach_profiles', JSON.stringify(profiles));
   window.dispatchEvent(new CustomEvent('coach-profiles-changed', { detail: profiles }));
 }
 

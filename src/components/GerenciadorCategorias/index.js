@@ -2,7 +2,7 @@ import IconSelect from '../IconSelect';
 import AppIcon, { ICON_OPTIONS } from '../AppIcon';
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Pencil, Trash, CheckCircle, Tag, Check } from '@phosphor-icons/react';
-import { toast } from 'sonner';
+import { toast } from '../../services/notifications';
 import { 
   getStoredCategories, 
   addStoredCategory, 

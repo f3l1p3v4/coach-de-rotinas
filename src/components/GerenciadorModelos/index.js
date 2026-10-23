@@ -1,7 +1,7 @@
 import AppIcon from '../AppIcon';
 import React, { useState } from 'react';
 import { PlusCircle, Pencil, Trash, XCircle, CheckCircle } from '@phosphor-icons/react';
-import { toast } from 'sonner';
+import { toast } from '../../services/notifications';
 import ProfilePicker from '../ProfilePicker';
 import CategoryPicker from '../CategoryPicker';
 import RecurrenceSelector from '../RecurrenceSelector';

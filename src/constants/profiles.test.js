@@ -1,6 +1,16 @@
+import { workspaceStore } from '../services/workspaceStore';
+import { supabase } from '../lib/supabaseClient';
 import { DEFAULT_PROFILES, getStoredProfiles, saveStoredProfiles, migrateTaskProfile } from './profiles';
 
-beforeEach(() => localStorage.clear());
+jest.mock('../lib/supabaseClient', () => ({ supabase: { rpc: jest.fn() } }));
+beforeEach(async () => {
+  workspaceStore.reset();
+  Object.defineProperty(global.crypto, 'randomUUID', { configurable: true, value: () => '00000000-0000-4000-8000-000000000001' });
+  supabase.rpc.mockResolvedValue({ data: { user_id: 'account', version: 0, data: {} }, error: null });
+  await workspaceStore.load('account');
+  supabase.rpc.mockResolvedValue({ data: { user_id: 'account', version: 1 }, error: null });
+});
+afterEach(async () => { await workspaceStore.flush(); });
 
 test('profiles start independent of categories and respect an empty customized list', () => {
   expect(getStoredProfiles()).toEqual(DEFAULT_PROFILES);

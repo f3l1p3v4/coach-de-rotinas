@@ -1,0 +1,6 @@
+.cloud-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; box-sizing: border-box; text-align: center; background: var(--bg-color); color: var(--text-color); }
+.cloud-screen button, .cloud-panel button { background: var(--primary-bg); color: var(--primary-text); border: 1px solid var(--border-color); border-radius: 8px; padding: .65rem 1rem; cursor: pointer; font-size: 1rem; }
+.cloud-blocker { position: fixed; inset: 0; z-index: 10000; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,.6); padding: 1rem; }
+.cloud-panel { max-width: 560px; max-height: 85vh; overflow: auto; padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-bg); color: var(--text-color); }
+.cloud-panel button { margin: .25rem; }
+.cloud-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .75rem; margin: 1rem auto 6rem; font-size: .9rem; color: var(--secondary-text); }

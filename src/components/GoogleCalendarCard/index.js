@@ -1,3 +1,4 @@
+import { appData } from '../../services/workspaceStore';
 import AppIcon from '../AppIcon';
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
@@ -11,7 +12,7 @@ import {
   PlusCircle,
   Tag
 } from '@phosphor-icons/react';
-import { toast } from 'sonner';
+import { toast } from '../../services/notifications';
 
 import { 
   signInWithGoogleCalendar, 
@@ -82,7 +83,7 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   const [viewMode, setViewMode] = useState('month'); // 'month' ou 'week'
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState(() => {
-    const saved = localStorage.getItem('google_calendar_events');
+    const saved = appData.getItem('google_calendar_events');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -128,7 +129,12 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
       }
 
       const fetchedList = res.events || [];
-      setEvents(fetchedList);
+      const firstDay = startRange.slice(0, 10);
+      const lastDay = endRange.slice(0, 10);
+      setEvents(previous => {
+        const kept = previous.filter(event => event.date < firstDay || event.date > lastDay);
+        return [...new Map([...kept, ...fetchedList].map(event => [event.id, event])).values()];
+      });
       if (fetchedList.length > 0) {
         setSyncStatusMsg(`Sincronizado! ${fetchedList.length} evento(s) carregado(s).`);
       } else {
@@ -182,8 +188,8 @@ function GoogleCalendarCard({ onClose, onAddTaskFromCalendar, selectedDate }) {
   };
 
   useEffect(() => {
-    if (events && events.length > 0) {
-      localStorage.setItem('google_calendar_events', JSON.stringify(events));
+    if (Array.isArray(events)) {
+      appData.setItem('google_calendar_events', JSON.stringify(events));
       window.dispatchEvent(new CustomEvent('google-calendar-events-updated', { detail: events }));
     }
   }, [events]);

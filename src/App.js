@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { appData } from './services/workspaceStore';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import DailyPlanner, { initialTaskTemplates } from './components/DailyPlanner';
 import FloatingMenuMobile from './components/FloatingMenuMobile';
@@ -6,12 +7,11 @@ import AjustesModal from './components/AjustesModal';
 import BlocoDeNotas from './components/BlocoDeNotas';
 import AuthModal from './components/AuthModal';
 import GoogleCalendarCard from './components/GoogleCalendarCard';
-import { DEFAULT_CATEGORIES, saveStoredCategories } from './constants/categories';
-import { DEFAULT_PROFILES, saveStoredProfiles, migrateTaskProfile, getTaskProfile } from './constants/profiles';
+import { migrateTaskProfile, getTaskProfile } from './constants/profiles';
 import { Toaster } from 'sonner';
 
-import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
-import { loadUserTemplates, syncUserTemplates, loadUserFocusScore, syncUserFocusScore } from './services/supabaseService';
+import CloudGate from './components/CloudGate';
+import { syncUserTemplates, syncUserFocusScore } from './services/supabaseService';
 
 const getTodayString = () => {
   const d = new Date();
@@ -21,15 +21,14 @@ const getTodayString = () => {
   return `${year}-${month}-${day}`;
 };
 
-function App() {
+function WorkspaceApp({ user }) {
   const [mobileCard, setMobileCard] = useState(null);
-  const [, setPomodoroCount] = useState(0);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [user, setUser] = useState(null);
+  const [, setPomodoroCount] = useState(() => JSON.parse(appData.getItem('focus_scores') || '{}')[getTodayString()] || 0);
+  const [isDarkMode, setIsDarkMode] = useState(() => appData.getItem('theme') === 'dark');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [calendarTaskToAdd, setCalendarTaskToAdd] = useState(null);
   const [selectedDate, setSelectedDate] = useState(() => {
-    const saved = localStorage.getItem('selected_planner_date');
+    const saved = appData.getItem('selected_planner_date');
     if (saved && /^\d{4}-\d{2}-\d{2}$/.test(saved)) {
       return saved;
     }
@@ -37,12 +36,12 @@ function App() {
   });
 
   useEffect(() => {
-    localStorage.setItem('selected_planner_date', selectedDate);
+    appData.setItem('selected_planner_date', selectedDate);
   }, [selectedDate]);
 
   const [templates, setTemplates] = useState(() => {
     try {
-      const saved = localStorage.getItem('custom_task_templates');
+      const saved = appData.getItem('custom_task_templates');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) return parsed.map(migrateTaskProfile);
@@ -51,106 +50,15 @@ function App() {
     return initialTaskTemplates;
   });
 
-  // Escutar autenticação do Supabase
-  useEffect(() => {
-    if (isSupabaseConfigured && supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        const u = session?.user ?? null;
-        setUser(u);
-        const avatar = u?.user_metadata?.avatar_url || u?.user_metadata?.picture;
-        if (avatar) localStorage.setItem('google_user_avatar', avatar);
-      });
-
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        const u = session?.user ?? null;
-        setUser(u);
-        const avatar = u?.user_metadata?.avatar_url || u?.user_metadata?.picture;
-        if (avatar) localStorage.setItem('google_user_avatar', avatar);
-      });
-
-      return () => subscription.unsubscribe();
-    }
-  }, []);
-
-  const [isTemplatesLoaded, setIsTemplatesLoaded] = useState(false);
-  const hasTemplatesLoadedRef = useRef(false);
-  const templatesUserRef = useRef(null);
-
-  // Carregar modelos de tarefa ao mudar usuário
-  useEffect(() => {
-    let isMounted = true;
-    async function initTemplates() {
-      if (user?.id) {
-        hasTemplatesLoadedRef.current = false;
-        const tmpls = await loadUserTemplates(user.id, initialTaskTemplates);
-        if (isMounted) {
-          if (Array.isArray(tmpls)) {
-            setTemplates(tmpls);
-          }
-          templatesUserRef.current = user.id;
-          hasTemplatesLoadedRef.current = true;
-          setIsTemplatesLoaded(true);
-        }
-      } else {
-        hasTemplatesLoadedRef.current = true;
-        setIsTemplatesLoaded(true);
-      }
-    }
-    initTemplates();
-    return () => { isMounted = false; };
-  }, [user]);
-
-  useEffect(() => {
-    const key = `coach_categories_${user?.id || 'guest'}`;
-    const previousKey = localStorage.getItem('coach_categories_owner');
-    if (previousKey && previousKey !== key) {
-      const previous = localStorage.getItem('coach_categories');
-      if (previous) localStorage.setItem(previousKey, previous);
-    }
-    let categories = DEFAULT_CATEGORIES;
-    try {
-      const existingAccount = user?.created_at && Date.now() - new Date(user.created_at).getTime() > 86400000;
-      const saved = localStorage.getItem(key) || (!previousKey && (!user?.id || existingAccount) ? localStorage.getItem('coach_categories') : null);
-      if (saved && Array.isArray(JSON.parse(saved))) categories = JSON.parse(saved);
-    } catch (e) {}
-    localStorage.setItem('coach_categories_owner', key);
-    saveStoredCategories(categories);
-    const persist = (event) => localStorage.setItem(key, JSON.stringify(event.detail));
-    window.addEventListener('coach-categories-changed', persist);
-    return () => window.removeEventListener('coach-categories-changed', persist);
-  }, [user?.id, user?.created_at]);
-
-  useEffect(() => {
-    const key = `coach_profiles_${user?.id || 'guest'}`;
-    const previousKey = localStorage.getItem('coach_profiles_owner');
-    if (previousKey && previousKey !== key) {
-      const previous = localStorage.getItem('coach_profiles');
-      if (previous) localStorage.setItem(previousKey, previous);
-    }
-    let profiles = DEFAULT_PROFILES;
-    try {
-      const saved = localStorage.getItem(key) || (!previousKey ? localStorage.getItem('coach_profiles') : null);
-      if (saved && Array.isArray(JSON.parse(saved))) profiles = JSON.parse(saved);
-    } catch (error) {}
-    localStorage.setItem('coach_profiles_owner', key);
-    saveStoredProfiles(profiles);
-    const persist = event => localStorage.setItem(key, JSON.stringify(event.detail));
-    window.addEventListener('coach-profiles-changed', persist);
-    return () => window.removeEventListener('coach-profiles-changed', persist);
-  }, [user?.id]);
-
   useEffect(() => {
     const rename = ({ detail: { previous, next } }) => setTemplates(items => items.map(item => getTaskProfile(item) === previous ? { ...item, profile: next } : item));
     window.addEventListener('coach-profile-renamed', rename);
     return () => window.removeEventListener('coach-profile-renamed', rename);
   }, []);
 
-  // Sincronizar modelos ao alterar (apenas após inicialização)
   useEffect(() => {
-    if (isTemplatesLoaded && hasTemplatesLoadedRef.current && (!user?.id || templatesUserRef.current === user.id)) {
-      syncUserTemplates(user?.id, templates);
-    }
-  }, [templates, user, isTemplatesLoaded]);
+    syncUserTemplates(user.id, templates).catch(() => {});
+  }, [templates, user.id]);
 
   const handleAddTemplate = (newTemplate) => {
     setTemplates(prev => [...prev, newTemplate]);
@@ -165,35 +73,22 @@ function App() {
   };
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDarkMode(true);
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-  }, []);
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   const toggleDarkMode = () => {
     setIsDarkMode(prev => {
       const newTheme = !prev ? 'dark' : 'light';
-      localStorage.setItem('theme', newTheme);
+      appData.setItem('theme', newTheme);
       document.documentElement.setAttribute('data-theme', newTheme);
       return !prev;
     });
   };
 
-  // Carregar placar de foco
-  useEffect(() => {
-    async function initFocusScore() {
-      const score = await loadUserFocusScore(user?.id);
-      setPomodoroCount(score);
-    }
-    initFocusScore();
-  }, [user]);
-
   const handlePomodoroComplete = () => {
     setPomodoroCount(currentCount => {
       const newCount = currentCount + 1;
-      syncUserFocusScore(user?.id, newCount);
+      syncUserFocusScore(user.id, newCount).catch(() => {});
       return newCount;
     });
   };
@@ -227,7 +122,7 @@ function App() {
         <AuthModal 
           user={user} 
           onClose={() => setIsAuthModalOpen(false)} 
-          onAuthSuccess={(u) => setUser(u)}
+          onAuthSuccess={() => {}}
         />
       )}
 
@@ -295,4 +190,6 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return <CloudGate>{user => <WorkspaceApp key={user.id} user={user} />}</CloudGate>;
+}

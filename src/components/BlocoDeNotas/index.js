@@ -1,3 +1,4 @@
+import { appData } from '../../services/workspaceStore';
 import AppIcon from '../AppIcon';
 import React, { useState, useEffect } from 'react';
 import { 
@@ -6,7 +7,7 @@ import {
 } from '@phosphor-icons/react';
 import { loadUserNotes, syncUserNotes } from '../../services/supabaseService';
 import { getStoredCategories, getCategoryColor } from '../../constants/categories';
-import { toast } from 'sonner';
+import { toast } from '../../services/notifications';
 
 import './styles.css';
 
@@ -76,30 +77,7 @@ export function serializeItemsToPlainText(items) {
 }
 
 function BlocoDeNotas({ onClose, user }) {
-  const [notes, setNotes] = useState(() => {
-    try {
-      const saved = localStorage.getItem('coach_anotacoes');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-      const backup = localStorage.getItem('coach_anotacoes_backup');
-      if (backup) {
-        const parsedBackup = JSON.parse(backup);
-        if (Array.isArray(parsedBackup) && parsedBackup.length > 0) return parsedBackup;
-      }
-    } catch (e) {}
-    return [
-      {
-        id: '1',
-        title: 'Bem-vindo ao seu Bloco de Notas!',
-        content: 'Use este espaço para anotações rápidas, ideias do dia, lembretes de rotina ou pensamentos importantes.',
-        date: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }),
-        color: '#fff9c4',
-        type: 'text'
-      }
-    ];
-  });
+  const [notes, setNotes] = useState(() => JSON.parse(appData.getItem('coach_anotacoes') || '[]'));
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeNote, setActiveNote] = useState(null); // Note sendo editada ou visualizada
   const [isEditing, setIsEditing] = useState(false);
@@ -140,7 +118,7 @@ function BlocoDeNotas({ onClose, user }) {
 
   useEffect(() => {
     if (isLoaded) {
-      syncUserNotes(user?.id, notes);
+      syncUserNotes(user.id, notes).catch(() => {});
     }
   }, [notes, user, isLoaded]);
 

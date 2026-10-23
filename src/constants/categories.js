@@ -1,7 +1,6 @@
-export const DEFAULT_CATEGORIES = [
-  { id: 'musica', name: 'Música', color: '#8b5cf6', icon: 'music', appliesTo: 'both' },
-  { id: 'casa', name: 'Casa', color: '#10b981', icon: 'house', appliesTo: 'both' },
-];
+import { appData } from '../services/workspaceStore';
+import { DEFAULT_CATEGORIES } from '../utils/workspaceData';
+export { DEFAULT_CATEGORIES };
 
 export const CATEGORY_COLORS = [
   '#3b82f6', // Azul
@@ -24,7 +23,7 @@ const normalizeCategory = ({ emoji, ...category }) => {
 export function getStoredCategories(filterAppliesTo = null) {
   let list = DEFAULT_CATEGORIES;
   try {
-    const saved = localStorage.getItem('coach_categories');
+    const saved = appData.getItem('coach_categories');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
@@ -52,7 +51,7 @@ export function notifyCategoriesChanged(updated) {
 export function saveStoredCategories(categories) {
   try {
     categories = categories.map(normalizeCategory);
-    localStorage.setItem('coach_categories', JSON.stringify(categories));
+    appData.setItem('coach_categories', JSON.stringify(categories));
     notifyCategoriesChanged(categories);
   } catch (e) {}
 }

@@ -10,7 +10,7 @@ import {
   PencilSimple,
   CalendarBlank
 } from '@phosphor-icons/react';
-import { toast } from 'sonner';
+import { toast } from '../../services/notifications';
 import { getTaskProfile } from '../../constants/profiles';
 import ProfilePicker from '../ProfilePicker';
 import CategoryPicker from '../CategoryPicker';
